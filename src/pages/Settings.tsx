@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,7 +102,7 @@ const Settings = () => {
   const fetchPlatformSettings = async () => {
     try {
       const { data, error } = await supabase
-        .from('platform_settings' as any)
+        .from('platform_settings')
         .select('whatsapp_api_token, whatsapp_phone_id')
         .single();
 
@@ -152,17 +153,25 @@ const Settings = () => {
     setWhatsappLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('platform_settings' as any)
-        .update({
-          whatsapp_api_token: platformSettings.whatsapp_api_token,
-          whatsapp_phone_id: platformSettings.whatsapp_phone_id,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', (await supabase.from('platform_settings' as any).select('id').single()).data?.id);
+      // First get the existing platform settings ID
+      const { data: existingSettings } = await supabase
+        .from('platform_settings')
+        .select('id')
+        .single();
 
-      if (error) throw error;
-      toast.success('WhatsApp settings updated successfully!');
+      if (existingSettings?.id) {
+        const { error } = await supabase
+          .from('platform_settings')
+          .update({
+            whatsapp_api_token: platformSettings.whatsapp_api_token,
+            whatsapp_phone_id: platformSettings.whatsapp_phone_id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingSettings.id);
+
+        if (error) throw error;
+        toast.success('WhatsApp settings updated successfully!');
+      }
     } catch (error) {
       console.error('Error saving WhatsApp settings:', error);
       toast.error('Failed to update WhatsApp settings');
