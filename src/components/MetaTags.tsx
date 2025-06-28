@@ -12,7 +12,7 @@ interface MetaTagsProps {
 const MetaTags = ({ 
   title = "Link2Pay — Smart Invoicing for WhatsApp Sellers",
   description = "Create invoices, showcase products, and get paid — all via WhatsApp.",
-  image = "/lovable-uploads/a9a6cef8-8a91-451c-aea6-3832e0e0f914.png",
+  image = "/lovable-uploads/e6db2000-16be-4362-bb02-9bb7800e39bd.png",
   url = window.location.href,
   type = "website"
 }: MetaTagsProps) => {

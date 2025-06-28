@@ -37,7 +37,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             <div className="flex items-center space-x-8">
               <Link to="/dashboard" className="flex items-center space-x-3">
                 <img 
-                  src="/lovable-uploads/a9a6cef8-8a91-451c-aea6-3832e0e0f914.png" 
+                  src="/lovable-uploads/e6db2000-16be-4362-bb02-9bb7800e39bd.png" 
                   alt="Link2Pay" 
                   className="h-8 w-auto"
                 />
