@@ -19,6 +19,17 @@ interface Profile {
   primary_color: string;
   accent_color: string;
   header_banner_url: string;
+  hero_image_url: string;
+  hero_headline: string;
+  hero_subheading: string;
+  hero_cta_text: string;
+  hero_cta_link: string;
+  background_color: string;
+  theme_preset: string;
+  store_visibility: boolean;
+  default_currency: string;
+  store_location: string;
+  delivery_note: string;
 }
 
 interface StoreDesignTabProps {
