@@ -14,6 +14,7 @@ interface Product {
   price: number;
   image_url: string;
   category: string;
+  product_id: string;
 }
 
 interface Profile {
@@ -35,12 +36,11 @@ const Storefront = () => {
 
   const fetchStorefrontData = async () => {
     try {
-      // For demo purposes, we'll fetch by business name or use a simple approach
-      // In production, you'd want a proper username system
+      // Fetch profile by store handle
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
-        .ilike('business_name', `%${username}%`)
+        .select('business_name, whatsapp_number, store_bio, logo_url')
+        .eq('store_handle', username)
         .single();
 
       if (profileError) throw profileError;
@@ -49,7 +49,7 @@ const Storefront = () => {
       // Fetch products for this user
       const { data: productsData, error: productsError } = await supabase
         .from('products')
-        .select('*')
+        .select('id, title, description, price, image_url, category, product_id')
         .eq('user_id', profileData.id)
         .eq('is_active', true);
 
@@ -66,7 +66,7 @@ const Storefront = () => {
   const handleWhatsAppOrder = (product: Product) => {
     if (!profile?.whatsapp_number) return;
     
-    const message = `Hi! I'm interested in ordering: ${product.title} - R${product.price.toFixed(2)}. Please let me know how to proceed.`;
+    const message = `Hi! I'd like to order ${product.title} for R${product.price.toFixed(2)}.`;
     const whatsappLink = `https://wa.me/${profile.whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(whatsappLink, '_blank');
   };
@@ -164,11 +164,16 @@ const Storefront = () => {
                       </div>
                     )}
                     <CardTitle className="text-lg">{product.title}</CardTitle>
-                    {product.category && (
-                      <Badge variant="outline" className="w-fit">
-                        {product.category}
+                    <div className="flex items-center gap-2 mt-2">
+                      {product.category && (
+                        <Badge variant="outline" className="w-fit">
+                          {product.category}
+                        </Badge>
+                      )}
+                      <Badge variant="secondary" className="w-fit text-xs">
+                        ID: {product.product_id}
                       </Badge>
-                    )}
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {product.description && (

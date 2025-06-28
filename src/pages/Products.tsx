@@ -28,6 +28,7 @@ interface Product {
   is_active: boolean;
   stock_quantity: number;
   inventory_enabled: boolean;
+  product_id: string;
   created_at: string;
 }
 
@@ -106,7 +107,8 @@ const Products = () => {
 
   const filteredProducts = products.filter(product =>
     product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+    product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.product_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -183,16 +185,19 @@ const Products = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <CardTitle className="text-lg">{product.title}</CardTitle>
-                      <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <Badge variant={product.is_active ? 'default' : 'secondary'}>
                           {product.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                         {product.category && (
                           <Badge variant="outline">{product.category}</Badge>
                         )}
+                        <Badge variant="secondary" className="text-xs">
+                          {product.product_id}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right ml-4">
                       <div className="text-xl font-bold text-[#4C9F70]">
                         R{product.price.toFixed(2)}
                       </div>

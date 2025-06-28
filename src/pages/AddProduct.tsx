@@ -69,23 +69,48 @@ const AddProduct = () => {
     return publicUrl;
   };
 
+  const generateProductId = async (): Promise<string> => {
+    const { data, error } = await supabase.rpc('generate_product_id');
+    if (error) throw error;
+    return data;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
+    // Validate required fields
+    if (!formData.title.trim()) {
+      toast.error('Product name is required');
+      return;
+    }
+    if (!formData.description.trim()) {
+      toast.error('Product description is required');
+      return;
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      toast.error('Valid price is required');
+      return;
+    }
+    if (!imageFile) {
+      toast.error('Product image is required');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      let imageUrl = '';
+      // Generate unique product ID
+      const productId = await generateProductId();
       
-      if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
-      }
+      // Upload image
+      const imageUrl = await uploadImage(imageFile);
 
       const { error } = await supabase
         .from('products')
         .insert({
           user_id: user.id,
+          product_id: productId,
           title: formData.title,
           description: formData.description,
           price: parseFloat(formData.price),
@@ -98,11 +123,11 @@ const AddProduct = () => {
 
       if (error) throw error;
 
-      toast.success('Product added successfully!');
+      toast.success(`Product added successfully! Product ID: ${productId}`);
       navigate('/products');
     } catch (error) {
       console.error('Error adding product:', error);
-      toast.error('Failed to add product');
+      toast.error('Failed to add product. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -135,14 +160,14 @@ const AddProduct = () => {
           <CardHeader>
             <CardTitle>Product Details</CardTitle>
             <CardDescription>
-              Fill in the information about your product
+              Fill in the information about your product. All fields marked with * are required.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Image Upload */}
               <div>
-                <Label>Product Image</Label>
+                <Label>Product Image *</Label>
                 <div className="mt-2">
                   {imagePreview ? (
                     <div className="relative inline-block">
@@ -187,12 +212,12 @@ const AddProduct = () => {
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="title">Product Title *</Label>
+                  <Label htmlFor="title">Product Name *</Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Enter product title"
+                    placeholder="Enter product name"
                     required
                   />
                 </div>
@@ -222,13 +247,14 @@ const AddProduct = () => {
               </div>
 
               <div>
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Description *</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Describe your product..."
                   rows={4}
+                  required
                 />
               </div>
 
@@ -295,7 +321,7 @@ const AddProduct = () => {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={loading || !formData.title || !formData.price}
+                  disabled={loading}
                   className="flex-1 bg-[#4C9F70] hover:bg-[#3d8159]"
                 >
                   {loading ? 'Adding Product...' : 'Add Product'}

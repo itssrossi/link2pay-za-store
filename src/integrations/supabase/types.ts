@@ -9,13 +9,203 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      invoice_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          invoice_id: string
+          quantity: number
+          title: string
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id: string
+          quantity?: number
+          title: string
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          title?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          client_email: string | null
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          id: string
+          invoice_number: string
+          payment_instructions: string | null
+          status: string | null
+          subtotal: number
+          total_amount: number
+          updated_at: string
+          user_id: string
+          vat_amount: number | null
+          vat_enabled: boolean | null
+        }
+        Insert: {
+          client_email?: string | null
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          invoice_number: string
+          payment_instructions?: string | null
+          status?: string | null
+          subtotal: number
+          total_amount: number
+          updated_at?: string
+          user_id: string
+          vat_amount?: number | null
+          vat_enabled?: boolean | null
+        }
+        Update: {
+          client_email?: string | null
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          invoice_number?: string
+          payment_instructions?: string | null
+          status?: string | null
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+          vat_amount?: number | null
+          vat_enabled?: boolean | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          inventory_enabled: boolean | null
+          is_active: boolean
+          price: number
+          product_id: string | null
+          stock_quantity: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          inventory_enabled?: boolean | null
+          is_active?: boolean
+          price: number
+          product_id?: string | null
+          stock_quantity?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          inventory_enabled?: boolean | null
+          is_active?: boolean
+          price?: number
+          product_id?: string | null
+          stock_quantity?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          business_name: string | null
+          created_at: string
+          delivery_method: string | null
+          eft_details: string | null
+          id: string
+          logo_url: string | null
+          payfast_link: string | null
+          payment_method: string | null
+          snapscan_link: string | null
+          store_bio: string | null
+          store_handle: string | null
+          updated_at: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          business_name?: string | null
+          created_at?: string
+          delivery_method?: string | null
+          eft_details?: string | null
+          id: string
+          logo_url?: string | null
+          payfast_link?: string | null
+          payment_method?: string | null
+          snapscan_link?: string | null
+          store_bio?: string | null
+          store_handle?: string | null
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          business_name?: string | null
+          created_at?: string
+          delivery_method?: string | null
+          eft_details?: string | null
+          id?: string
+          logo_url?: string | null
+          payfast_link?: string | null
+          payment_method?: string | null
+          snapscan_link?: string | null
+          store_bio?: string | null
+          store_handle?: string | null
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_product_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

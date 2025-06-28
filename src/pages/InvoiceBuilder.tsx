@@ -131,7 +131,7 @@ const InvoiceBuilder = () => {
 
     try {
       const { subtotal, vatAmount, total } = calculateTotals();
-      const invoiceNumber = `INV-${Date.now()}`;
+      const invoiceNumber = `inv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       // Create invoice
       const { data: invoice, error: invoiceError } = await supabase
@@ -153,6 +153,7 @@ const InvoiceBuilder = () => {
         .single();
 
       if (invoiceError) throw invoiceError;
+      if (!invoice) throw new Error('Failed to create invoice');
 
       // Create invoice items
       const invoiceItems = validItems.map(item => ({
@@ -171,7 +172,7 @@ const InvoiceBuilder = () => {
       if (itemsError) throw itemsError;
 
       // Generate WhatsApp message
-      const message = `Hi ${invoiceData.client_name}, here's your invoice for R${total.toFixed(2)}: ${window.location.origin}/invoice/${invoice.id}`;
+      const message = `Hi ${invoiceData.client_name}, here's your invoice for R${total.toFixed(2)}: ${window.location.origin}/invoice/${invoice.invoice_number}`;
       const whatsappLink = `https://wa.me/${profile?.whatsapp_number?.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
 
       // Open WhatsApp

@@ -18,7 +18,8 @@ import {
   DollarSign,
   MessageCircle,
   ExternalLink,
-  Copy
+  Copy,
+  Share2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -32,6 +33,7 @@ interface DashboardStats {
 interface Profile {
   business_name: string;
   whatsapp_number: string;
+  store_handle: string;
 }
 
 const Dashboard = () => {
@@ -44,7 +46,8 @@ const Dashboard = () => {
   });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [quickCommand, setQuickCommand] = useState('');
-  const [generatedLink, setGeneratedLink] = useState('');
+  const [generatedInvoiceLink, setGeneratedInvoiceLink] = useState('');
+  const [generatedWhatsAppLink, setGeneratedWhatsAppLink] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
@@ -57,7 +60,7 @@ const Dashboard = () => {
       // Fetch profile
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('business_name, whatsapp_number')
+        .select('business_name, whatsapp_number, store_handle')
         .eq('id', user.id)
         .single();
       
@@ -91,42 +94,104 @@ const Dashboard = () => {
     }
   };
 
-  const handleQuickCommand = () => {
-    if (!quickCommand.trim()) return;
-    
-    // Parse command: l2p:ClientName:Amount
-    const parts = quickCommand.split(':');
-    if (parts.length !== 3 || parts[0].toLowerCase() !== 'l2p') {
-      toast.error('Invalid format. Use: l2p:ClientName:Amount');
-      return;
+  const parseQuickCommand = (command: string) => {
+    const parts = command.split(':');
+    if (parts.length < 3 || parts[0].toLowerCase() !== 'l2p') {
+      throw new Error('Invalid format. Use: l2p:ClientName:Amount or l2p:ClientName:Amount:ProductID');
     }
 
-    const [, clientName, amount] = parts;
-    const cleanAmount = amount.replace('R', '').trim();
-    
-    if (!clientName.trim() || !cleanAmount) {
-      toast.error('Please provide both client name and amount');
-      return;
-    }
-
-    // Generate invoice ID (simplified)
-    const invoiceId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Generate WhatsApp link
-    const message = `Hey ${clientName}, here's your invoice for R${cleanAmount}: ${window.location.origin}/invoice/${invoiceId}`;
-    const whatsappLink = `https://wa.me/${profile?.whatsapp_number?.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-    
-    setGeneratedLink(whatsappLink);
-    toast.success('WhatsApp link generated!');
+    const [, clientName, amount, productId] = parts;
+    return {
+      clientName: clientName.trim(),
+      amount: amount.replace('R', '').trim(),
+      productId: productId?.trim()
+    };
   };
 
-  const copyToClipboard = async () => {
+  const handleQuickCommand = async () => {
+    if (!quickCommand.trim()) return;
+    
     try {
-      await navigator.clipboard.writeText(generatedLink);
-      toast.success('Link copied to clipboard!');
-    } catch (err) {
-      toast.error('Failed to copy link');
+      const { clientName, amount, productId } = parseQuickCommand(quickCommand);
+      
+      if (!clientName || !amount) {
+        toast.error('Please provide both client name and amount');
+        return;
+      }
+
+      const cleanAmount = parseFloat(amount);
+      if (isNaN(cleanAmount) || cleanAmount <= 0) {
+        toast.error('Please provide a valid amount');
+        return;
+      }
+
+      let productName = 'Custom Invoice';
+      
+      // If product ID is provided, fetch product details
+      if (productId) {
+        const { data: product, error } = await supabase
+          .from('products')
+          .select('title, price')
+          .eq('product_id', productId)
+          .eq('user_id', user!.id)
+          .single();
+
+        if (error || !product) {
+          toast.error(`Product with ID ${productId} not found`);
+          return;
+        }
+        
+        productName = product.title;
+      }
+
+      // Generate invoice
+      const invoiceId = `inv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      const { error: invoiceError } = await supabase
+        .from('invoices')
+        .insert({
+          user_id: user!.id,
+          invoice_number: invoiceId,
+          client_name: clientName,
+          subtotal: cleanAmount,
+          total_amount: cleanAmount,
+          vat_enabled: false,
+          status: 'pending'
+        });
+
+      if (invoiceError) throw invoiceError;
+
+      // Generate links
+      const invoiceLink = `${window.location.origin}/invoice/${invoiceId}`;
+      const whatsappMessage = `Hi ${clientName}, here's your invoice for ${productName} - R${cleanAmount.toFixed(2)}: ${invoiceLink}`;
+      const whatsappLink = `https://wa.me/${profile?.whatsapp_number?.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMessage)}`;
+      
+      setGeneratedInvoiceLink(invoiceLink);
+      setGeneratedWhatsAppLink(whatsappLink);
+      toast.success('Invoice created successfully!');
+      
+    } catch (error: any) {
+      console.error('Error processing quick command:', error);
+      toast.error(error.message || 'Failed to process command');
     }
+  };
+
+  const copyToClipboard = async (text: string, type: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${type} copied to clipboard!`);
+    } catch (err) {
+      toast.error(`Failed to copy ${type.toLowerCase()}`);
+    }
+  };
+
+  const copyStoreLink = async () => {
+    if (!profile?.store_handle) {
+      toast.error('Store handle not found');
+      return;
+    }
+    const storeLink = `${window.location.origin}/shop/${profile.store_handle}`;
+    await copyToClipboard(storeLink, 'Store link');
   };
 
   const statCards = [
@@ -174,6 +239,10 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={copyStoreLink} variant="outline" className="flex items-center gap-2">
+              <Share2 className="w-4 h-4" />
+              Copy Store Link
+            </Button>
             <Link to="/products/add">
               <Button className="bg-[#4C9F70] hover:bg-[#3d8159]">
                 <Plus className="w-4 h-4 mr-2" />
@@ -218,7 +287,9 @@ const Dashboard = () => {
               Quick Invoice Command
             </CardTitle>
             <CardDescription>
-              Generate a WhatsApp message link instantly with the format: <Badge variant="secondary">l2p:ClientName:Amount</Badge>
+              Generate a WhatsApp message link instantly with the format: <Badge variant="secondary">l2p:ClientName:Amount:ProductID</Badge>
+              <br />
+              ProductID is optional. Leave it blank for custom invoices.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -227,7 +298,7 @@ const Dashboard = () => {
               <div className="flex gap-2 mt-1">
                 <Input
                   id="command"
-                  placeholder="l2p:John:R750"
+                  placeholder="l2p:John:R750:prod-001"
                   value={quickCommand}
                   onChange={(e) => setQuickCommand(e.target.value)}
                   className="font-mono"
@@ -238,24 +309,49 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {generatedLink && (
-              <div className="p-4 bg-white rounded-lg border border-green-200">
-                <Label className="text-sm font-medium text-gray-700">Generated WhatsApp Link:</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    value={generatedLink}
-                    readOnly
-                    className="text-sm"
-                  />
-                  <Button size="sm" variant="outline" onClick={copyToClipboard}>
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" className="bg-[#4C9F70] hover:bg-[#3d8159]" asChild>
-                    <a href={generatedLink} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  </Button>
-                </div>
+            {(generatedInvoiceLink || generatedWhatsAppLink) && (
+              <div className="space-y-3 p-4 bg-white rounded-lg border border-green-200">
+                {generatedInvoiceLink && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Invoice Link:</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        value={generatedInvoiceLink}
+                        readOnly
+                        className="text-sm"
+                      />
+                      <Button size="sm" variant="outline" onClick={() => copyToClipboard(generatedInvoiceLink, 'Invoice link')}>
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" className="bg-[#4C9F70] hover:bg-[#3d8159]" asChild>
+                        <a href={generatedInvoiceLink} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {generatedWhatsAppLink && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">WhatsApp Message Link:</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        value={generatedWhatsAppLink}
+                        readOnly
+                        className="text-sm"
+                      />
+                      <Button size="sm" variant="outline" onClick={() => copyToClipboard(generatedWhatsAppLink, 'WhatsApp link')}>
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" className="bg-green-600 hover:bg-green-700" asChild>
+                        <a href={generatedWhatsAppLink} target="_blank" rel="noopener noreferrer">
+                          <MessageCircle className="w-4 h-4" />
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -263,8 +359,8 @@ const Dashboard = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
-            <Link to="/products">
+          <Link to="/products">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center text-gray-900">
                   <Package className="w-5 h-5 mr-2 text-[#4C9F70]" />
@@ -274,11 +370,11 @@ const Dashboard = () => {
                   Add, edit, or remove products from your store
                 </CardDescription>
               </CardHeader>
-            </Link>
-          </Card>
+            </Card>
+          </Link>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
-            <Link to="/orders">
+          <Link to="/orders">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center text-gray-900">
                   <FileText className="w-5 h-5 mr-2 text-[#4C9F70]" />
@@ -288,11 +384,11 @@ const Dashboard = () => {
                   Track all your invoices and orders
                 </CardDescription>
               </CardHeader>
-            </Link>
-          </Card>
+            </Card>
+          </Link>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" asChild>
-            <Link to="/settings">
+          <Link to="/settings">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center text-gray-900">
                   <Users className="w-5 h-5 mr-2 text-[#4C9F70]" />
@@ -302,8 +398,8 @@ const Dashboard = () => {
                   Configure payments and store details
                 </CardDescription>
               </CardHeader>
-            </Link>
-          </Card>
+            </Card>
+          </Link>
         </div>
       </div>
     </Layout>
