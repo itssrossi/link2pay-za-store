@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Zap, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { parseQuickInvoiceCommand, sendWhatsAppInvoice } from '@/utils/whatsappService';
 
 const QuickInvoice = () => {
   const { user } = useAuth();
@@ -18,38 +19,15 @@ const QuickInvoice = () => {
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState('');
 
-  const parseQuickInput = (input: string) => {
-    // Parse format: l2p:ClientName:R1500 or l2p:ClientName:1500
-    const match = input.match(/^l2p:(.+?):(R?)(\d+(?:\.\d{2})?)$/i);
-    if (!match) return null;
-    
-    const [, clientName, , amount] = match;
-    const parsedAmount = parseFloat(amount);
-    
-    // Validate inputs
-    if (!clientName.trim()) {
-      return { error: 'Client name cannot be empty' };
-    }
-    
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      return { error: 'Amount must be a valid positive number' };
-    }
-    
-    return {
-      clientName: clientName.trim(),
-      amount: parsedAmount
-    };
-  };
-
   const generateQuickInvoice = async () => {
     if (!user || !quickInput.trim()) {
       toast.error('Please enter invoice details');
       return;
     }
 
-    const parsed = parseQuickInput(quickInput.trim());
+    const parsed = parseQuickInvoiceCommand(quickInput.trim());
     if (!parsed) {
-      toast.error('Invalid format. Use: l2p:ClientName:R1500');
+      toast.error('Invalid format. Use: l2p:ClientName:Amount:ProductID:+27821234567');
       return;
     }
     
@@ -61,6 +39,19 @@ const QuickInvoice = () => {
     setLoading(true);
     
     try {
+      // Validate product exists
+      const { data: product, error: productError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('product_id', parsed.productId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (productError || !product) {
+        toast.error(`Product ${parsed.productId} not found`);
+        return;
+      }
+
       // Generate invoice number
       const invoiceNumber = `INV-${Date.now()}`;
       const finalDeliveryMethod = deliveryMethod === 'Other' ? otherDelivery : deliveryMethod;
@@ -84,12 +75,13 @@ const QuickInvoice = () => {
 
       if (invoiceError) throw invoiceError;
 
-      // Create invoice item
+      // Create invoice item using product details
       const { error: itemError } = await supabase
         .from('invoice_items')
         .insert({
           invoice_id: invoiceData.id,
-          title: 'Service/Product',
+          title: product.title,
+          description: product.description,
           quantity: 1,
           unit_price: parsed.amount,
           total_price: parsed.amount
@@ -99,8 +91,23 @@ const QuickInvoice = () => {
 
       const invoiceLink = `${window.location.origin}/invoice/${invoiceData.id}`;
       setGeneratedLink(invoiceLink);
+
+      // Send WhatsApp message
+      const whatsappSuccess = await sendWhatsAppInvoice({
+        clientName: parsed.clientName,
+        amount: parsed.amount,
+        phoneNumber: parsed.phoneNumber,
+        invoiceId: invoiceData.id,
+        invoiceUrl: invoiceLink
+      });
+
+      if (whatsappSuccess) {
+        toast.success(`Invoice created and WhatsApp message sent to ${parsed.phoneNumber}`);
+      } else {
+        toast.error('Invoice created, but WhatsApp message failed. Please check API settings.');
+      }
+
       setQuickInput('');
-      toast.success('Quick invoice generated successfully!');
       
     } catch (error) {
       console.error('Error generating quick invoice:', error);
@@ -125,16 +132,16 @@ const QuickInvoice = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="quick-invoice">Quick Format</Label>
+          <Label htmlFor="quick-invoice">Enhanced Quick Format</Label>
           <Input
             id="quick-invoice"
-            placeholder="l2p:John Smith:R750"
+            placeholder="l2p:John Smith:750:prod-001:+27821234567"
             value={quickInput}
             onChange={(e) => setQuickInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && generateQuickInvoice()}
           />
           <p className="text-sm text-gray-600">
-            Format: l2p:ClientName:R1500
+            Format: l2p:ClientName:Amount:ProductID:+27Phone
           </p>
         </div>
 
@@ -167,7 +174,7 @@ const QuickInvoice = () => {
           disabled={loading || !quickInput.trim()}
           className="w-full bg-[#4C9F70] hover:bg-[#3d8159]"
         >
-          {loading ? 'Generating...' : 'Generate Invoice'}
+          {loading ? 'Generating...' : 'Generate Invoice & Send WhatsApp'}
         </Button>
 
         {generatedLink && (

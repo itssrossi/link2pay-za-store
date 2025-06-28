@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,9 +29,15 @@ interface Profile {
   header_banner_url: string;
 }
 
+interface PlatformSettings {
+  whatsapp_api_token: string;
+  whatsapp_phone_id: string;
+}
+
 const Settings = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
   const [profile, setProfile] = useState<Profile>({
     business_name: '',
     whatsapp_number: '',
@@ -49,9 +54,15 @@ const Settings = () => {
     header_banner_url: ''
   });
 
+  const [platformSettings, setPlatformSettings] = useState<PlatformSettings>({
+    whatsapp_api_token: '',
+    whatsapp_phone_id: ''
+  });
+
   useEffect(() => {
     if (user) {
       fetchSettings();
+      fetchPlatformSettings();
     }
   }, [user]);
 
@@ -87,6 +98,29 @@ const Settings = () => {
     }
   };
 
+  const fetchPlatformSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('platform_settings')
+        .select('whatsapp_api_token, whatsapp_phone_id')
+        .single();
+
+      if (error) {
+        console.error('Error fetching platform settings:', error);
+        return;
+      }
+
+      if (data) {
+        setPlatformSettings({
+          whatsapp_api_token: data.whatsapp_api_token || '',
+          whatsapp_phone_id: data.whatsapp_phone_id || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching platform settings:', error);
+    }
+  };
+
   const saveProfile = async () => {
     if (!user) return;
     setLoading(true);
@@ -111,6 +145,29 @@ const Settings = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const savePlatformSettings = async () => {
+    setWhatsappLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('platform_settings')
+        .update({
+          whatsapp_api_token: platformSettings.whatsapp_api_token,
+          whatsapp_phone_id: platformSettings.whatsapp_phone_id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', (await supabase.from('platform_settings').select('id').single()).data?.id);
+
+      if (error) throw error;
+      toast.success('WhatsApp settings updated successfully!');
+    } catch (error) {
+      console.error('Error saving WhatsApp settings:', error);
+      toast.error('Failed to update WhatsApp settings');
+    } finally {
+      setWhatsappLoading(false);
     }
   };
 
@@ -144,10 +201,11 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">Business Profile</TabsTrigger>
             <TabsTrigger value="design">Store Design</TabsTrigger>
             <TabsTrigger value="payments">Payment Settings</TabsTrigger>
+            <TabsTrigger value="whatsapp">WhatsApp Automation</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6">
@@ -412,6 +470,66 @@ const Settings = () => {
                   className="bg-[#4C9F70] hover:bg-[#3d8159]"
                 >
                   {loading ? 'Saving...' : 'Save Payment Settings'}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="whatsapp" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>WhatsApp Automation (Platform Admin)</CardTitle>
+                <CardDescription>
+                  Configure the platform's WhatsApp Business API credentials for automated invoice messaging.
+                  These settings are used for all WhatsApp automation across the platform.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="whatsapp_api_token">360dialog API Token</Label>
+                    <Input
+                      id="whatsapp_api_token"
+                      type="password"
+                      value={platformSettings.whatsapp_api_token}
+                      onChange={(e) => setPlatformSettings({ ...platformSettings, whatsapp_api_token: e.target.value })}
+                      placeholder="Enter your 360dialog API token"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Your secure API token from 360dialog WhatsApp Business API
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="whatsapp_phone_id">WhatsApp Business Phone Number ID</Label>
+                    <Input
+                      id="whatsapp_phone_id"
+                      value={platformSettings.whatsapp_phone_id}
+                      onChange={(e) => setPlatformSettings({ ...platformSettings, whatsapp_phone_id: e.target.value })}
+                      placeholder="Enter your WhatsApp Business Phone Number ID"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      The Phone Number ID from your WhatsApp Business API setup
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">How WhatsApp Automation Works:</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Users can send invoices via WhatsApp using the enhanced l2p: command</li>
+                    <li>• Format: l2p:ClientName:Amount:ProductID:+27Phone</li>
+                    <li>• Messages are sent automatically when invoices are created</li>
+                    <li>• Manual WhatsApp option available in invoice creation form</li>
+                  </ul>
+                </div>
+
+                <Button 
+                  onClick={savePlatformSettings}
+                  disabled={whatsappLoading}
+                  className="bg-[#4C9F70] hover:bg-[#3d8159]"
+                >
+                  {whatsappLoading ? 'Saving...' : 'Save WhatsApp Settings'}
                 </Button>
               </CardContent>
             </Card>

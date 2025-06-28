@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,8 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Trash2, Send } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Trash2, Send, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
+import { sendWhatsAppInvoice, validatePhoneNumber } from '@/utils/whatsappService';
 
 interface InvoiceItem {
   id: string;
@@ -38,6 +39,11 @@ const InvoiceBuilder = () => {
     client_phone: '',
     payment_instructions: '',
     vat_enabled: false
+  });
+
+  const [whatsappData, setWhatsappData] = useState({
+    send_whatsapp: false,
+    whatsapp_phone: ''
   });
 
   const [items, setItems] = useState<InvoiceItem[]>([
@@ -127,6 +133,18 @@ const InvoiceBuilder = () => {
       return;
     }
 
+    // Validate WhatsApp phone if sending WhatsApp
+    if (whatsappData.send_whatsapp) {
+      if (!whatsappData.whatsapp_phone.trim()) {
+        toast.error('Please enter a WhatsApp phone number');
+        return;
+      }
+      if (!validatePhoneNumber(whatsappData.whatsapp_phone)) {
+        toast.error('Please enter a valid phone number in E.164 format (e.g., +27821234567)');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -171,14 +189,32 @@ const InvoiceBuilder = () => {
 
       if (itemsError) throw itemsError;
 
-      // Generate WhatsApp message
-      const message = `Hi ${invoiceData.client_name}, here's your invoice for R${total.toFixed(2)}: ${window.location.origin}/invoice/${invoice.invoice_number}`;
-      const whatsappLink = `https://wa.me/${profile?.whatsapp_number?.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+      const invoiceUrl = `${window.location.origin}/invoice/${invoice.invoice_number}`;
 
-      // Open WhatsApp
-      window.open(whatsappLink, '_blank');
+      // Send WhatsApp message if requested
+      if (whatsappData.send_whatsapp) {
+        const whatsappSuccess = await sendWhatsAppInvoice({
+          clientName: invoiceData.client_name,
+          amount: total,
+          phoneNumber: whatsappData.whatsapp_phone,
+          invoiceId: invoice.id,
+          invoiceUrl: invoiceUrl
+        });
 
-      toast.success('Invoice created and WhatsApp opened!');
+        if (whatsappSuccess) {
+          toast.success(`Invoice created and WhatsApp message sent to ${whatsappData.whatsapp_phone}!`);
+        } else {
+          toast.error('Invoice created, but WhatsApp message failed. Please check API settings.');
+        }
+      } else {
+        // Generate WhatsApp message for manual sending
+        const message = `Hi ${invoiceData.client_name}, here's your invoice for R${total.toFixed(2)}: ${invoiceUrl}`;
+        const whatsappLink = `https://wa.me/${profile?.whatsapp_number?.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+        
+        // Open WhatsApp
+        window.open(whatsappLink, '_blank');
+        toast.success('Invoice created and WhatsApp opened!');
+      }
       
       // Reset form
       setInvoiceData({
@@ -187,6 +223,10 @@ const InvoiceBuilder = () => {
         client_phone: '',
         payment_instructions: '',
         vat_enabled: false
+      });
+      setWhatsappData({
+        send_whatsapp: false,
+        whatsapp_phone: ''
       });
       setItems([{
         id: '1',
@@ -261,6 +301,46 @@ const InvoiceBuilder = () => {
                     />
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* WhatsApp Options */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-green-600" />
+                  WhatsApp Delivery
+                </CardTitle>
+                <CardDescription>
+                  Send invoice automatically via WhatsApp
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="send_whatsapp"
+                    checked={whatsappData.send_whatsapp}
+                    onCheckedChange={(checked) => setWhatsappData({ ...whatsappData, send_whatsapp: !!checked })}
+                  />
+                  <Label htmlFor="send_whatsapp" className="text-sm font-medium">
+                    Send invoice via WhatsApp automatically
+                  </Label>
+                </div>
+                
+                {whatsappData.send_whatsapp && (
+                  <div>
+                    <Label htmlFor="whatsapp_phone">WhatsApp Phone Number *</Label>
+                    <Input
+                      id="whatsapp_phone"
+                      value={whatsappData.whatsapp_phone}
+                      onChange={(e) => setWhatsappData({ ...whatsappData, whatsapp_phone: e.target.value })}
+                      placeholder="+27821234567"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter phone number in E.164 format (e.g., +27821234567)
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -409,13 +489,16 @@ const InvoiceBuilder = () => {
                   {loading ? 'Creating Invoice...' : (
                     <>
                       <Send className="w-4 h-4 mr-2" />
-                      Create & Send Invoice
+                      {whatsappData.send_whatsapp ? 'Create & Send via WhatsApp' : 'Create & Send Invoice'}
                     </>
                   )}
                 </Button>
                 
                 <p className="text-xs text-gray-600 text-center">
-                  This will create the invoice and open WhatsApp with a pre-filled message
+                  {whatsappData.send_whatsapp 
+                    ? 'This will create the invoice and send it automatically via WhatsApp'
+                    : 'This will create the invoice and open WhatsApp with a pre-filled message'
+                  }
                 </p>
               </CardContent>
             </Card>
