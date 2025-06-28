@@ -223,12 +223,22 @@ export type Database = {
       profiles: {
         Row: {
           accent_color: string | null
+          background_color: string | null
           business_name: string | null
           created_at: string
+          customization_version: number | null
+          default_currency: string | null
           delivery_method: string | null
+          delivery_note: string | null
           eft_details: string | null
           header_banner_url: string | null
+          hero_cta_link: string | null
+          hero_cta_text: string | null
+          hero_headline: string | null
+          hero_image_url: string | null
+          hero_subheading: string | null
           id: string
+          last_customized_at: string | null
           logo_url: string | null
           payfast_link: string | null
           payment_method: string | null
@@ -238,17 +248,30 @@ export type Database = {
           store_font: string | null
           store_handle: string | null
           store_layout: string | null
+          store_location: string | null
+          store_visibility: boolean | null
+          theme_preset: string | null
           updated_at: string
           whatsapp_number: string | null
         }
         Insert: {
           accent_color?: string | null
+          background_color?: string | null
           business_name?: string | null
           created_at?: string
+          customization_version?: number | null
+          default_currency?: string | null
           delivery_method?: string | null
+          delivery_note?: string | null
           eft_details?: string | null
           header_banner_url?: string | null
+          hero_cta_link?: string | null
+          hero_cta_text?: string | null
+          hero_headline?: string | null
+          hero_image_url?: string | null
+          hero_subheading?: string | null
           id: string
+          last_customized_at?: string | null
           logo_url?: string | null
           payfast_link?: string | null
           payment_method?: string | null
@@ -258,17 +281,30 @@ export type Database = {
           store_font?: string | null
           store_handle?: string | null
           store_layout?: string | null
+          store_location?: string | null
+          store_visibility?: boolean | null
+          theme_preset?: string | null
           updated_at?: string
           whatsapp_number?: string | null
         }
         Update: {
           accent_color?: string | null
+          background_color?: string | null
           business_name?: string | null
           created_at?: string
+          customization_version?: number | null
+          default_currency?: string | null
           delivery_method?: string | null
+          delivery_note?: string | null
           eft_details?: string | null
           header_banner_url?: string | null
+          hero_cta_link?: string | null
+          hero_cta_text?: string | null
+          hero_headline?: string | null
+          hero_image_url?: string | null
+          hero_subheading?: string | null
           id?: string
+          last_customized_at?: string | null
           logo_url?: string | null
           payfast_link?: string | null
           payment_method?: string | null
@@ -278,8 +314,50 @@ export type Database = {
           store_font?: string | null
           store_handle?: string | null
           store_layout?: string | null
+          store_location?: string | null
+          store_visibility?: boolean | null
+          theme_preset?: string | null
           updated_at?: string
           whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      store_sections: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean | null
+          section_content: string | null
+          section_order: number | null
+          section_settings: Json | null
+          section_title: string | null
+          section_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          section_content?: string | null
+          section_order?: number | null
+          section_settings?: Json | null
+          section_title?: string | null
+          section_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          section_content?: string | null
+          section_order?: number | null
+          section_settings?: Json | null
+          section_title?: string | null
+          section_type?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

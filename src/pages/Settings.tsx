@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +8,7 @@ import BusinessProfileTab from '@/components/settings/BusinessProfileTab';
 import StoreDesignTab from '@/components/settings/StoreDesignTab';
 import PaymentSettingsTab from '@/components/settings/PaymentSettingsTab';
 import WhatsAppAutomationTab from '@/components/settings/WhatsAppAutomationTab';
+import StorefrontCustomizationTab from '@/components/settings/StorefrontCustomizationTab';
 
 interface Profile {
   business_name: string;
@@ -24,6 +24,17 @@ interface Profile {
   primary_color: string;
   accent_color: string;
   header_banner_url: string;
+  hero_image_url: string;
+  hero_headline: string;
+  hero_subheading: string;
+  hero_cta_text: string;
+  hero_cta_link: string;
+  background_color: string;
+  theme_preset: string;
+  store_visibility: boolean;
+  default_currency: string;
+  store_location: string;
+  delivery_note: string;
 }
 
 interface PlatformSettings {
@@ -48,7 +59,18 @@ const Settings = () => {
     store_font: 'inter',
     primary_color: '#4C9F70',
     accent_color: '#3d8159',
-    header_banner_url: ''
+    header_banner_url: '',
+    hero_image_url: '',
+    hero_headline: '',
+    hero_subheading: '',
+    hero_cta_text: '',
+    hero_cta_link: '',
+    background_color: '#ffffff',
+    theme_preset: 'clean',
+    store_visibility: true,
+    default_currency: 'ZAR',
+    store_location: '',
+    delivery_note: ''
   });
 
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings>({
@@ -87,7 +109,18 @@ const Settings = () => {
           store_font: profileData.store_font || 'inter',
           primary_color: profileData.primary_color || '#4C9F70',
           accent_color: profileData.accent_color || '#3d8159',
-          header_banner_url: profileData.header_banner_url || ''
+          header_banner_url: profileData.header_banner_url || '',
+          hero_image_url: profileData.hero_image_url || '',
+          hero_headline: profileData.hero_headline || '',
+          hero_subheading: profileData.hero_subheading || '',
+          hero_cta_text: profileData.hero_cta_text || '',
+          hero_cta_link: profileData.hero_cta_link || '',
+          background_color: profileData.background_color || '#ffffff',
+          theme_preset: profileData.theme_preset || 'clean',
+          store_visibility: profileData.store_visibility !== false,
+          default_currency: profileData.default_currency || 'ZAR',
+          store_location: profileData.store_location || '',
+          delivery_note: profileData.delivery_note || ''
         });
       }
     } catch (error) {
@@ -187,8 +220,9 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile">Business Profile</TabsTrigger>
+            <TabsTrigger value="customize">Customize Store</TabsTrigger>
             <TabsTrigger value="design">Store Design</TabsTrigger>
             <TabsTrigger value="payments">Payment Settings</TabsTrigger>
             <TabsTrigger value="whatsapp">WhatsApp Automation</TabsTrigger>
@@ -196,6 +230,15 @@ const Settings = () => {
 
           <TabsContent value="profile" className="space-y-6">
             <BusinessProfileTab
+              profile={profile}
+              setProfile={setProfile}
+              onSave={saveProfile}
+              loading={loading}
+            />
+          </TabsContent>
+
+          <TabsContent value="customize" className="space-y-6">
+            <StorefrontCustomizationTab
               profile={profile}
               setProfile={setProfile}
               onSave={saveProfile}
