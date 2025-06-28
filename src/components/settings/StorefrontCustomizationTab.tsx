@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Smartphone, Monitor, Save, RotateCcw, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -72,6 +72,7 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('mobile');
   const [sections, setSections] = useState<any[]>([]);
   const [loadingSections, setLoadingSections] = useState(true);
+  const [activeTab, setActiveTab] = useState('theme');
 
   useEffect(() => {
     fetchSections();
@@ -140,13 +141,284 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
     }
   };
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'theme':
+        return (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Theme & Colors</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-sm">Theme Preset</Label>
+                <div className="grid grid-cols-1 gap-2 mt-2">
+                  {themePresets.map((preset) => (
+                    <Button
+                      key={preset.id}
+                      variant={profile.theme_preset === preset.id ? "default" : "outline"}
+                      onClick={() => applyThemePreset(preset)}
+                      className="h-auto p-3 flex flex-col items-start text-xs sm:text-sm w-full"
+                    >
+                      <span className="font-medium">{preset.name}</span>
+                      <div className="flex gap-1 mt-1">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: preset.colors.primary }}
+                        />
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: preset.colors.accent }}
+                        />
+                        <div 
+                          className="w-3 h-3 rounded-full border" 
+                          style={{ backgroundColor: preset.colors.bg }}
+                        />
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="primary_color" className="text-sm">Primary Color</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="primary_color"
+                      type="color"
+                      value={profile.primary_color}
+                      onChange={(e) => setProfile({ ...profile, primary_color: e.target.value })}
+                      className="w-12 h-8"
+                    />
+                    <Input
+                      value={profile.primary_color}
+                      onChange={(e) => setProfile({ ...profile, primary_color: e.target.value })}
+                      className="flex-1 text-xs"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="accent_color" className="text-sm">Accent Color</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="accent_color"
+                      type="color"
+                      value={profile.accent_color}
+                      onChange={(e) => setProfile({ ...profile, accent_color: e.target.value })}
+                      className="w-12 h-8"
+                    />
+                    <Input
+                      value={profile.accent_color}
+                      onChange={(e) => setProfile({ ...profile, accent_color: e.target.value })}
+                      className="flex-1 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="background_color" className="text-sm">Background Color</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    id="background_color"
+                    type="color"
+                    value={profile.background_color}
+                    onChange={(e) => setProfile({ ...profile, background_color: e.target.value })}
+                    className="w-12 h-8"
+                  />
+                  <Input
+                    value={profile.background_color}
+                    onChange={(e) => setProfile({ ...profile, background_color: e.target.value })}
+                    className="flex-1 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="store_font" className="text-sm">Font Family</Label>
+                <Select value={profile.store_font} onValueChange={(value) => setProfile({ ...profile, store_font: value })}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Choose font" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fontOptions.map((font) => (
+                      <SelectItem key={font.value} value={font.value}>
+                        {font.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'hero':
+        return (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Hero Section</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="hero_image_url" className="text-sm">Hero Image URL</Label>
+                <Input
+                  id="hero_image_url"
+                  value={profile.hero_image_url || ''}
+                  onChange={(e) => setProfile({ ...profile, hero_image_url: e.target.value })}
+                  placeholder="https://example.com/hero-image.jpg"
+                  className="mt-1 text-xs"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="hero_headline" className="text-sm">Headline</Label>
+                <Input
+                  id="hero_headline"
+                  value={profile.hero_headline || ''}
+                  onChange={(e) => setProfile({ ...profile, hero_headline: e.target.value })}
+                  placeholder="Welcome to our store"
+                  className="mt-1 text-xs"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="hero_subheading" className="text-sm">Subheading</Label>
+                <Textarea
+                  id="hero_subheading"
+                  value={profile.hero_subheading || ''}
+                  onChange={(e) => setProfile({ ...profile, hero_subheading: e.target.value })}
+                  placeholder="Discover amazing products..."
+                  rows={2}
+                  className="mt-1 text-xs"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="hero_cta_text" className="text-sm">CTA Button Text</Label>
+                  <Input
+                    id="hero_cta_text"
+                    value={profile.hero_cta_text || ''}
+                    onChange={(e) => setProfile({ ...profile, hero_cta_text: e.target.value })}
+                    placeholder="Shop Now"
+                    className="mt-1 text-xs"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="hero_cta_link" className="text-sm">CTA Button Link</Label>
+                  <Input
+                    id="hero_cta_link"
+                    value={profile.hero_cta_link || ''}
+                    onChange={(e) => setProfile({ ...profile, hero_cta_link: e.target.value })}
+                    placeholder="https://wa.me/..."
+                    className="mt-1 text-xs"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'sections':
+        return (
+          <SectionManager
+            sections={sections}
+            setSections={setSections}
+            loading={loadingSections}
+            onUpdate={fetchSections}
+          />
+        );
+
+      case 'settings':
+        return (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Store Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm">Store Visibility</Label>
+                  <p className="text-xs text-gray-500">Make your store public or private</p>
+                </div>
+                <Switch
+                  checked={profile.store_visibility}
+                  onCheckedChange={(checked) => setProfile({ ...profile, store_visibility: checked })}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="default_currency" className="text-sm">Default Currency</Label>
+                  <Select value={profile.default_currency} onValueChange={(value) => setProfile({ ...profile, default_currency: value })}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ZAR">ZAR (Rand)</SelectItem>
+                      <SelectItem value="USD">USD (Dollar)</SelectItem>
+                      <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                      <SelectItem value="GBP">GBP (Pound)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="store_layout" className="text-sm">Layout Style</Label>
+                  <Select value={profile.store_layout} onValueChange={(value) => setProfile({ ...profile, store_layout: value })}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="grid">Grid</SelectItem>
+                      <SelectItem value="list">List</SelectItem>
+                      <SelectItem value="carousel">Carousel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="store_location" className="text-sm">Store Location</Label>
+                <Input
+                  id="store_location"
+                  value={profile.store_location || ''}
+                  onChange={(e) => setProfile({ ...profile, store_location: e.target.value })}
+                  placeholder="City, Country"
+                  className="mt-1 text-xs"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="delivery_note" className="text-sm">Delivery Note</Label>
+                <Textarea
+                  id="delivery_note"
+                  value={profile.delivery_note || ''}
+                  onChange={(e) => setProfile({ ...profile, delivery_note: e.target.value })}
+                  placeholder="Free delivery within 5km..."
+                  rows={2}
+                  className="mt-1 text-xs"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 min-h-screen bg-gray-50">
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-4">
             <div>
-              <CardTitle className="text-lg sm:text-xl">Customize Your Storefront</CardTitle>
+              <CardTitle className="text-lg">Customize Your Storefront</CardTitle>
               <CardDescription className="text-sm mt-1">
                 Design your online store with drag-and-drop simplicity. Changes are previewed instantly.
               </CardDescription>
@@ -159,7 +431,7 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
                 className="flex items-center gap-2"
               >
                 <RotateCcw className="h-4 w-4" />
-                {!isMobile && 'Reset'}
+                Reset
               </Button>
               <Button
                 onClick={handleSave}
@@ -168,393 +440,76 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
                 size="sm"
               >
                 <Save className="h-4 w-4" />
-                {loading ? 'Saving...' : (isMobile ? 'Save' : 'Save & Publish')}
+                {loading ? 'Saving...' : 'Save'}
               </Button>
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'} gap-4 sm:gap-6`}>
-        {/* Customization Controls */}
-        <div className="space-y-4 sm:space-y-6">
-          <Tabs defaultValue="theme" className="w-full">
-            <div className="overflow-x-auto">
-              <TabsList className={`${isMobile ? 'w-full grid-cols-2' : 'grid w-full grid-cols-4'} h-auto`}>
-                <TabsTrigger value="theme" className="text-xs sm:text-sm px-2 py-2">Theme</TabsTrigger>
-                <TabsTrigger value="hero" className="text-xs sm:text-sm px-2 py-2">Hero</TabsTrigger>
-                {!isMobile && (
-                  <>
-                    <TabsTrigger value="sections" className="text-xs sm:text-sm px-2 py-2">Sections</TabsTrigger>
-                    <TabsTrigger value="settings" className="text-xs sm:text-sm px-2 py-2">Settings</TabsTrigger>
-                  </>
-                )}
-              </TabsList>
-            </div>
-
-            {/* Mobile Secondary Tabs */}
-            {isMobile && (
-              <div className="flex gap-1 overflow-x-auto pb-2 mt-2">
-                <TabsTrigger value="sections" className="text-xs px-3 py-2 whitespace-nowrap flex-shrink-0">
-                  Sections
-                </TabsTrigger>
-                <TabsTrigger value="settings" className="text-xs px-3 py-2 whitespace-nowrap flex-shrink-0">
-                  Settings
-                </TabsTrigger>
-              </div>
-            )}
-
-            <TabsContent value="theme" className="space-y-4 mt-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base sm:text-lg">Theme & Colors</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label className="text-sm">Theme Preset</Label>
-                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mt-2`}>
-                      {themePresets.map((preset) => (
-                        <Button
-                          key={preset.id}
-                          variant={profile.theme_preset === preset.id ? "default" : "outline"}
-                          onClick={() => applyThemePreset(preset)}
-                          className="h-auto p-3 flex flex-col items-start text-xs sm:text-sm"
-                        >
-                          <span className="font-medium">{preset.name}</span>
-                          <div className="flex gap-1 mt-1">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: preset.colors.primary }}
-                            />
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: preset.colors.accent }}
-                            />
-                            <div 
-                              className="w-3 h-3 rounded-full border" 
-                              style={{ backgroundColor: preset.colors.bg }}
-                            />
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-                    <div>
-                      <Label htmlFor="primary_color" className="text-sm">Primary Color</Label>
-                      <div className="flex gap-2 mt-1">
-                        <Input
-                          id="primary_color"
-                          type="color"
-                          value={profile.primary_color}
-                          onChange={(e) => setProfile({ ...profile, primary_color: e.target.value })}
-                          className="w-12 sm:w-16 h-8 sm:h-10"
-                        />
-                        <Input
-                          value={profile.primary_color}
-                          onChange={(e) => setProfile({ ...profile, primary_color: e.target.value })}
-                          className="flex-1 text-xs sm:text-sm"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="accent_color" className="text-sm">Accent Color</Label>
-                      <div className="flex gap-2 mt-1">
-                        <Input
-                          id="accent_color"
-                          type="color"
-                          value={profile.accent_color}
-                          onChange={(e) => setProfile({ ...profile, accent_color: e.target.value })}
-                          className="w-12 sm:w-16 h-8 sm:h-10"
-                        />
-                        <Input
-                          value={profile.accent_color}
-                          onChange={(e) => setProfile({ ...profile, accent_color: e.target.value })}
-                          className="flex-1 text-xs sm:text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="background_color" className="text-sm">Background Color</Label>
-                    <div className="flex gap-2 mt-1">
-                      <Input
-                        id="background_color"
-                        type="color"
-                        value={profile.background_color}
-                        onChange={(e) => setProfile({ ...profile, background_color: e.target.value })}
-                        className="w-12 sm:w-16 h-8 sm:h-10"
-                      />
-                      <Input
-                        value={profile.background_color}
-                        onChange={(e) => setProfile({ ...profile, background_color: e.target.value })}
-                        className="flex-1 text-xs sm:text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="store_font" className="text-sm">Font Family</Label>
-                    <Select value={profile.store_font} onValueChange={(value) => setProfile({ ...profile, store_font: value })}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Choose font" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {fontOptions.map((font) => (
-                          <SelectItem key={font.value} value={font.value}>
-                            {font.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="hero" className="space-y-4 mt-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base sm:text-lg">Hero Section</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="hero_image_url" className="text-sm">Hero Image URL</Label>
-                    <Input
-                      id="hero_image_url"
-                      value={profile.hero_image_url || ''}
-                      onChange={(e) => setProfile({ ...profile, hero_image_url: e.target.value })}
-                      placeholder="https://example.com/hero-image.jpg"
-                      className="mt-1 text-xs sm:text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="hero_headline" className="text-sm">Headline</Label>
-                    <Input
-                      id="hero_headline"
-                      value={profile.hero_headline || ''}
-                      onChange={(e) => setProfile({ ...profile, hero_headline: e.target.value })}
-                      placeholder="Welcome to our store"
-                      className="mt-1 text-xs sm:text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="hero_subheading" className="text-sm">Subheading</Label>
-                    <Textarea
-                      id="hero_subheading"
-                      value={profile.hero_subheading || ''}
-                      onChange={(e) => setProfile({ ...profile, hero_subheading: e.target.value })}
-                      placeholder="Discover amazing products..."
-                      rows={2}
-                      className="mt-1 text-xs sm:text-sm"
-                    />
-                  </div>
-
-                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-                    <div>
-                      <Label htmlFor="hero_cta_text" className="text-sm">CTA Button Text</Label>
-                      <Input
-                        id="hero_cta_text"
-                        value={profile.hero_cta_text || ''}
-                        onChange={(e) => setProfile({ ...profile, hero_cta_text: e.target.value })}
-                        placeholder="Shop Now"
-                        className="mt-1 text-xs sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="hero_cta_link" className="text-sm">CTA Button Link</Label>
-                      <Input
-                        id="hero_cta_link"
-                        value={profile.hero_cta_link || ''}
-                        onChange={(e) => setProfile({ ...profile, hero_cta_link: e.target.value })}
-                        placeholder="https://wa.me/..."
-                        className="mt-1 text-xs sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="sections" className="space-y-4 mt-4">
-              <SectionManager
-                sections={sections}
-                setSections={setSections}
-                loading={loadingSections}
-                onUpdate={fetchSections}
-              />
-            </TabsContent>
-
-            <TabsContent value="settings" className="space-y-4 mt-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base sm:text-lg">Store Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-sm">Store Visibility</Label>
-                      <p className="text-xs text-gray-500">Make your store public or private</p>
-                    </div>
-                    <Switch
-                      checked={profile.store_visibility}
-                      onCheckedChange={(checked) => setProfile({ ...profile, store_visibility: checked })}
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-                    <div>
-                      <Label htmlFor="default_currency" className="text-sm">Default Currency</Label>
-                      <Select value={profile.default_currency} onValueChange={(value) => setProfile({ ...profile, default_currency: value })}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ZAR">ZAR (Rand)</SelectItem>
-                          <SelectItem value="USD">USD (Dollar)</SelectItem>
-                          <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                          <SelectItem value="GBP">GBP (Pound)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="store_layout" className="text-sm">Layout Style</Label>
-                      <Select value={profile.store_layout} onValueChange={(value) => setProfile({ ...profile, store_layout: value })}>
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="grid">Grid</SelectItem>
-                          <SelectItem value="list">List</SelectItem>
-                          <SelectItem value="carousel">Carousel</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="store_location" className="text-sm">Store Location</Label>
-                    <Input
-                      id="store_location"
-                      value={profile.store_location || ''}
-                      onChange={(e) => setProfile({ ...profile, store_location: e.target.value })}
-                      placeholder="City, Country"
-                      className="mt-1 text-xs sm:text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="delivery_note" className="text-sm">Delivery Note</Label>
-                    <Textarea
-                      id="delivery_note"
-                      value={profile.delivery_note || ''}
-                      onChange={(e) => setProfile({ ...profile, delivery_note: e.target.value })}
-                      placeholder="Free delivery within 5km..."
-                      rows={2}
-                      className="mt-1 text-xs sm:text-sm"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+      {/* Mobile Tab Navigation */}
+      <div className="bg-white rounded-lg p-2">
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          {[
+            { id: 'theme', label: 'Theme' },
+            { id: 'hero', label: 'Hero' },
+            { id: 'sections', label: 'Sections' },
+            { id: 'settings', label: 'Settings' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-[#4C9F70] text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
-
-        {/* Live Preview - Only show on desktop or as separate section on mobile */}
-        {!isMobile && (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base sm:text-lg">Live Preview</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant={previewMode === 'mobile' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setPreviewMode('mobile')}
-                    >
-                      <Smartphone className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant={previewMode === 'desktop' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setPreviewMode('desktop')}
-                    >
-                      <Monitor className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <StorefrontPreview
-                  profile={profile}
-                  sections={sections}
-                  mode={previewMode}
-                />
-              </CardContent>
-            </Card>
-
-            {profile.store_handle && (
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Eye className="h-4 w-4" />
-                    <span>Your store will be live at:</span>
-                  </div>
-                  <div className="mt-2">
-                    <Badge variant="outline" className="font-mono text-xs">
-                      /store/{profile.store_handle}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Mobile Preview Section */}
-      {isMobile && (
-        <Card className="mt-4">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Live Preview</CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={previewMode === 'mobile' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPreviewMode('mobile')}
-                >
-                  <Smartphone className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={previewMode === 'desktop' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPreviewMode('desktop')}
-                >
-                  <Monitor className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <StorefrontPreview
-              profile={profile}
-              sections={sections}
-              mode={previewMode}
-            />
-          </CardContent>
-        </Card>
-      )}
+      {/* Tab Content */}
+      <div className="space-y-4">
+        {renderTabContent()}
+      </div>
 
-      {/* Mobile Store URL */}
-      {isMobile && profile.store_handle && (
+      {/* Preview Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Live Preview</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={previewMode === 'mobile' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPreviewMode('mobile')}
+              >
+                <Smartphone className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={previewMode === 'desktop' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPreviewMode('desktop')}
+              >
+                <Monitor className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <StorefrontPreview
+            profile={profile}
+            sections={sections}
+            mode={previewMode}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Store URL */}
+      {profile.store_handle && (
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-sm text-gray-600">
