@@ -256,7 +256,7 @@ const Settings = () => {
             {activeTab === 'profile' && (
               <BusinessProfileTab
                 profile={profile}
-                setProfile={setProfile}
+                setProfile={(updatedProfile) => setProfile(updatedProfile)}
                 onSave={saveProfile}
                 loading={loading}
               />
@@ -265,7 +265,7 @@ const Settings = () => {
             {activeTab === 'customize' && (
               <StorefrontCustomizationTab
                 profile={profile}
-                setProfile={setProfile}
+                setProfile={(updatedProfile) => setProfile(updatedProfile)}
                 onSave={saveProfile}
                 loading={loading}
               />
@@ -274,7 +274,7 @@ const Settings = () => {
             {activeTab === 'design' && (
               <StoreDesignTab
                 profile={profile}
-                setProfile={setProfile}
+                setProfile={(updatedProfile) => setProfile(updatedProfile)}
                 onSave={saveProfile}
                 loading={loading}
               />
@@ -283,7 +283,7 @@ const Settings = () => {
             {activeTab === 'payments' && (
               <PaymentSettingsTab
                 profile={profile}
-                setProfile={setProfile}
+                setProfile={(updatedProfile) => setProfile(updatedProfile)}
                 onSave={saveProfile}
                 loading={loading}
               />
@@ -335,7 +335,7 @@ const Settings = () => {
           <TabsContent value="profile" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
             <BusinessProfileTab
               profile={profile}
-              setProfile={setProfile}
+              setProfile={(updatedProfile) => setProfile(updatedProfile)}
               onSave={saveProfile}
               loading={loading}
             />
@@ -344,7 +344,7 @@ const Settings = () => {
           <TabsContent value="customize" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
             <StorefrontCustomizationTab
               profile={profile}
-              setProfile={setProfile}
+              setProfile={(updatedProfile) => setProfile(updatedProfile)}
               onSave={saveProfile}
               loading={loading}
             />
@@ -353,7 +353,7 @@ const Settings = () => {
           <TabsContent value="design" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
             <StoreDesignTab
               profile={profile}
-              setProfile={setProfile}
+              setProfile={(updatedProfile) => setProfile(updatedProfile)}
               onSave={saveProfile}
               loading={loading}
             />
@@ -362,7 +362,7 @@ const Settings = () => {
           <TabsContent value="payments" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
             <PaymentSettingsTab
               profile={profile}
-              setProfile={setProfile}
+              setProfile={(updatedProfile) => setProfile(updatedProfile)}
               onSave={saveProfile}
               loading={loading}
             />
