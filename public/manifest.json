@@ -1,0 +1,28 @@
+
+{
+  "name": "Link2Pay - Smart Invoicing for WhatsApp Sellers",
+  "short_name": "Link2Pay",
+  "description": "Create invoices, showcase products, and get paid — all via WhatsApp.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4C9F70",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/lovable-uploads/43de5b2f-9590-48a5-928c-985ee37f53fd.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/43de5b2f-9590-48a5-928c-985ee37f53fd.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
