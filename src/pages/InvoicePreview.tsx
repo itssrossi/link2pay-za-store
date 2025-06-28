@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ExternalLink, FileText } from 'lucide-react';
+import { ExternalLink, FileText, Download } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface InvoiceItem {
   id: string;
@@ -28,6 +29,8 @@ interface Invoice {
   total_amount: number;
   vat_enabled: boolean;
   payment_instructions: string;
+  delivery_method: string;
+  payment_enabled: boolean;
   status: string;
   created_at: string;
 }
@@ -96,11 +99,17 @@ const InvoicePreview = () => {
     
     const link = method === 'snapscan' ? profile.snapscan_link : profile.payfast_link;
     if (!link) {
-      alert(`${method === 'snapscan' ? 'SnapScan' : 'PayFast'} payment link not available`);
+      toast.error(`${method === 'snapscan' ? 'SnapScan' : 'PayFast'} payment link not available`);
       return;
     }
     
     window.open(link, '_blank');
+  };
+
+  const downloadPDF = () => {
+    // This is a placeholder for PDF generation
+    // In a real implementation, you would use a library like jsPDF or html2pdf
+    toast.info('PDF download feature coming soon!');
   };
 
   if (loading) {
@@ -157,14 +166,26 @@ const InvoicePreview = () => {
             </div>
           </div>
 
-          {/* Bill To */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Bill To:</h3>
-            <div className="text-gray-600">
-              <p className="font-medium">{invoice.client_name}</p>
-              {invoice.client_email && <p>{invoice.client_email}</p>}
-              {invoice.client_phone && <p>{invoice.client_phone}</p>}
+          {/* Bill To & Delivery */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Bill To:</h3>
+              <div className="text-gray-600">
+                <p className="font-medium">{invoice.client_name}</p>
+                {invoice.client_email && <p>{invoice.client_email}</p>}
+                {invoice.client_phone && <p>{invoice.client_phone}</p>}
+              </div>
             </div>
+            {invoice.delivery_method && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Delivery Method:</h3>
+                <div className="text-gray-600">
+                  <Badge variant="outline" className="text-sm">
+                    {invoice.delivery_method}
+                  </Badge>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Items Table */}
@@ -249,30 +270,40 @@ const InvoicePreview = () => {
             </div>
           )}
 
-          {/* Payment Buttons */}
-          <div className="flex gap-4 justify-center">
-            {profile?.snapscan_link && (
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-4 justify-center mb-6">
+            <Button
+              onClick={downloadPDF}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Download PDF
+            </Button>
+            
+            {invoice.payment_enabled && profile?.snapscan_link && (
               <Button
                 onClick={() => handlePayment('snapscan')}
                 className="bg-[#4C9F70] hover:bg-[#3d8159] text-white"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Pay with SnapScan
+                Pay Now via SnapScan
               </Button>
             )}
-            {profile?.payfast_link && (
+            
+            {invoice.payment_enabled && profile?.payfast_link && (
               <Button
                 onClick={() => handlePayment('payfast')}
                 className="bg-[#4C9F70] hover:bg-[#3d8159] text-white"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Pay with PayFast
+                Pay Now via PayFast
               </Button>
             )}
           </div>
 
           {/* Status Badge */}
-          <div className="flex justify-center mt-6">
+          <div className="flex justify-center">
             <Badge 
               variant={invoice.status === 'paid' ? 'default' : 'secondary'}
               className="text-sm px-4 py-2"

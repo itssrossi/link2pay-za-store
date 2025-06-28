@@ -6,12 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Zap, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
 const QuickInvoice = () => {
   const { user } = useAuth();
   const [quickInput, setQuickInput] = useState('');
+  const [deliveryMethod, setDeliveryMethod] = useState('Local Pickup');
+  const [otherDelivery, setOtherDelivery] = useState('');
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState('');
 
@@ -21,18 +24,37 @@ const QuickInvoice = () => {
     if (!match) return null;
     
     const [, clientName, , amount] = match;
+    const parsedAmount = parseFloat(amount);
+    
+    // Validate inputs
+    if (!clientName.trim()) {
+      return { error: 'Client name cannot be empty' };
+    }
+    
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return { error: 'Amount must be a valid positive number' };
+    }
+    
     return {
       clientName: clientName.trim(),
-      amount: parseFloat(amount)
+      amount: parsedAmount
     };
   };
 
   const generateQuickInvoice = async () => {
-    if (!user || !quickInput.trim()) return;
+    if (!user || !quickInput.trim()) {
+      toast.error('Please enter invoice details');
+      return;
+    }
 
     const parsed = parseQuickInput(quickInput.trim());
     if (!parsed) {
       toast.error('Invalid format. Use: l2p:ClientName:R1500');
+      return;
+    }
+    
+    if (parsed.error) {
+      toast.error(parsed.error);
       return;
     }
 
@@ -41,6 +63,7 @@ const QuickInvoice = () => {
     try {
       // Generate invoice number
       const invoiceNumber = `INV-${Date.now()}`;
+      const finalDeliveryMethod = deliveryMethod === 'Other' ? otherDelivery : deliveryMethod;
       
       // Create invoice
       const { data: invoiceData, error: invoiceError } = await supabase
@@ -51,7 +74,10 @@ const QuickInvoice = () => {
           client_name: parsed.clientName,
           subtotal: parsed.amount,
           total_amount: parsed.amount,
-          status: 'pending'
+          delivery_method: finalDeliveryMethod,
+          status: 'pending',
+          payment_enabled: true,
+          auto_reminder_enabled: false
         })
         .select()
         .single();
@@ -78,7 +104,7 @@ const QuickInvoice = () => {
       
     } catch (error) {
       console.error('Error generating quick invoice:', error);
-      toast.error('Failed to generate invoice');
+      toast.error('Failed to generate invoice. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -110,6 +136,30 @@ const QuickInvoice = () => {
           <p className="text-sm text-gray-600">
             Format: l2p:ClientName:R1500
           </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="delivery-method">Delivery Method</Label>
+          <Select value={deliveryMethod} onValueChange={setDeliveryMethod}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select delivery method" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Local Pickup">Local Pickup</SelectItem>
+              <SelectItem value="Courier Guy">Courier Guy</SelectItem>
+              <SelectItem value="Pargo">Pargo</SelectItem>
+              <SelectItem value="Door-to-Door">Door-to-Door</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {deliveryMethod === 'Other' && (
+            <Input
+              placeholder="Enter delivery method"
+              value={otherDelivery}
+              onChange={(e) => setOtherDelivery(e.target.value)}
+            />
+          )}
         </div>
         
         <Button 

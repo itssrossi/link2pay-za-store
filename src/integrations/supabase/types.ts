@@ -50,15 +50,51 @@ export type Database = {
           },
         ]
       }
+      invoice_reminders: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_id: string
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_id: string
+          sent_at?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_reminders_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
+          auto_reminder_enabled: boolean | null
           client_email: string | null
           client_name: string
           client_phone: string | null
           created_at: string
+          delivery_method: string | null
           id: string
           invoice_number: string
+          payment_enabled: boolean | null
           payment_instructions: string | null
+          reminder_sent_at: string | null
           status: string | null
           subtotal: number
           total_amount: number
@@ -68,13 +104,17 @@ export type Database = {
           vat_enabled: boolean | null
         }
         Insert: {
+          auto_reminder_enabled?: boolean | null
           client_email?: string | null
           client_name: string
           client_phone?: string | null
           created_at?: string
+          delivery_method?: string | null
           id?: string
           invoice_number: string
+          payment_enabled?: boolean | null
           payment_instructions?: string | null
+          reminder_sent_at?: string | null
           status?: string | null
           subtotal: number
           total_amount: number
@@ -84,13 +124,17 @@ export type Database = {
           vat_enabled?: boolean | null
         }
         Update: {
+          auto_reminder_enabled?: boolean | null
           client_email?: string | null
           client_name?: string
           client_phone?: string | null
           created_at?: string
+          delivery_method?: string | null
           id?: string
           invoice_number?: string
+          payment_enabled?: boolean | null
           payment_instructions?: string | null
+          reminder_sent_at?: string | null
           status?: string | null
           subtotal?: number
           total_amount?: number
@@ -105,6 +149,7 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string
+          delivery_method: string | null
           description: string | null
           id: string
           image_url: string | null
@@ -120,6 +165,7 @@ export type Database = {
         Insert: {
           category?: string | null
           created_at?: string
+          delivery_method?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
@@ -135,6 +181,7 @@ export type Database = {
         Update: {
           category?: string | null
           created_at?: string
+          delivery_method?: string | null
           description?: string | null
           id?: string
           image_url?: string | null

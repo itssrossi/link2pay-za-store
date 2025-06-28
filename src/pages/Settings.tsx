@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -352,7 +353,7 @@ const Settings = () => {
               <CardHeader>
                 <CardTitle>Payment Methods</CardTitle>
                 <CardDescription>
-                  Configure how customers can pay you
+                  Paste your SnapScan or PayFast link here to enable fast payments on invoices.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -367,6 +368,9 @@ const Settings = () => {
                         onChange={(e) => setProfile({ ...profile, snapscan_link: e.target.value })}
                         placeholder="https://pos.snapscan.io/..."
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Paste your SnapScan link to enable "Pay Now via SnapScan" buttons
+                      </p>
                     </div>
                     <div>
                       <Label htmlFor="payfast_link">PayFast Payment Link</Label>
@@ -376,6 +380,9 @@ const Settings = () => {
                         onChange={(e) => setProfile({ ...profile, payfast_link: e.target.value })}
                         placeholder="https://www.payfast.co.za/..."
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Paste your PayFast link to enable "Pay Now via PayFast" buttons
+                      </p>
                     </div>
                   </div>
                 </div>

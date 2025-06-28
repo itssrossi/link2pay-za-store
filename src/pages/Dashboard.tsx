@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import QuickInvoice from '@/components/QuickInvoice';
+import MetaTags from '@/components/MetaTags';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -145,263 +147,269 @@ const Dashboard = () => {
   }
 
   return (
-    <Layout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-2">
-              Welcome back! Here's what's happening with your business.
-            </p>
+    <>
+      <MetaTags 
+        title="Dashboard - Link2Pay"
+        description="Manage your invoices, products and business with Link2Pay"
+      />
+      <Layout>
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+              <p className="text-gray-600 mt-2">
+                Welcome back! Here's what's happening with your business.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button asChild className="bg-[#4C9F70] hover:bg-[#3d8159]">
+                <Link to="/products/add">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Product
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/invoice-builder">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Create Invoice
+                </Link>
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button asChild className="bg-[#4C9F70] hover:bg-[#3d8159]">
-              <Link to="/products/add">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Product
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/invoice-builder">
-                <FileText className="w-4 h-4 mr-2" />
-                Create Invoice
-              </Link>
-            </Button>
-          </div>
-        </div>
 
-        {/* Quick Invoice Generator */}
-        <QuickInvoice />
+          {/* Quick Invoice Generator */}
+          <QuickInvoice />
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5" />
-                Your Store
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {stats.storeHandle ? (
-                <>
-                  <p className="text-sm text-gray-600">
-                    Store URL: /store/{stats.storeHandle}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button onClick={copyStoreLink} size="sm" variant="outline">
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy Link
-                    </Button>
-                    <Button asChild size="sm" variant="outline">
-                      <a href={`/store/${stats.storeHandle}`} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Preview
-                      </a>
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-gray-600">
-                    Set up your store handle to enable your public store
-                  </p>
-                  <Button asChild size="sm">
-                    <Link to="/settings">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Go to Settings
-                    </Link>
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Stats</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-[#4C9F70]">
-                    {stats.activeProducts}
-                  </div>
-                  <div className="text-sm text-gray-600">Active Products</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-[#4C9F70]">
-                    {stats.pendingInvoices}
-                  </div>
-                  <div className="text-sm text-gray-600">Pending Invoices</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalProducts}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.activeProducts} active
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Products</CardTitle>
-              <Package className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.activeProducts}</div>
-              <p className="text-xs text-muted-foreground">
-                Currently visible
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalInvoices}</div>
-              <p className="text-xs text-muted-foreground">
-                All time
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Invoices</CardTitle>
-              <FileText className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{stats.pendingInvoices}</div>
-              <p className="text-xs text-muted-foreground">
-                Awaiting payment
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Products */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Products</CardTitle>
-              <CardDescription>Your latest added products</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentProducts.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No products yet</p>
-              ) : (
-                <div className="space-y-3">
-                  {recentProducts.map((product) => (
-                    <div key={product.id} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{product.title}</p>
-                        <p className="text-sm text-gray-600">
-                          R{product.price.toFixed(2)} • {product.category}
-                        </p>
-                      </div>
-                      <Badge variant={product.is_active ? 'default' : 'secondary'}>
-                        {product.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingBag className="w-5 h-5" />
+                  Your Store
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {stats.storeHandle ? (
+                  <>
+                    <p className="text-sm text-gray-600">
+                      Store URL: /store/{stats.storeHandle}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button onClick={copyStoreLink} size="sm" variant="outline">
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy Link
+                      </Button>
+                      <Button asChild size="sm" variant="outline">
+                        <a href={`/store/${stats.storeHandle}`} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Preview
+                        </a>
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-600">
+                      Set up your store handle to enable your public store
+                    </p>
+                    <Button asChild size="sm">
+                      <Link to="/settings">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Go to Settings
+                      </Link>
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
 
-          {/* Recent Invoices */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Invoices</CardTitle>
-              <CardDescription>Your latest created invoices</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentInvoices.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No invoices yet</p>
-              ) : (
-                <div className="space-y-3">
-                  {recentInvoices.map((invoice) => (
-                    <div key={invoice.id} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">#{invoice.invoice_number}</p>
-                        <p className="text-sm text-gray-600">
-                          {invoice.client_name} • R{invoice.total_amount.toFixed(2)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={
-                          invoice.status === 'paid' ? 'default' : 
-                          invoice.status === 'pending' ? 'secondary' : 'outline'
-                        }>
-                          {invoice.status}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Stats</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-[#4C9F70]">
+                      {stats.activeProducts}
+                    </div>
+                    <div className="text-sm text-gray-600">Active Products</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-[#4C9F70]">
+                      {stats.pendingInvoices}
+                    </div>
+                    <div className="text-sm text-gray-600">Pending Invoices</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalProducts}</div>
+                <p className="text-xs text-muted-foreground">
+                  {stats.activeProducts} active
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+                <Package className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{stats.activeProducts}</div>
+                <p className="text-xs text-muted-foreground">
+                  Currently visible
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalInvoices}</div>
+                <p className="text-xs text-muted-foreground">
+                  All time
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Invoices</CardTitle>
+                <FileText className="h-4 w-4 text-yellow-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">{stats.pendingInvoices}</div>
+                <p className="text-xs text-muted-foreground">
+                  Awaiting payment
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Products */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Products</CardTitle>
+                <CardDescription>Your latest added products</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {recentProducts.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No products yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentProducts.map((product) => (
+                      <div key={product.id} className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{product.title}</p>
+                          <p className="text-sm text-gray-600">
+                            R{product.price.toFixed(2)} • {product.category}
+                          </p>
+                        </div>
+                        <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                          {product.is_active ? 'Active' : 'Inactive'}
                         </Badge>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyInvoiceLink(invoice.id)}
-                        >
-                          <Copy className="w-3 h-3" />
-                        </Button>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-        {/* Overview Chart */}
-        {(stats.totalProducts > 0 || stats.totalInvoices > 0) && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Overview</CardTitle>
-              <CardDescription>Your business at a glance</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={120}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </Layout>
+            {/* Recent Invoices */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Invoices</CardTitle>
+                <CardDescription>Your latest created invoices</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {recentInvoices.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No invoices yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentInvoices.map((invoice) => (
+                      <div key={invoice.id} className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">#{invoice.invoice_number}</p>
+                          <p className="text-sm text-gray-600">
+                            {invoice.client_name} • R{invoice.total_amount.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={
+                            invoice.status === 'paid' ? 'default' : 
+                            invoice.status === 'pending' ? 'secondary' : 'outline'
+                          }>
+                            {invoice.status}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyInvoiceLink(invoice.id)}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Overview Chart */}
+          {(stats.totalProducts > 0 || stats.totalInvoices > 0) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Overview</CardTitle>
+                <CardDescription>Your business at a glance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={120}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </Layout>
+    </>
   );
 };
 
