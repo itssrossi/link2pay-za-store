@@ -30,7 +30,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/shop/:username" element={<Storefront />} />
+            <Route path="/store/:username" element={<Storefront />} />
             <Route path="/invoice/:invoiceId" element={<InvoicePreview />} />
             
             {/* Protected Routes */}

@@ -23,6 +23,11 @@ interface Profile {
   whatsapp_number: string;
   store_bio: string;
   logo_url: string;
+  store_layout: string;
+  store_font: string;
+  primary_color: string;
+  accent_color: string;
+  header_banner_url: string;
 }
 
 const Storefront = () => {
@@ -37,10 +42,13 @@ const Storefront = () => {
 
   const fetchStorefrontData = async () => {
     try {
-      // Fetch profile by store handle - include id field
+      // Fetch profile by store handle with customization fields
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, business_name, whatsapp_number, store_bio, logo_url')
+        .select(`
+          id, business_name, whatsapp_number, store_bio, logo_url,
+          store_layout, store_font, primary_color, accent_color, header_banner_url
+        `)
         .eq('store_handle', username)
         .single();
 
@@ -72,6 +80,22 @@ const Storefront = () => {
     window.open(whatsappLink, '_blank');
   };
 
+  const getFontClass = (font: string) => {
+    switch (font) {
+      case 'poppins': return 'font-["Poppins"]';
+      case 'roboto': return 'font-["Roboto"]';
+      default: return 'font-["Inter"]';
+    }
+  };
+
+  const getLayoutClass = () => {
+    switch (profile?.store_layout) {
+      case 'list': return 'grid grid-cols-1 gap-4';
+      case 'carousel': return 'flex overflow-x-auto gap-4 pb-4';
+      default: return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -83,10 +107,13 @@ const Storefront = () => {
   if (!profile) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md">
+        <Card className="max-w-md mx-4">
           <CardContent className="text-center py-12">
+            <ShoppingCart className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">Store Not Found</h2>
-            <p className="text-gray-600 mb-4">This store may not exist or is no longer available.</p>
+            <p className="text-gray-600 mb-4">
+              This store may not exist or is no longer available. Please check the URL and try again.
+            </p>
             <Button asChild>
               <a href="/">Back to Home</a>
             </Button>
@@ -96,8 +123,22 @@ const Storefront = () => {
     );
   }
 
+  const primaryColor = profile.primary_color || '#4C9F70';
+  const accentColor = profile.accent_color || '#3d8159';
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div 
+      className={`min-h-screen bg-gray-50 ${getFontClass(profile.store_font)}`}
+      style={{
+        '--primary-color': primaryColor,
+        '--accent-color': accentColor,
+      } as React.CSSProperties}
+    >
+      {/* Header Banner */}
+      {profile.header_banner_url && (
+        <div className="w-full h-48 bg-cover bg-center" style={{ backgroundImage: `url(${profile.header_banner_url})` }} />
+      )}
+
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-8">
@@ -106,7 +147,8 @@ const Storefront = () => {
               <img
                 src={profile.logo_url}
                 alt={profile.business_name}
-                className="w-24 h-24 object-cover rounded-full border-4 border-[#4C9F70]"
+                className="w-24 h-24 object-cover rounded-full"
+                style={{ borderColor: primaryColor, borderWidth: '4px' }}
               />
             )}
             <div className="text-center md:text-left">
@@ -124,7 +166,8 @@ const Storefront = () => {
                   const whatsappLink = `https://wa.me/${profile.whatsapp_number?.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
                   window.open(whatsappLink, '_blank');
                 }}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="text-white hover:opacity-90"
+                style={{ backgroundColor: primaryColor }}
               >
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Chat on WhatsApp
@@ -151,9 +194,9 @@ const Storefront = () => {
               <p className="text-gray-600">Browse our selection and order via WhatsApp</p>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className={getLayoutClass()}>
               {products.map((product) => (
-                <Card key={product.id} className="hover:shadow-lg transition-shadow">
+                <Card key={product.id} className="hover:shadow-lg transition-shadow flex-shrink-0" style={{ minWidth: profile.store_layout === 'carousel' ? '280px' : 'auto' }}>
                   <CardHeader className="pb-4">
                     {product.image_url && (
                       <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-4">
@@ -184,13 +227,14 @@ const Storefront = () => {
                     )}
                     
                     <div className="flex items-center justify-between">
-                      <div className="text-xl font-bold text-[#4C9F70]">
+                      <div className="text-xl font-bold" style={{ color: primaryColor }}>
                         R{product.price.toFixed(2)}
                       </div>
                       <Button
                         onClick={() => handleWhatsAppOrder(product)}
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        className="text-white hover:opacity-90"
+                        style={{ backgroundColor: accentColor }}
                       >
                         <MessageCircle className="w-4 h-4 mr-1" />
                         Order Now
@@ -208,7 +252,7 @@ const Storefront = () => {
       <div className="bg-white border-t border-gray-200 mt-12">
         <div className="max-w-6xl mx-auto px-4 py-6 text-center">
           <p className="text-gray-600">
-            Powered by <span className="font-semibold text-[#4C9F70]">Link2Pay</span>
+            Powered by <span className="font-semibold" style={{ color: primaryColor }}>Link2Pay</span>
           </p>
         </div>
       </div>

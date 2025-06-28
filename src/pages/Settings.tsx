@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,8 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { Copy, ExternalLink } from 'lucide-react';
 
 interface Profile {
   business_name: string;
@@ -21,6 +22,11 @@ interface Profile {
   snapscan_link: string;
   payfast_link: string;
   eft_details: string;
+  store_layout: string;
+  store_font: string;
+  primary_color: string;
+  accent_color: string;
+  header_banner_url: string;
 }
 
 const Settings = () => {
@@ -34,7 +40,12 @@ const Settings = () => {
     store_handle: '',
     snapscan_link: '',
     payfast_link: '',
-    eft_details: ''
+    eft_details: '',
+    store_layout: 'grid',
+    store_font: 'inter',
+    primary_color: '#4C9F70',
+    accent_color: '#3d8159',
+    header_banner_url: ''
   });
 
   useEffect(() => {
@@ -62,7 +73,12 @@ const Settings = () => {
           store_handle: profileData.store_handle || '',
           snapscan_link: profileData.snapscan_link || '',
           payfast_link: profileData.payfast_link || '',
-          eft_details: profileData.eft_details || ''
+          eft_details: profileData.eft_details || '',
+          store_layout: profileData.store_layout || 'grid',
+          store_font: profileData.store_font || 'inter',
+          primary_color: profileData.primary_color || '#4C9F70',
+          accent_color: profileData.accent_color || '#3d8159',
+          header_banner_url: profileData.header_banner_url || ''
         });
       }
     } catch (error) {
@@ -87,10 +103,33 @@ const Settings = () => {
       toast.success('Settings updated successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast.error('Failed to update settings');
+      if (error.message?.includes('unique constraint')) {
+        toast.error('Store handle is already taken. Please choose a different one.');
+      } else {
+        toast.error('Failed to update settings');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyStoreLink = () => {
+    if (!profile.store_handle) {
+      toast.error('Please set a store handle first');
+      return;
+    }
+    const storeUrl = `${window.location.origin}/store/${profile.store_handle}`;
+    navigator.clipboard.writeText(storeUrl);
+    toast.success('Store link copied to clipboard!');
+  };
+
+  const openStorePreview = () => {
+    if (!profile.store_handle) {
+      toast.error('Please set a store handle first');
+      return;
+    }
+    const storeUrl = `${window.location.origin}/store/${profile.store_handle}`;
+    window.open(storeUrl, '_blank');
   };
 
   return (
@@ -104,8 +143,9 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Business Profile</TabsTrigger>
+            <TabsTrigger value="design">Store Design</TabsTrigger>
             <TabsTrigger value="payments">Payment Settings</TabsTrigger>
           </TabsList>
 
@@ -133,11 +173,11 @@ const Settings = () => {
                     <Input
                       id="store_handle"
                       value={profile.store_handle}
-                      onChange={(e) => setProfile({ ...profile, store_handle: e.target.value })}
+                      onChange={(e) => setProfile({ ...profile, store_handle: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
                       placeholder="your-store-name"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Your store will be available at: /shop/{profile.store_handle || 'your-store-name'}
+                      Your store will be available at: /store/{profile.store_handle || 'your-store-name'}
                     </p>
                   </div>
                 </div>
@@ -173,12 +213,135 @@ const Settings = () => {
                   />
                 </div>
 
+                <div className="flex gap-2 pt-4">
+                  <Button 
+                    onClick={saveProfile}
+                    disabled={loading}
+                    className="bg-[#4C9F70] hover:bg-[#3d8159]"
+                  >
+                    {loading ? 'Saving...' : 'Save Profile'}
+                  </Button>
+                  
+                  <Button 
+                    onClick={copyStoreLink}
+                    variant="outline"
+                    disabled={!profile.store_handle}
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Store Link
+                  </Button>
+                  
+                  <Button 
+                    onClick={openStorePreview}
+                    variant="outline"
+                    disabled={!profile.store_handle}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Preview Store
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="design" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Store Design</CardTitle>
+                <CardDescription>
+                  Customize the look and feel of your public store
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="store_layout">Store Layout</Label>
+                    <Select value={profile.store_layout} onValueChange={(value) => setProfile({ ...profile, store_layout: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose layout" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="grid">Grid</SelectItem>
+                        <SelectItem value="list">List</SelectItem>
+                        <SelectItem value="carousel">Carousel</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="store_font">Font Style</Label>
+                    <Select value={profile.store_font} onValueChange={(value) => setProfile({ ...profile, store_font: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose font" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="inter">Inter</SelectItem>
+                        <SelectItem value="poppins">Poppins</SelectItem>
+                        <SelectItem value="roboto">Roboto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="primary_color">Primary Color</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="primary_color"
+                        type="color"
+                        value={profile.primary_color}
+                        onChange={(e) => setProfile({ ...profile, primary_color: e.target.value })}
+                        className="w-16 h-10"
+                      />
+                      <Input
+                        value={profile.primary_color}
+                        onChange={(e) => setProfile({ ...profile, primary_color: e.target.value })}
+                        placeholder="#4C9F70"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="accent_color">Accent Color</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="accent_color"
+                        type="color"
+                        value={profile.accent_color}
+                        onChange={(e) => setProfile({ ...profile, accent_color: e.target.value })}
+                        className="w-16 h-10"
+                      />
+                      <Input
+                        value={profile.accent_color}
+                        onChange={(e) => setProfile({ ...profile, accent_color: e.target.value })}
+                        placeholder="#3d8159"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="header_banner_url">Header Banner URL (Optional)</Label>
+                  <Input
+                    id="header_banner_url"
+                    value={profile.header_banner_url}
+                    onChange={(e) => setProfile({ ...profile, header_banner_url: e.target.value })}
+                    placeholder="https://example.com/banner.jpg"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Recommended size: 1200x300px
+                  </p>
+                </div>
+
                 <Button 
                   onClick={saveProfile}
                   disabled={loading}
                   className="bg-[#4C9F70] hover:bg-[#3d8159]"
                 >
-                  {loading ? 'Saving...' : 'Save Profile'}
+                  {loading ? 'Saving...' : 'Save Design Settings'}
                 </Button>
               </CardContent>
             </Card>

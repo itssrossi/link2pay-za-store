@@ -4,8 +4,18 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MessageCircle, Download, ArrowLeft } from 'lucide-react';
+import { ExternalLink, FileText } from 'lucide-react';
+
+interface InvoiceItem {
+  id: string;
+  title: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+}
 
 interface Invoice {
   id: string;
@@ -22,18 +32,8 @@ interface Invoice {
   created_at: string;
 }
 
-interface InvoiceItem {
-  id: string;
-  title: string;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-}
-
-interface BusinessProfile {
+interface Profile {
   business_name: string;
-  whatsapp_number: string;
   logo_url: string;
   snapscan_link: string;
   payfast_link: string;
@@ -43,8 +43,8 @@ interface BusinessProfile {
 const InvoicePreview = () => {
   const { invoiceId } = useParams();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [items, setItems] = useState<InvoiceItem[]>([]);
-  const [business, setBusiness] = useState<BusinessProfile | null>(null);
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,11 +55,11 @@ const InvoicePreview = () => {
 
   const fetchInvoiceData = async () => {
     try {
-      // Fetch invoice details
+      // Fetch invoice
       const { data: invoiceData, error: invoiceError } = await supabase
         .from('invoices')
         .select('*')
-        .eq('invoice_number', invoiceId)
+        .eq('id', invoiceId)
         .single();
 
       if (invoiceError) throw invoiceError;
@@ -69,20 +69,20 @@ const InvoicePreview = () => {
       const { data: itemsData, error: itemsError } = await supabase
         .from('invoice_items')
         .select('*')
-        .eq('invoice_id', invoiceData.id);
+        .eq('invoice_id', invoiceId);
 
       if (itemsError) throw itemsError;
-      setItems(itemsData || []);
+      setInvoiceItems(itemsData || []);
 
       // Fetch business profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('business_name, whatsapp_number, logo_url, snapscan_link, payfast_link, eft_details')
+        .select('business_name, logo_url, snapscan_link, payfast_link, eft_details')
         .eq('id', invoiceData.user_id)
         .single();
 
       if (profileError) throw profileError;
-      setBusiness(profileData);
+      setProfile(profileData);
 
     } catch (error) {
       console.error('Error fetching invoice data:', error);
@@ -91,12 +91,16 @@ const InvoicePreview = () => {
     }
   };
 
-  const handleWhatsAppContact = () => {
-    if (!business?.whatsapp_number || !invoice) return;
+  const handlePayment = (method: 'snapscan' | 'payfast') => {
+    if (!profile) return;
     
-    const message = `Hi! I have a question about invoice ${invoice.invoice_number} for R${invoice.total_amount.toFixed(2)}.`;
-    const whatsappLink = `https://wa.me/${business.whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappLink, '_blank');
+    const link = method === 'snapscan' ? profile.snapscan_link : profile.payfast_link;
+    if (!link) {
+      alert(`${method === 'snapscan' ? 'SnapScan' : 'PayFast'} payment link not available`);
+      return;
+    }
+    
+    window.open(link, '_blank');
   };
 
   if (loading) {
@@ -107,13 +111,16 @@ const InvoicePreview = () => {
     );
   }
 
-  if (!invoice || !business) {
+  if (!invoice) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md">
+        <Card className="max-w-md mx-4">
           <CardContent className="text-center py-12">
+            <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h2 className="text-xl font-bold text-gray-900 mb-2">Invoice Not Found</h2>
-            <p className="text-gray-600 mb-4">This invoice may not exist or is no longer available.</p>
+            <p className="text-gray-600 mb-4">
+              This invoice may not exist or is no longer available. Please check the URL and try again.
+            </p>
             <Button asChild>
               <a href="/">Back to Home</a>
             </Button>
@@ -127,162 +134,157 @@ const InvoicePreview = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => window.history.back()}
-            className="text-gray-600 hover:text-gray-900 mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
+        <div className="bg-white rounded-lg shadow-sm p-8 mb-6">
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              {profile?.logo_url && (
+                <img
+                  src={profile.logo_url}
+                  alt={profile.business_name}
+                  className="h-16 w-auto mb-4"
+                />
+              )}
+              <h1 className="text-2xl font-bold text-gray-900">
+                {profile?.business_name || 'Business Name'}
+              </h1>
+            </div>
+            <div className="text-right">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">INVOICE</h2>
+              <p className="text-gray-600">#{invoice.invoice_number}</p>
+              <p className="text-sm text-gray-500">
+                {new Date(invoice.created_at).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+
+          {/* Bill To */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Bill To:</h3>
+            <div className="text-gray-600">
+              <p className="font-medium">{invoice.client_name}</p>
+              {invoice.client_email && <p>{invoice.client_email}</p>}
+              {invoice.client_phone && <p>{invoice.client_phone}</p>}
+            </div>
+          </div>
+
+          {/* Items Table */}
+          <div className="mb-8">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 font-medium text-gray-900">Description</th>
+                    <th className="text-right py-3 font-medium text-gray-900">Qty</th>
+                    <th className="text-right py-3 font-medium text-gray-900">Unit Price</th>
+                    <th className="text-right py-3 font-medium text-gray-900">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceItems.map((item) => (
+                    <tr key={item.id} className="border-b border-gray-100">
+                      <td className="py-3">
+                        <div>
+                          <p className="font-medium text-gray-900">{item.title}</p>
+                          {item.description && (
+                            <p className="text-sm text-gray-600">{item.description}</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="text-right py-3 text-gray-600">{item.quantity}</td>
+                      <td className="text-right py-3 text-gray-600">R{item.unit_price.toFixed(2)}</td>
+                      <td className="text-right py-3 font-medium text-gray-900">
+                        R{item.total_price.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Totals */}
+          <div className="flex justify-end mb-8">
+            <div className="w-64">
+              <div className="flex justify-between py-2">
+                <span className="text-gray-600">Subtotal:</span>
+                <span className="font-medium">R{invoice.subtotal.toFixed(2)}</span>
+              </div>
+              {invoice.vat_enabled && (
+                <div className="flex justify-between py-2">
+                  <span className="text-gray-600">VAT (15%):</span>
+                  <span className="font-medium">R{invoice.vat_amount.toFixed(2)}</span>
+                </div>
+              )}
+              <Separator className="my-2" />
+              <div className="flex justify-between py-2">
+                <span className="text-lg font-semibold">Total:</span>
+                <span className="text-lg font-bold text-[#4C9F70]">
+                  R{invoice.total_amount.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Instructions */}
+          {invoice.payment_instructions && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Instructions:</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <pre className="text-sm text-gray-600 whitespace-pre-wrap">
+                  {invoice.payment_instructions}
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {/* EFT Details */}
+          {profile?.eft_details && (
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Banking Details:</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <pre className="text-sm text-gray-600 whitespace-pre-wrap">
+                  {profile.eft_details}
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Buttons */}
+          <div className="flex gap-4 justify-center">
+            {profile?.snapscan_link && (
+              <Button
+                onClick={() => handlePayment('snapscan')}
+                className="bg-[#4C9F70] hover:bg-[#3d8159] text-white"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Pay with SnapScan
+              </Button>
+            )}
+            {profile?.payfast_link && (
+              <Button
+                onClick={() => handlePayment('payfast')}
+                className="bg-[#4C9F70] hover:bg-[#3d8159] text-white"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Pay with PayFast
+              </Button>
+            )}
+          </div>
+
+          {/* Status Badge */}
+          <div className="flex justify-center mt-6">
+            <Badge 
+              variant={invoice.status === 'paid' ? 'default' : 'secondary'}
+              className="text-sm px-4 py-2"
+            >
+              Status: {invoice.status?.toUpperCase() || 'PENDING'}
+            </Badge>
+          </div>
         </div>
 
-        <Card className="shadow-lg">
-          <CardHeader className="bg-white border-b border-gray-200">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div className="flex items-center gap-4">
-                {business.logo_url && (
-                  <img
-                    src={business.logo_url}
-                    alt={business.business_name}
-                    className="w-16 h-16 object-cover rounded-lg"
-                  />
-                )}
-                <div>
-                  <CardTitle className="text-2xl text-[#4C9F70]">
-                    {business.business_name}
-                  </CardTitle>
-                  <p className="text-gray-600">Invoice #{invoice.invoice_number}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">
-                  Date: {new Date(invoice.created_at).toLocaleDateString()}
-                </p>
-                <p className="text-sm text-gray-600 capitalize">
-                  Status: <span className="font-medium">{invoice.status}</span>
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="p-6 space-y-6">
-            {/* Client Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Bill To:</h3>
-              <p className="font-medium">{invoice.client_name}</p>
-              {invoice.client_email && <p className="text-gray-600">{invoice.client_email}</p>}
-              {invoice.client_phone && <p className="text-gray-600">{invoice.client_phone}</p>}
-            </div>
-
-            {/* Invoice Items */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Items:</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-200">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="border border-gray-200 px-4 py-2 text-left">Item</th>
-                      <th className="border border-gray-200 px-4 py-2 text-center">Qty</th>
-                      <th className="border border-gray-200 px-4 py-2 text-right">Unit Price</th>
-                      <th className="border border-gray-200 px-4 py-2 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item) => (
-                      <tr key={item.id}>
-                        <td className="border border-gray-200 px-4 py-2">
-                          <div>
-                            <p className="font-medium">{item.title}</p>
-                            {item.description && (
-                              <p className="text-sm text-gray-600">{item.description}</p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="border border-gray-200 px-4 py-2 text-center">
-                          {item.quantity}
-                        </td>
-                        <td className="border border-gray-200 px-4 py-2 text-right">
-                          R{item.unit_price.toFixed(2)}
-                        </td>
-                        <td className="border border-gray-200 px-4 py-2 text-right">
-                          R{item.total_price.toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Totals */}
-            <div className="flex justify-end">
-              <div className="w-full max-w-sm space-y-2">
-                <div className="flex justify-between">
-                  <span>Subtotal:</span>
-                  <span>R{invoice.subtotal.toFixed(2)}</span>
-                </div>
-                {invoice.vat_enabled && (
-                  <div className="flex justify-between">
-                    <span>VAT (15%):</span>
-                    <span>R{(invoice.vat_amount || 0).toFixed(2)}</span>
-                  </div>
-                )}
-                <Separator />
-                <div className="flex justify-between text-lg font-bold text-[#4C9F70]">
-                  <span>Total:</span>
-                  <span>R{invoice.total_amount.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Instructions */}
-            {invoice.payment_instructions && (
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">Payment Instructions:</h4>
-                <p className="text-gray-700 whitespace-pre-wrap">{invoice.payment_instructions}</p>
-              </div>
-            )}
-
-            {/* Payment Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              {business.snapscan_link && (
-                <Button asChild className="bg-purple-600 hover:bg-purple-700">
-                  <a href={business.snapscan_link} target="_blank" rel="noopener noreferrer">
-                    Pay with SnapScan
-                  </a>
-                </Button>
-              )}
-              {business.payfast_link && (
-                <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                  <a href={business.payfast_link} target="_blank" rel="noopener noreferrer">
-                    Pay with PayFast
-                  </a>
-                </Button>
-              )}
-              <Button onClick={handleWhatsAppContact} className="bg-green-600 hover:bg-green-700">
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Contact via WhatsApp
-              </Button>
-            </div>
-
-            {/* EFT Details */}
-            {business.eft_details && (
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">EFT Payment Details:</h4>
-                <pre className="text-sm text-gray-700 whitespace-pre-wrap">{business.eft_details}</pre>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-gray-600">
-            Powered by <span className="font-semibold text-[#4C9F70]">Link2Pay</span>
-          </p>
+        <div className="text-center text-gray-500 text-sm">
+          <p>Powered by <span className="font-semibold text-[#4C9F70]">Link2Pay</span></p>
         </div>
       </div>
     </div>

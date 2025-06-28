@@ -151,47 +151,62 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accent_color: string | null
           business_name: string | null
           created_at: string
           delivery_method: string | null
           eft_details: string | null
+          header_banner_url: string | null
           id: string
           logo_url: string | null
           payfast_link: string | null
           payment_method: string | null
+          primary_color: string | null
           snapscan_link: string | null
           store_bio: string | null
+          store_font: string | null
           store_handle: string | null
+          store_layout: string | null
           updated_at: string
           whatsapp_number: string | null
         }
         Insert: {
+          accent_color?: string | null
           business_name?: string | null
           created_at?: string
           delivery_method?: string | null
           eft_details?: string | null
+          header_banner_url?: string | null
           id: string
           logo_url?: string | null
           payfast_link?: string | null
           payment_method?: string | null
+          primary_color?: string | null
           snapscan_link?: string | null
           store_bio?: string | null
+          store_font?: string | null
           store_handle?: string | null
+          store_layout?: string | null
           updated_at?: string
           whatsapp_number?: string | null
         }
         Update: {
+          accent_color?: string | null
           business_name?: string | null
           created_at?: string
           delivery_method?: string | null
           eft_details?: string | null
+          header_banner_url?: string | null
           id?: string
           logo_url?: string | null
           payfast_link?: string | null
           payment_method?: string | null
+          primary_color?: string | null
           snapscan_link?: string | null
           store_bio?: string | null
+          store_font?: string | null
           store_handle?: string | null
+          store_layout?: string | null
           updated_at?: string
           whatsapp_number?: string | null
         }
