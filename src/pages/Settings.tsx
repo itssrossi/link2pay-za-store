@@ -101,7 +101,7 @@ const Settings = () => {
   const fetchPlatformSettings = async () => {
     try {
       const { data, error } = await supabase
-        .from('platform_settings')
+        .from('platform_settings' as any)
         .select('whatsapp_api_token, whatsapp_phone_id')
         .single();
 
@@ -153,13 +153,13 @@ const Settings = () => {
 
     try {
       const { error } = await supabase
-        .from('platform_settings')
+        .from('platform_settings' as any)
         .update({
           whatsapp_api_token: platformSettings.whatsapp_api_token,
           whatsapp_phone_id: platformSettings.whatsapp_phone_id,
           updated_at: new Date().toISOString()
         })
-        .eq('id', (await supabase.from('platform_settings').select('id').single()).data?.id);
+        .eq('id', (await supabase.from('platform_settings' as any).select('id').single()).data?.id);
 
       if (error) throw error;
       toast.success('WhatsApp settings updated successfully!');

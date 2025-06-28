@@ -13,7 +13,7 @@ export const sendWhatsAppInvoice = async (data: WhatsAppInvoiceData): Promise<bo
   try {
     // Fetch platform WhatsApp credentials from settings
     const { data: settings, error: settingsError } = await supabase
-      .from('platform_settings')
+      .from('platform_settings' as any)
       .select('whatsapp_api_token, whatsapp_phone_id')
       .single();
 

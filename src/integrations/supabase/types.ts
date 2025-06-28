@@ -145,6 +145,30 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          whatsapp_api_token: string | null
+          whatsapp_phone_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          whatsapp_api_token?: string | null
+          whatsapp_phone_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          whatsapp_api_token?: string | null
+          whatsapp_phone_id?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string | null
