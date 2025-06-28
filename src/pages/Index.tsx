@@ -43,7 +43,7 @@ const Index = () => {
               <img 
                 src="/lovable-uploads/e6db2000-16be-4362-bb02-9bb7800e39bd.png" 
                 alt="Link2Pay" 
-                className="h-8 w-auto"
+                className="h-10 w-auto"
               />
               <Badge variant="secondary" className="ml-2">SA</Badge>
             </div>
@@ -175,7 +175,7 @@ const Index = () => {
               <img 
                 src="/lovable-uploads/e6db2000-16be-4362-bb02-9bb7800e39bd.png" 
                 alt="Link2Pay" 
-                className="h-6 w-auto brightness-0 invert"
+                className="h-8 w-auto brightness-0 invert"
               />
             </div>
             <div className="text-center md:text-right">
