@@ -9,6 +9,7 @@ import StoreDesignTab from '@/components/settings/StoreDesignTab';
 import PaymentSettingsTab from '@/components/settings/PaymentSettingsTab';
 import WhatsAppAutomationTab from '@/components/settings/WhatsAppAutomationTab';
 import StorefrontCustomizationTab from '@/components/settings/StorefrontCustomizationTab';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Profile {
   business_name: string;
@@ -44,6 +45,7 @@ interface PlatformSettings {
 
 const Settings = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [whatsappLoading, setWhatsappLoading] = useState(false);
   const [profile, setProfile] = useState<Profile>({
@@ -211,24 +213,55 @@ const Settings = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-2">
+      <div className="max-w-6xl mx-auto space-y-4 px-2 sm:px-4">
+        <div className="px-2 sm:px-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
+          <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
             Manage your store settings and business information.
           </p>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="profile">Business Profile</TabsTrigger>
-            <TabsTrigger value="customize">Customize Store</TabsTrigger>
-            <TabsTrigger value="design">Store Design</TabsTrigger>
-            <TabsTrigger value="payments">Payment Settings</TabsTrigger>
-            <TabsTrigger value="whatsapp">WhatsApp Automation</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
+          <div className="overflow-x-auto">
+            <TabsList className={`${isMobile ? 'w-full grid-cols-2' : 'grid w-full grid-cols-5'} h-auto`}>
+              <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+                {isMobile ? 'Profile' : 'Business Profile'}
+              </TabsTrigger>
+              <TabsTrigger value="customize" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+                {isMobile ? 'Store' : 'Customize Store'}
+              </TabsTrigger>
+              {!isMobile && (
+                <>
+                  <TabsTrigger value="design" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+                    Store Design
+                  </TabsTrigger>
+                  <TabsTrigger value="payments" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+                    Payment Settings
+                  </TabsTrigger>
+                  <TabsTrigger value="whatsapp" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+                    WhatsApp Automation
+                  </TabsTrigger>
+                </>
+              )}
+            </TabsList>
+          </div>
 
-          <TabsContent value="profile" className="space-y-6">
+          {/* Mobile Secondary Tabs */}
+          {isMobile && (
+            <div className="flex gap-1 overflow-x-auto pb-2">
+              <TabsTrigger value="design" className="text-xs px-3 py-2 whitespace-nowrap flex-shrink-0">
+                Design
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="text-xs px-3 py-2 whitespace-nowrap flex-shrink-0">
+                Payments
+              </TabsTrigger>
+              <TabsTrigger value="whatsapp" className="text-xs px-3 py-2 whitespace-nowrap flex-shrink-0">
+                WhatsApp
+              </TabsTrigger>
+            </div>
+          )}
+
+          <TabsContent value="profile" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
             <BusinessProfileTab
               profile={profile}
               setProfile={setProfile}
@@ -237,7 +270,7 @@ const Settings = () => {
             />
           </TabsContent>
 
-          <TabsContent value="customize" className="space-y-6">
+          <TabsContent value="customize" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
             <StorefrontCustomizationTab
               profile={profile}
               setProfile={setProfile}
@@ -246,7 +279,7 @@ const Settings = () => {
             />
           </TabsContent>
 
-          <TabsContent value="design" className="space-y-6">
+          <TabsContent value="design" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
             <StoreDesignTab
               profile={profile}
               setProfile={setProfile}
@@ -255,7 +288,7 @@ const Settings = () => {
             />
           </TabsContent>
 
-          <TabsContent value="payments" className="space-y-6">
+          <TabsContent value="payments" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
             <PaymentSettingsTab
               profile={profile}
               setProfile={setProfile}
@@ -264,7 +297,7 @@ const Settings = () => {
             />
           </TabsContent>
 
-          <TabsContent value="whatsapp" className="space-y-6">
+          <TabsContent value="whatsapp" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
             <WhatsAppAutomationTab
               platformSettings={platformSettings}
               setPlatformSettings={setPlatformSettings}

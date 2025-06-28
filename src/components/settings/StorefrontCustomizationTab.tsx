@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import StorefrontPreview from './StorefrontPreview';
 import SectionManager from './SectionManager';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ExtendedProfile {
   business_name: string;
@@ -68,6 +68,7 @@ const fontOptions = [
 
 const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: StorefrontCustomizationTabProps) => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('mobile');
   const [sections, setSections] = useState<any[]>([]);
   const [loadingSections, setLoadingSections] = useState(true);
@@ -140,13 +141,13 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>Customize Your Storefront</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Customize Your Storefront</CardTitle>
+              <CardDescription className="text-sm mt-1">
                 Design your online store with drag-and-drop simplicity. Changes are previewed instantly.
               </CardDescription>
             </div>
@@ -158,47 +159,66 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
                 className="flex items-center gap-2"
               >
                 <RotateCcw className="h-4 w-4" />
-                Reset
+                {!isMobile && 'Reset'}
               </Button>
               <Button
                 onClick={handleSave}
                 disabled={loading}
                 className="bg-[#4C9F70] hover:bg-[#3d8159] flex items-center gap-2"
+                size="sm"
               >
                 <Save className="h-4 w-4" />
-                {loading ? 'Saving...' : 'Save & Publish'}
+                {loading ? 'Saving...' : (isMobile ? 'Save' : 'Save & Publish')}
               </Button>
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'} gap-4 sm:gap-6`}>
         {/* Customization Controls */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <Tabs defaultValue="theme" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="theme">Theme</TabsTrigger>
-              <TabsTrigger value="hero">Hero</TabsTrigger>
-              <TabsTrigger value="sections">Sections</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto">
+              <TabsList className={`${isMobile ? 'w-full grid-cols-2' : 'grid w-full grid-cols-4'} h-auto`}>
+                <TabsTrigger value="theme" className="text-xs sm:text-sm px-2 py-2">Theme</TabsTrigger>
+                <TabsTrigger value="hero" className="text-xs sm:text-sm px-2 py-2">Hero</TabsTrigger>
+                {!isMobile && (
+                  <>
+                    <TabsTrigger value="sections" className="text-xs sm:text-sm px-2 py-2">Sections</TabsTrigger>
+                    <TabsTrigger value="settings" className="text-xs sm:text-sm px-2 py-2">Settings</TabsTrigger>
+                  </>
+                )}
+              </TabsList>
+            </div>
 
-            <TabsContent value="theme" className="space-y-4">
+            {/* Mobile Secondary Tabs */}
+            {isMobile && (
+              <div className="flex gap-1 overflow-x-auto pb-2 mt-2">
+                <TabsTrigger value="sections" className="text-xs px-3 py-2 whitespace-nowrap flex-shrink-0">
+                  Sections
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="text-xs px-3 py-2 whitespace-nowrap flex-shrink-0">
+                  Settings
+                </TabsTrigger>
+              </div>
+            )}
+
+            <TabsContent value="theme" className="space-y-4 mt-4">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Theme & Colors</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base sm:text-lg">Theme & Colors</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label>Theme Preset</Label>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
+                    <Label className="text-sm">Theme Preset</Label>
+                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mt-2`}>
                       {themePresets.map((preset) => (
                         <Button
                           key={preset.id}
                           variant={profile.theme_preset === preset.id ? "default" : "outline"}
                           onClick={() => applyThemePreset(preset)}
-                          className="h-auto p-3 flex flex-col items-start"
+                          className="h-auto p-3 flex flex-col items-start text-xs sm:text-sm"
                         >
                           <span className="font-medium">{preset.name}</span>
                           <div className="flex gap-1 mt-1">
@@ -220,65 +240,65 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                     <div>
-                      <Label htmlFor="primary_color">Primary Color</Label>
+                      <Label htmlFor="primary_color" className="text-sm">Primary Color</Label>
                       <div className="flex gap-2 mt-1">
                         <Input
                           id="primary_color"
                           type="color"
                           value={profile.primary_color}
                           onChange={(e) => setProfile({ ...profile, primary_color: e.target.value })}
-                          className="w-16 h-10"
+                          className="w-12 sm:w-16 h-8 sm:h-10"
                         />
                         <Input
                           value={profile.primary_color}
                           onChange={(e) => setProfile({ ...profile, primary_color: e.target.value })}
-                          className="flex-1"
+                          className="flex-1 text-xs sm:text-sm"
                         />
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="accent_color">Accent Color</Label>
+                      <Label htmlFor="accent_color" className="text-sm">Accent Color</Label>
                       <div className="flex gap-2 mt-1">
                         <Input
                           id="accent_color"
                           type="color"
                           value={profile.accent_color}
                           onChange={(e) => setProfile({ ...profile, accent_color: e.target.value })}
-                          className="w-16 h-10"
+                          className="w-12 sm:w-16 h-8 sm:h-10"
                         />
                         <Input
                           value={profile.accent_color}
                           onChange={(e) => setProfile({ ...profile, accent_color: e.target.value })}
-                          className="flex-1"
+                          className="flex-1 text-xs sm:text-sm"
                         />
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="background_color">Background Color</Label>
+                    <Label htmlFor="background_color" className="text-sm">Background Color</Label>
                     <div className="flex gap-2 mt-1">
                       <Input
                         id="background_color"
                         type="color"
                         value={profile.background_color}
                         onChange={(e) => setProfile({ ...profile, background_color: e.target.value })}
-                        className="w-16 h-10"
+                        className="w-12 sm:w-16 h-8 sm:h-10"
                       />
                       <Input
                         value={profile.background_color}
                         onChange={(e) => setProfile({ ...profile, background_color: e.target.value })}
-                        className="flex-1"
+                        className="flex-1 text-xs sm:text-sm"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="store_font">Font Family</Label>
+                    <Label htmlFor="store_font" className="text-sm">Font Family</Label>
                     <Select value={profile.store_font} onValueChange={(value) => setProfile({ ...profile, store_font: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Choose font" />
                       </SelectTrigger>
                       <SelectContent>
@@ -294,60 +314,65 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
               </Card>
             </TabsContent>
 
-            <TabsContent value="hero" className="space-y-4">
+            <TabsContent value="hero" className="space-y-4 mt-4">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Hero Section</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base sm:text-lg">Hero Section</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="hero_image_url">Hero Image URL</Label>
+                    <Label htmlFor="hero_image_url" className="text-sm">Hero Image URL</Label>
                     <Input
                       id="hero_image_url"
                       value={profile.hero_image_url || ''}
                       onChange={(e) => setProfile({ ...profile, hero_image_url: e.target.value })}
                       placeholder="https://example.com/hero-image.jpg"
+                      className="mt-1 text-xs sm:text-sm"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="hero_headline">Headline</Label>
+                    <Label htmlFor="hero_headline" className="text-sm">Headline</Label>
                     <Input
                       id="hero_headline"
                       value={profile.hero_headline || ''}
                       onChange={(e) => setProfile({ ...profile, hero_headline: e.target.value })}
                       placeholder="Welcome to our store"
+                      className="mt-1 text-xs sm:text-sm"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="hero_subheading">Subheading</Label>
+                    <Label htmlFor="hero_subheading" className="text-sm">Subheading</Label>
                     <Textarea
                       id="hero_subheading"
                       value={profile.hero_subheading || ''}
                       onChange={(e) => setProfile({ ...profile, hero_subheading: e.target.value })}
                       placeholder="Discover amazing products..."
                       rows={2}
+                      className="mt-1 text-xs sm:text-sm"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                     <div>
-                      <Label htmlFor="hero_cta_text">CTA Button Text</Label>
+                      <Label htmlFor="hero_cta_text" className="text-sm">CTA Button Text</Label>
                       <Input
                         id="hero_cta_text"
                         value={profile.hero_cta_text || ''}
                         onChange={(e) => setProfile({ ...profile, hero_cta_text: e.target.value })}
                         placeholder="Shop Now"
+                        className="mt-1 text-xs sm:text-sm"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="hero_cta_link">CTA Button Link</Label>
+                      <Label htmlFor="hero_cta_link" className="text-sm">CTA Button Link</Label>
                       <Input
                         id="hero_cta_link"
                         value={profile.hero_cta_link || ''}
                         onChange={(e) => setProfile({ ...profile, hero_cta_link: e.target.value })}
                         placeholder="https://wa.me/..."
+                        className="mt-1 text-xs sm:text-sm"
                       />
                     </div>
                   </div>
@@ -355,7 +380,7 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
               </Card>
             </TabsContent>
 
-            <TabsContent value="sections" className="space-y-4">
+            <TabsContent value="sections" className="space-y-4 mt-4">
               <SectionManager
                 sections={sections}
                 setSections={setSections}
@@ -364,16 +389,16 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
               />
             </TabsContent>
 
-            <TabsContent value="settings" className="space-y-4">
+            <TabsContent value="settings" className="space-y-4 mt-4">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Store Settings</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base sm:text-lg">Store Settings</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Store Visibility</Label>
-                      <p className="text-sm text-gray-500">Make your store public or private</p>
+                      <Label className="text-sm">Store Visibility</Label>
+                      <p className="text-xs text-gray-500">Make your store public or private</p>
                     </div>
                     <Switch
                       checked={profile.store_visibility}
@@ -383,11 +408,11 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
 
                   <Separator />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                     <div>
-                      <Label htmlFor="default_currency">Default Currency</Label>
+                      <Label htmlFor="default_currency" className="text-sm">Default Currency</Label>
                       <Select value={profile.default_currency} onValueChange={(value) => setProfile({ ...profile, default_currency: value })}>
-                        <SelectTrigger>
+                        <SelectTrigger className="mt-1">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -399,9 +424,9 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="store_layout">Layout Style</Label>
+                      <Label htmlFor="store_layout" className="text-sm">Layout Style</Label>
                       <Select value={profile.store_layout} onValueChange={(value) => setProfile({ ...profile, store_layout: value })}>
-                        <SelectTrigger>
+                        <SelectTrigger className="mt-1">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -414,23 +439,25 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
                   </div>
 
                   <div>
-                    <Label htmlFor="store_location">Store Location</Label>
+                    <Label htmlFor="store_location" className="text-sm">Store Location</Label>
                     <Input
                       id="store_location"
                       value={profile.store_location || ''}
                       onChange={(e) => setProfile({ ...profile, store_location: e.target.value })}
                       placeholder="City, Country"
+                      className="mt-1 text-xs sm:text-sm"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="delivery_note">Delivery Note</Label>
+                    <Label htmlFor="delivery_note" className="text-sm">Delivery Note</Label>
                     <Textarea
                       id="delivery_note"
                       value={profile.delivery_note || ''}
                       onChange={(e) => setProfile({ ...profile, delivery_note: e.target.value })}
                       placeholder="Free delivery within 5km..."
                       rows={2}
+                      className="mt-1 text-xs sm:text-sm"
                     />
                   </div>
                 </CardContent>
@@ -439,56 +466,109 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
           </Tabs>
         </div>
 
-        {/* Live Preview */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Live Preview</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={previewMode === 'mobile' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPreviewMode('mobile')}
-                  >
-                    <Smartphone className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={previewMode === 'desktop' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPreviewMode('desktop')}
-                  >
-                    <Monitor className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <StorefrontPreview
-                profile={profile}
-                sections={sections}
-                mode={previewMode}
-              />
-            </CardContent>
-          </Card>
-
-          {profile.store_handle && (
+        {/* Live Preview - Only show on desktop or as separate section on mobile */}
+        {!isMobile && (
+          <div className="space-y-4">
             <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Eye className="h-4 w-4" />
-                  <span>Your store will be live at:</span>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base sm:text-lg">Live Preview</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={previewMode === 'mobile' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setPreviewMode('mobile')}
+                    >
+                      <Smartphone className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={previewMode === 'desktop' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setPreviewMode('desktop')}
+                    >
+                      <Monitor className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-2">
-                  <Badge variant="outline" className="font-mono">
-                    /store/{profile.store_handle}
-                  </Badge>
-                </div>
+              </CardHeader>
+              <CardContent>
+                <StorefrontPreview
+                  profile={profile}
+                  sections={sections}
+                  mode={previewMode}
+                />
               </CardContent>
             </Card>
-          )}
-        </div>
+
+            {profile.store_handle && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Eye className="h-4 w-4" />
+                    <span>Your store will be live at:</span>
+                  </div>
+                  <div className="mt-2">
+                    <Badge variant="outline" className="font-mono text-xs">
+                      /store/{profile.store_handle}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Mobile Preview Section */}
+      {isMobile && (
+        <Card className="mt-4">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Live Preview</CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={previewMode === 'mobile' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPreviewMode('mobile')}
+                >
+                  <Smartphone className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={previewMode === 'desktop' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPreviewMode('desktop')}
+                >
+                  <Monitor className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <StorefrontPreview
+              profile={profile}
+              sections={sections}
+              mode={previewMode}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Mobile Store URL */}
+      {isMobile && profile.store_handle && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Eye className="h-4 w-4" />
+              <span>Your store will be live at:</span>
+            </div>
+            <div className="mt-2">
+              <Badge variant="outline" className="font-mono text-xs break-all">
+                /store/{profile.store_handle}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

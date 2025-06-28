@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +22,7 @@ import {
 import { Plus, Package, FileText, Settings, ExternalLink, Copy, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DashboardStats {
   totalProducts: number;
@@ -52,6 +52,7 @@ interface Invoice {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
     activeProducts: 0,
@@ -153,23 +154,23 @@ const Dashboard = () => {
         description="Manage your invoices, products and business with Link2Pay"
       />
       <Layout>
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-8 px-2 sm:px-0">
           {/* Header */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600 mt-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+              <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
                 Welcome back! Here's what's happening with your business.
               </p>
             </div>
-            <div className="flex gap-2">
-              <Button asChild className="bg-[#4C9F70] hover:bg-[#3d8159]">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button asChild className="bg-[#4C9F70] hover:bg-[#3d8159] text-sm" size={isMobile ? "sm" : "default"}>
                 <Link to="/products/add">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Product
                 </Link>
               </Button>
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" size={isMobile ? "sm" : "default"}>
                 <Link to="/invoice-builder">
                   <FileText className="w-4 h-4 mr-2" />
                   Create Invoice
@@ -182,10 +183,10 @@ const Dashboard = () => {
           <QuickInvoice />
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <ShoppingBag className="w-5 h-5" />
                   Your Store
                 </CardTitle>
@@ -193,15 +194,15 @@ const Dashboard = () => {
               <CardContent className="space-y-3">
                 {stats.storeHandle ? (
                   <>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 break-all">
                       Store URL: /store/{stats.storeHandle}
                     </p>
-                    <div className="flex gap-2">
-                      <Button onClick={copyStoreLink} size="sm" variant="outline">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button onClick={copyStoreLink} size="sm" variant="outline" className="flex-1">
                         <Copy className="w-4 h-4 mr-2" />
                         Copy Link
                       </Button>
-                      <Button asChild size="sm" variant="outline">
+                      <Button asChild size="sm" variant="outline" className="flex-1">
                         <a href={`/store/${stats.storeHandle}`} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-4 h-4 mr-2" />
                           Preview
@@ -214,7 +215,7 @@ const Dashboard = () => {
                     <p className="text-sm text-gray-600">
                       Set up your store handle to enable your public store
                     </p>
-                    <Button asChild size="sm">
+                    <Button asChild size="sm" className="w-full sm:w-auto">
                       <Link to="/settings">
                         <Settings className="w-4 h-4 mr-2" />
                         Go to Settings
@@ -226,22 +227,22 @@ const Dashboard = () => {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Quick Stats</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Quick Stats</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-[#4C9F70]">
+                    <div className="text-xl sm:text-2xl font-bold text-[#4C9F70]">
                       {stats.activeProducts}
                     </div>
-                    <div className="text-sm text-gray-600">Active Products</div>
+                    <div className="text-xs sm:text-sm text-gray-600">Active Products</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-[#4C9F70]">
+                    <div className="text-xl sm:text-2xl font-bold text-[#4C9F70]">
                       {stats.pendingInvoices}
                     </div>
-                    <div className="text-sm text-gray-600">Pending Invoices</div>
+                    <div className="text-xs sm:text-sm text-gray-600">Pending Invoices</div>
                   </div>
                 </div>
               </CardContent>
@@ -249,14 +250,14 @@ const Dashboard = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">Total Products</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalProducts}</div>
+                <div className="text-xl sm:text-2xl font-bold">{stats.totalProducts}</div>
                 <p className="text-xs text-muted-foreground">
                   {stats.activeProducts} active
                 </p>
@@ -265,11 +266,11 @@ const Dashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">Active Products</CardTitle>
                 <Package className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{stats.activeProducts}</div>
+                <div className="text-xl sm:text-2xl font-bold text-green-600">{stats.activeProducts}</div>
                 <p className="text-xs text-muted-foreground">
                   Currently visible
                 </p>
@@ -278,11 +279,11 @@ const Dashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">Total Invoices</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalInvoices}</div>
+                <div className="text-xl sm:text-2xl font-bold">{stats.totalInvoices}</div>
                 <p className="text-xs text-muted-foreground">
                   All time
                 </p>
@@ -291,11 +292,11 @@ const Dashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Invoices</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">Pending Invoices</CardTitle>
                 <FileText className="h-4 w-4 text-yellow-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">{stats.pendingInvoices}</div>
+                <div className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.pendingInvoices}</div>
                 <p className="text-xs text-muted-foreground">
                   Awaiting payment
                 </p>
@@ -304,27 +305,27 @@ const Dashboard = () => {
           </div>
 
           {/* Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
             {/* Recent Products */}
             <Card>
-              <CardHeader>
-                <CardTitle>Recent Products</CardTitle>
-                <CardDescription>Your latest added products</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Recent Products</CardTitle>
+                <CardDescription className="text-sm">Your latest added products</CardDescription>
               </CardHeader>
               <CardContent>
                 {recentProducts.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No products yet</p>
+                  <p className="text-gray-500 text-center py-4 text-sm">No products yet</p>
                 ) : (
                   <div className="space-y-3">
                     {recentProducts.map((product) => (
                       <div key={product.id} className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{product.title}</p>
-                          <p className="text-sm text-gray-600">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">{product.title}</p>
+                          <p className="text-xs sm:text-sm text-gray-600">
                             R{product.price.toFixed(2)} • {product.category}
                           </p>
                         </div>
-                        <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                        <Badge variant={product.is_active ? 'default' : 'secondary'} className="text-xs ml-2">
                           {product.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
@@ -336,34 +337,35 @@ const Dashboard = () => {
 
             {/* Recent Invoices */}
             <Card>
-              <CardHeader>
-                <CardTitle>Recent Invoices</CardTitle>
-                <CardDescription>Your latest created invoices</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Recent Invoices</CardTitle>
+                <CardDescription className="text-sm">Your latest created invoices</CardDescription>
               </CardHeader>
               <CardContent>
                 {recentInvoices.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No invoices yet</p>
+                  <p className="text-gray-500 text-center py-4 text-sm">No invoices yet</p>
                 ) : (
                   <div className="space-y-3">
                     {recentInvoices.map((invoice) => (
                       <div key={invoice.id} className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">#{invoice.invoice_number}</p>
-                          <p className="text-sm text-gray-600">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm">#{invoice.invoice_number}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 truncate">
                             {invoice.client_name} • R{invoice.total_amount.toFixed(2)}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 ml-2">
                           <Badge variant={
                             invoice.status === 'paid' ? 'default' : 
                             invoice.status === 'pending' ? 'secondary' : 'outline'
-                          }>
+                          } className="text-xs">
                             {invoice.status}
                           </Badge>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => copyInvoiceLink(invoice.id)}
+                            className="h-6 w-6 p-0"
                           >
                             <Copy className="w-3 h-3" />
                           </Button>
@@ -379,20 +381,20 @@ const Dashboard = () => {
           {/* Overview Chart */}
           {(stats.totalProducts > 0 || stats.totalInvoices > 0) && (
             <Card>
-              <CardHeader>
-                <CardTitle>Overview</CardTitle>
-                <CardDescription>Your business at a glance</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Overview</CardTitle>
+                <CardDescription className="text-sm">Your business at a glance</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[300px]">
+                <div className="h-[250px] sm:h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={chartData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={120}
+                        innerRadius={isMobile ? 40 : 60}
+                        outerRadius={isMobile ? 80 : 120}
                         paddingAngle={5}
                         dataKey="value"
                       >
