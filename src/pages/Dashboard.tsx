@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -202,11 +203,11 @@ const Dashboard = () => {
                         <Copy className="w-4 h-4 mr-2" />
                         Copy Link
                       </Button>
-                      <Button asChild size="sm" variant="outline" className="flex-1">
-                        <a href={`/store/${stats.storeHandle}`} target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Link to={`/store/${stats.storeHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center">
                           <ExternalLink className="w-4 h-4 mr-2" />
                           Preview
-                        </a>
+                        </Link>
                       </Button>
                     </div>
                   </>
@@ -215,8 +216,8 @@ const Dashboard = () => {
                     <p className="text-sm text-gray-600">
                       Set up your store handle to enable your public store
                     </p>
-                    <Button asChild size="sm" className="w-full sm:w-auto">
-                      <Link to="/settings">
+                    <Button size="sm" className="w-full sm:w-auto">
+                      <Link to="/settings" className="flex items-center">
                         <Settings className="w-4 h-4 mr-2" />
                         Go to Settings
                       </Link>

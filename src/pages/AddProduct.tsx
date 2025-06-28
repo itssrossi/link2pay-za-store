@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -70,9 +69,15 @@ const AddProduct = () => {
   };
 
   const generateProductId = async (): Promise<string> => {
-    const { data, error } = await supabase.rpc('generate_product_id');
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.rpc('generate_product_id');
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error generating product ID:', error);
+      // Fallback to timestamp-based ID
+      return `prod-${Date.now()}`;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
