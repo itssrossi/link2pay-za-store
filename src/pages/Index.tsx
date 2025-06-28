@@ -39,11 +39,12 @@ const Index = () => {
       <header className="bg-white/80 backdrop-blur-sm border-b border-green-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-[#4C9F70] rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">L2P</span>
-              </div>
-              <span className="font-bold text-2xl text-gray-900">Link2Pay</span>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/lovable-uploads/a9a6cef8-8a91-451c-aea6-3832e0e0f914.png" 
+                alt="Link2Pay" 
+                className="h-8 w-auto"
+              />
               <Badge variant="secondary" className="ml-2">SA</Badge>
             </div>
             
@@ -170,11 +171,12 @@ const Index = () => {
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-[#4C9F70] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">L2P</span>
-              </div>
-              <span className="font-bold text-xl">Link2Pay</span>
+            <div className="flex items-center space-x-3 mb-4 md:mb-0">
+              <img 
+                src="/lovable-uploads/a9a6cef8-8a91-451c-aea6-3832e0e0f914.png" 
+                alt="Link2Pay" 
+                className="h-6 w-auto brightness-0 invert"
+              />
             </div>
             <div className="text-center md:text-right">
               <p className="text-gray-400">© 2024 Link2Pay. Made for South African entrepreneurs.</p>

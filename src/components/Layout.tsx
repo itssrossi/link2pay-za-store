@@ -35,11 +35,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
-              <Link to="/dashboard" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-[#4C9F70] rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">L2P</span>
-                </div>
-                <span className="font-bold text-xl text-gray-900">Link2Pay</span>
+              <Link to="/dashboard" className="flex items-center space-x-3">
+                <img 
+                  src="/lovable-uploads/a9a6cef8-8a91-451c-aea6-3832e0e0f914.png" 
+                  alt="Link2Pay" 
+                  className="h-8 w-auto"
+                />
               </Link>
               
               <div className="hidden md:flex space-x-6">
