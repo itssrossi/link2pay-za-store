@@ -18,6 +18,7 @@ interface Product {
 }
 
 interface Profile {
+  id: string;
   business_name: string;
   whatsapp_number: string;
   store_bio: string;
@@ -36,10 +37,10 @@ const Storefront = () => {
 
   const fetchStorefrontData = async () => {
     try {
-      // Fetch profile by store handle
+      // Fetch profile by store handle - include id field
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('business_name, whatsapp_number, store_bio, logo_url')
+        .select('id, business_name, whatsapp_number, store_bio, logo_url')
         .eq('store_handle', username)
         .single();
 
