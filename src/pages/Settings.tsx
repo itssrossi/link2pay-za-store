@@ -42,6 +42,9 @@ interface Profile {
 interface PlatformSettings {
   whatsapp_api_token: string;
   whatsapp_phone_id: string;
+  zoko_api_key: string;
+  zoko_business_phone: string;
+  zoko_base_url: string;
 }
 
 const Settings = () => {
@@ -79,7 +82,10 @@ const Settings = () => {
 
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings>({
     whatsapp_api_token: '',
-    whatsapp_phone_id: ''
+    whatsapp_phone_id: '',
+    zoko_api_key: '',
+    zoko_business_phone: '',
+    zoko_base_url: 'https://app.zoko.io/api/v2/messages/'
   });
 
   useEffect(() => {
@@ -136,7 +142,7 @@ const Settings = () => {
     try {
       const { data, error } = await supabase
         .from('platform_settings')
-        .select('whatsapp_api_token, whatsapp_phone_id')
+        .select('whatsapp_api_token, whatsapp_phone_id, zoko_api_key, zoko_business_phone, zoko_base_url')
         .single();
 
       if (error) {
@@ -147,7 +153,10 @@ const Settings = () => {
       if (data) {
         setPlatformSettings({
           whatsapp_api_token: data.whatsapp_api_token || '',
-          whatsapp_phone_id: data.whatsapp_phone_id || ''
+          whatsapp_phone_id: data.whatsapp_phone_id || '',
+          zoko_api_key: data.zoko_api_key || '',
+          zoko_business_phone: data.zoko_business_phone || '',
+          zoko_base_url: data.zoko_base_url || 'https://app.zoko.io/api/v2/messages/'
         });
       }
     } catch (error) {
@@ -198,6 +207,9 @@ const Settings = () => {
           .update({
             whatsapp_api_token: platformSettings.whatsapp_api_token,
             whatsapp_phone_id: platformSettings.whatsapp_phone_id,
+            zoko_api_key: platformSettings.zoko_api_key,
+            zoko_business_phone: platformSettings.zoko_business_phone,
+            zoko_base_url: platformSettings.zoko_base_url,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingSettings.id);

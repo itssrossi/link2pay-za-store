@@ -1,18 +1,20 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Send, MessageSquare } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { sendWhatsAppInvoice, validatePhoneNumber } from '@/utils/whatsappService';
+import { useNavigate } from 'react-router-dom';
+import { Trash2, Plus, Send } from 'lucide-react';
+import { ZokoService } from '@/utils/zokoService';
 
 interface InvoiceItem {
   id: string;
@@ -23,32 +25,35 @@ interface InvoiceItem {
   total_price: number;
 }
 
-interface Profile {
-  business_name: string;
-  whatsapp_number: string;
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  product_id: string;
 }
 
 const InvoiceBuilder = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
   
-  const [invoiceData, setInvoiceData] = useState({
-    client_name: '',
-    client_email: '',
-    client_phone: '',
-    payment_instructions: '',
-    vat_enabled: false
-  });
-
-  const [whatsappData, setWhatsappData] = useState({
-    send_whatsapp: false,
-    whatsapp_phone: ''
-  });
-
+  // Invoice details
+  const [clientName, setClientName] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [paymentInstructions, setPaymentInstructions] = useState('');
+  const [vatEnabled, setVatEnabled] = useState(false);
+  
+  // WhatsApp settings
+  const [sendWhatsApp, setSendWhatsApp] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  
+  // Invoice items
   const [items, setItems] = useState<InvoiceItem[]>([
     {
-      id: '1',
+      id: crypto.randomUUID(),
       title: '',
       description: '',
       quantity: 1,
@@ -59,29 +64,62 @@ const InvoiceBuilder = () => {
 
   useEffect(() => {
     if (user) {
-      fetchProfile();
+      fetchProducts();
     }
   }, [user]);
 
-  const fetchProfile = async () => {
+  const fetchProducts = async () => {
     if (!user) return;
 
     try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('business_name, whatsapp_number')
-        .eq('id', user.id)
-        .single();
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
 
-      if (data) setProfile(data);
+      if (error) throw error;
+      setProducts(data || []);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error fetching products:', error);
+      toast.error('Failed to load products');
     }
   };
 
-  const addItem = () => {
+  const addProduct = (product: Product) => {
     const newItem: InvoiceItem = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
+      title: product.title,
+      description: product.description,
+      quantity: 1,
+      unit_price: product.price,
+      total_price: product.price
+    };
+    setItems([...items, newItem]);
+  };
+
+  const updateItem = (id: string, field: keyof InvoiceItem, value: any) => {
+    setItems(items.map(item => {
+      if (item.id === id) {
+        const updatedItem = { ...item, [field]: value };
+        if (field === 'quantity' || field === 'unit_price') {
+          updatedItem.total_price = updatedItem.quantity * updatedItem.unit_price;
+        }
+        return updatedItem;
+      }
+      return item;
+    }));
+  };
+
+  const removeItem = (id: string) => {
+    if (items.length > 1) {
+      setItems(items.filter(item => item.id !== id));
+    }
+  };
+
+  const addEmptyItem = () => {
+    const newItem: InvoiceItem = {
+      id: crypto.randomUUID(),
       title: '',
       description: '',
       quantity: 1,
@@ -91,65 +129,49 @@ const InvoiceBuilder = () => {
     setItems([...items, newItem]);
   };
 
-  const removeItem = (id: string) => {
-    if (items.length > 1) {
-      setItems(items.filter(item => item.id !== id));
-    }
+  const calculateSubtotal = () => {
+    return items.reduce((sum, item) => sum + item.total_price, 0);
   };
 
-  const updateItem = (id: string, field: keyof InvoiceItem, value: any) => {
-    setItems(items.map(item => {
-      if (item.id === id) {
-        const updatedItem = { ...item, [field]: value };
-        
-        // Recalculate total price when quantity or unit_price changes
-        if (field === 'quantity' || field === 'unit_price') {
-          updatedItem.total_price = updatedItem.quantity * updatedItem.unit_price;
-        }
-        
-        return updatedItem;
-      }
-      return item;
-    }));
+  const calculateVAT = () => {
+    return vatEnabled ? calculateSubtotal() * 0.15 : 0;
   };
 
-  const calculateTotals = () => {
-    const subtotal = items.reduce((sum, item) => sum + item.total_price, 0);
-    const vatAmount = invoiceData.vat_enabled ? subtotal * 0.15 : 0;
-    const total = subtotal + vatAmount;
-    
-    return { subtotal, vatAmount, total };
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateVAT();
   };
 
-  const generateInvoice = async () => {
-    if (!user || !invoiceData.client_name.trim()) {
-      toast.error('Please fill in the client name');
+  const handleSubmit = async () => {
+    if (!user) return;
+    if (!clientName.trim()) {
+      toast.error('Client name is required');
       return;
     }
-
-    const validItems = items.filter(item => item.title.trim() && item.unit_price > 0);
-    if (validItems.length === 0) {
-      toast.error('Please add at least one valid item');
+    if (items.some(item => !item.title.trim())) {
+      toast.error('All items must have a title');
       return;
     }
-
-    // Validate WhatsApp phone if sending WhatsApp
-    if (whatsappData.send_whatsapp) {
-      if (!whatsappData.whatsapp_phone.trim()) {
-        toast.error('Please enter a WhatsApp phone number');
-        return;
-      }
-      if (!validatePhoneNumber(whatsappData.whatsapp_phone)) {
-        toast.error('Please enter a valid phone number in E.164 format (e.g., +27821234567)');
-        return;
-      }
+    if (sendWhatsApp && !whatsappNumber.trim()) {
+      toast.error('WhatsApp number is required when WhatsApp messaging is enabled');
+      return;
     }
 
     setLoading(true);
-
     try {
-      const { subtotal, vatAmount, total } = calculateTotals();
-      const invoiceNumber = `inv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const invoiceNumber = `INV-${Date.now()}`;
+      const subtotal = calculateSubtotal();
+      const vatAmount = calculateVAT();
+      const totalAmount = calculateTotal();
+
+      // Validate WhatsApp number if sending
+      let validatedWhatsAppNumber = '';
+      if (sendWhatsApp) {
+        validatedWhatsAppNumber = ZokoService.formatPhoneNumber(whatsappNumber);
+        if (!ZokoService.validatePhoneNumber(validatedWhatsAppNumber)) {
+          toast.error('Invalid WhatsApp number format. Please use E.164 format (e.g., +27821234567)');
+          return;
+        }
+      }
 
       // Create invoice
       const { data: invoice, error: invoiceError } = await supabase
@@ -157,25 +179,24 @@ const InvoiceBuilder = () => {
         .insert({
           user_id: user.id,
           invoice_number: invoiceNumber,
-          client_name: invoiceData.client_name,
-          client_email: invoiceData.client_email,
-          client_phone: invoiceData.client_phone,
+          client_name: clientName,
+          client_email: clientEmail || null,
+          client_phone: clientPhone || null,
           subtotal,
           vat_amount: vatAmount,
-          total_amount: total,
-          vat_enabled: invoiceData.vat_enabled,
-          payment_instructions: invoiceData.payment_instructions,
+          total_amount: totalAmount,
+          vat_enabled: vatEnabled,
+          payment_instructions: paymentInstructions || null,
           status: 'pending'
         })
         .select()
         .single();
 
       if (invoiceError) throw invoiceError;
-      if (!invoice) throw new Error('Failed to create invoice');
 
       // Create invoice items
-      const invoiceItems = validItems.map(item => ({
-        invoice_id: invoice.id,
+      const invoiceItems = items.map(item => ({
+        invoice_id: invoice!.id,
         title: item.title,
         description: item.description,
         quantity: item.quantity,
@@ -189,54 +210,25 @@ const InvoiceBuilder = () => {
 
       if (itemsError) throw itemsError;
 
-      const invoiceUrl = `${window.location.origin}/invoice/${invoice.invoice_number}`;
-
       // Send WhatsApp message if requested
-      if (whatsappData.send_whatsapp) {
-        const whatsappSuccess = await sendWhatsAppInvoice({
-          clientName: invoiceData.client_name,
-          amount: total,
-          phoneNumber: whatsappData.whatsapp_phone,
-          invoiceId: invoice.id,
-          invoiceUrl: invoiceUrl
-        });
+      if (sendWhatsApp && validatedWhatsAppNumber) {
+        const messageResult = await ZokoService.sendInvoiceMessage(
+          validatedWhatsAppNumber,
+          clientName,
+          `R${totalAmount.toFixed(2)}`,
+          invoice!.id
+        );
 
-        if (whatsappSuccess) {
-          toast.success(`Invoice created and WhatsApp message sent to ${whatsappData.whatsapp_phone}!`);
+        if (messageResult.success) {
+          toast.success(`Invoice ${invoiceNumber} created and sent via WhatsApp!`);
         } else {
-          toast.error('Invoice created, but WhatsApp message failed. Please check API settings.');
+          toast.warning(`Invoice ${invoiceNumber} created, but WhatsApp message failed: ${messageResult.error}`);
         }
       } else {
-        // Generate WhatsApp message for manual sending
-        const message = `Hi ${invoiceData.client_name}, here's your invoice for R${total.toFixed(2)}: ${invoiceUrl}`;
-        const whatsappLink = `https://wa.me/${profile?.whatsapp_number?.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-        
-        // Open WhatsApp
-        window.open(whatsappLink, '_blank');
-        toast.success('Invoice created and WhatsApp opened!');
+        toast.success(`Invoice ${invoiceNumber} created successfully!`);
       }
-      
-      // Reset form
-      setInvoiceData({
-        client_name: '',
-        client_email: '',
-        client_phone: '',
-        payment_instructions: '',
-        vat_enabled: false
-      });
-      setWhatsappData({
-        send_whatsapp: false,
-        whatsapp_phone: ''
-      });
-      setItems([{
-        id: '1',
-        title: '',
-        description: '',
-        quantity: 1,
-        unit_price: 0,
-        total_price: 0
-      }]);
 
+      navigate(`/invoice/${invoice!.id}`);
     } catch (error) {
       console.error('Error creating invoice:', error);
       toast.error('Failed to create invoice');
@@ -245,99 +237,88 @@ const InvoiceBuilder = () => {
     }
   };
 
-  const { subtotal, vatAmount, total } = calculateTotals();
-
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Invoice Builder</h1>
-          <p className="text-gray-600 mt-1">
-            Create professional invoices and send them via WhatsApp
+          <h1 className="text-3xl font-bold text-gray-900">Create Invoice</h1>
+          <p className="text-gray-600 mt-2">
+            Build your invoice and optionally send it via WhatsApp
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Invoice Form */}
+        <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
             {/* Client Information */}
             <Card>
               <CardHeader>
                 <CardTitle>Client Information</CardTitle>
-                <CardDescription>
-                  Enter your client's details
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="client_name">Client Name *</Label>
+                  <Label htmlFor="clientName">Client Name *</Label>
                   <Input
-                    id="client_name"
-                    value={invoiceData.client_name}
-                    onChange={(e) => setInvoiceData({ ...invoiceData, client_name: e.target.value })}
-                    placeholder="John Doe"
-                    required
+                    id="clientName"
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    placeholder="Enter client name"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <Label htmlFor="client_email">Email (Optional)</Label>
+                    <Label htmlFor="clientEmail">Email (Optional)</Label>
                     <Input
-                      id="client_email"
+                      id="clientEmail"
                       type="email"
-                      value={invoiceData.client_email}
-                      onChange={(e) => setInvoiceData({ ...invoiceData, client_email: e.target.value })}
-                      placeholder="john@example.com"
+                      value={clientEmail}
+                      onChange={(e) => setClientEmail(e.target.value)}
+                      placeholder="client@example.com"
                     />
                   </div>
+                  
                   <div>
-                    <Label htmlFor="client_phone">Phone (Optional)</Label>
+                    <Label htmlFor="clientPhone">Phone (Optional)</Label>
                     <Input
-                      id="client_phone"
-                      type="tel"
-                      value={invoiceData.client_phone}
-                      onChange={(e) => setInvoiceData({ ...invoiceData, client_phone: e.target.value })}
-                      placeholder="27821234567"
+                      id="clientPhone"
+                      value={clientPhone}
+                      onChange={(e) => setClientPhone(e.target.value)}
+                      placeholder="+27821234567"
                     />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* WhatsApp Options */}
+            {/* WhatsApp Settings */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-green-600" />
-                  WhatsApp Delivery
+                  <Send className="w-5 h-5 text-green-600" />
+                  WhatsApp Messaging
                 </CardTitle>
-                <CardDescription>
-                  Send invoice automatically via WhatsApp
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Checkbox
-                    id="send_whatsapp"
-                    checked={whatsappData.send_whatsapp}
-                    onCheckedChange={(checked) => setWhatsappData({ ...whatsappData, send_whatsapp: !!checked })}
+                    id="sendWhatsApp"
+                    checked={sendWhatsApp}
+                    onCheckedChange={(checked) => setSendWhatsApp(!!checked)}
                   />
-                  <Label htmlFor="send_whatsapp" className="text-sm font-medium">
-                    Send invoice via WhatsApp automatically
-                  </Label>
+                  <Label htmlFor="sendWhatsApp">Send this invoice via WhatsApp</Label>
                 </div>
                 
-                {whatsappData.send_whatsapp && (
+                {sendWhatsApp && (
                   <div>
-                    <Label htmlFor="whatsapp_phone">WhatsApp Phone Number *</Label>
+                    <Label htmlFor="whatsappNumber">Client WhatsApp Number *</Label>
                     <Input
-                      id="whatsapp_phone"
-                      value={whatsappData.whatsapp_phone}
-                      onChange={(e) => setWhatsappData({ ...whatsappData, whatsapp_phone: e.target.value })}
+                      id="whatsappNumber"
+                      value={whatsappNumber}
+                      onChange={(e) => setWhatsappNumber(e.target.value)}
                       placeholder="+27821234567"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Enter phone number in E.164 format (e.g., +27821234567)
+                      Must be in E.164 format (e.g., +27821234567)
                     </p>
                   </div>
                 )}
@@ -347,56 +328,58 @@ const InvoiceBuilder = () => {
             {/* Invoice Items */}
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Invoice Items</CardTitle>
-                    <CardDescription>
-                      Add products or services to this invoice
-                    </CardDescription>
-                  </div>
-                  <Button onClick={addItem} size="sm" variant="outline">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Item
-                  </Button>
-                </div>
+                <CardTitle>Invoice Items</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {items.map((item, index) => (
-                  <div key={item.id} className="p-4 border border-gray-200 rounded-lg space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-gray-900">Item {index + 1}</span>
+                  <div key={item.id} className="border rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Item {index + 1}</h4>
                       {items.length > 1 && (
                         <Button
                           onClick={() => removeItem(item.id)}
                           size="sm"
-                          variant="ghost"
-                          className="text-red-600 hover:text-red-700"
+                          variant="outline"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-4 md:grid-cols-2">
                       <div>
                         <Label>Title *</Label>
                         <Input
                           value={item.title}
                           onChange={(e) => updateItem(item.id, 'title', e.target.value)}
-                          placeholder="Product/Service name"
+                          placeholder="Item title"
                         />
                       </div>
+                      
                       <div>
-                        <Label>Description</Label>
+                        <Label>Unit Price</Label>
                         <Input
-                          value={item.description}
-                          onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                          placeholder="Optional description"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.unit_price}
+                          onChange={(e) => updateItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
                         />
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        value={item.description}
+                        onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                        placeholder="Item description (optional)"
+                        rows={2}
+                      />
+                    </div>
+                    
+                    <div className="grid gap-4 md:grid-cols-3">
                       <div>
                         <Label>Quantity</Label>
                         <Input
@@ -406,102 +389,122 @@ const InvoiceBuilder = () => {
                           onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
                         />
                       </div>
-                      <div>
-                        <Label>Unit Price (ZAR)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={item.unit_price}
-                          onChange={(e) => updateItem(item.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
-                      <div>
+                      
+                      <div className="md:col-span-2">
                         <Label>Total</Label>
-                        <Input
-                          value={`R${item.total_price.toFixed(2)}`}
-                          readOnly
-                          className="bg-gray-50"
-                        />
+                        <div className="text-lg font-semibold pt-2">
+                          R{item.total_price.toFixed(2)}
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
+                
+                <Button onClick={addEmptyItem} variant="outline" className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Item
+                </Button>
               </CardContent>
             </Card>
 
-            {/* Payment Instructions */}
+            {/* Additional Settings */}
             <Card>
               <CardHeader>
-                <CardTitle>Payment Instructions</CardTitle>
-                <CardDescription>
-                  Add any special payment instructions for your client
-                </CardDescription>
+                <CardTitle>Additional Settings</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={invoiceData.payment_instructions}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, payment_instructions: e.target.value })}
-                  placeholder="Payment due within 7 days. Bank transfer preferred."
-                  rows={3}
-                />
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="vatEnabled"
+                    checked={vatEnabled}
+                    onCheckedChange={(checked) => setVatEnabled(!!checked)}
+                  />
+                  <Label htmlFor="vatEnabled">Include VAT (15%)</Label>
+                </div>
+                
+                <div>
+                  <Label htmlFor="paymentInstructions">Payment Instructions</Label>
+                  <Textarea
+                    id="paymentInstructions"
+                    value={paymentInstructions}
+                    onChange={(e) => setPaymentInstructions(e.target.value)}
+                    placeholder="Special payment instructions or notes..."
+                    rows={3}
+                  />
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Invoice Summary */}
+          {/* Sidebar */}
           <div className="space-y-6">
+            {/* Quick Add Products */}
+            {products.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Add Products</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {products.slice(0, 5).map((product) => (
+                    <div key={product.id} className="flex items-center justify-between p-2 border rounded">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{product.title}</p>
+                        <p className="text-xs text-gray-500">R{product.price}</p>
+                      </div>
+                      <Button onClick={() => addProduct(product)} size="sm" variant="outline">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Invoice Summary */}
             <Card>
               <CardHeader>
                 <CardTitle>Invoice Summary</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>R{subtotal.toFixed(2)}</span>
+                  <span>R{calculateSubtotal().toFixed(2)}</span>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <span>VAT (15%):</span>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={invoiceData.vat_enabled}
-                      onCheckedChange={(checked) => 
-                        setInvoiceData({ ...invoiceData, vat_enabled: checked })
-                      }
-                    />
-                    <span>R{vatAmount.toFixed(2)}</span>
+                {vatEnabled && (
+                  <div className="flex justify-between">
+                    <span>VAT (15%):</span>
+                    <span>R{calculateVAT().toFixed(2)}</span>
                   </div>
-                </div>
+                )}
                 
-                <Separator />
-                
-                <div className="flex justify-between text-lg font-bold">
+                <div className="flex justify-between font-semibold text-lg border-t pt-2">
                   <span>Total:</span>
-                  <span className="text-[#4C9F70]">R{total.toFixed(2)}</span>
+                  <span>R{calculateTotal().toFixed(2)}</span>
                 </div>
                 
-                <Button
-                  onClick={generateInvoice}
-                  disabled={loading || !invoiceData.client_name.trim()}
-                  className="w-full bg-[#4C9F70] hover:bg-[#3d8159]"
-                >
-                  {loading ? 'Creating Invoice...' : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      {whatsappData.send_whatsapp ? 'Create & Send via WhatsApp' : 'Create & Send Invoice'}
-                    </>
-                  )}
-                </Button>
-                
-                <p className="text-xs text-gray-600 text-center">
-                  {whatsappData.send_whatsapp 
-                    ? 'This will create the invoice and send it automatically via WhatsApp'
-                    : 'This will create the invoice and open WhatsApp with a pre-filled message'
-                  }
-                </p>
+                {sendWhatsApp && (
+                  <div className="mt-4 p-2 bg-green-50 border border-green-200 rounded">
+                    <Badge variant="secondary" className="bg-green-500 text-white">
+                      WhatsApp Enabled
+                    </Badge>
+                    <p className="text-xs text-green-700 mt-1">
+                      Will be sent to: {whatsappNumber}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* Create Button */}
+            <Button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="w-full bg-[#4C9F70] hover:bg-[#3d8159]"
+              size="lg"
+            >
+              {loading ? 'Creating...' : sendWhatsApp ? 'Create & Send Invoice' : 'Create Invoice'}
+            </Button>
           </div>
         </div>
       </div>

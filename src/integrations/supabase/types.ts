@@ -152,6 +152,9 @@ export type Database = {
           updated_at: string | null
           whatsapp_api_token: string | null
           whatsapp_phone_id: string | null
+          zoko_api_key: string | null
+          zoko_base_url: string | null
+          zoko_business_phone: string | null
         }
         Insert: {
           created_at?: string | null
@@ -159,6 +162,9 @@ export type Database = {
           updated_at?: string | null
           whatsapp_api_token?: string | null
           whatsapp_phone_id?: string | null
+          zoko_api_key?: string | null
+          zoko_base_url?: string | null
+          zoko_business_phone?: string | null
         }
         Update: {
           created_at?: string | null
@@ -166,6 +172,9 @@ export type Database = {
           updated_at?: string | null
           whatsapp_api_token?: string | null
           whatsapp_phone_id?: string | null
+          zoko_api_key?: string | null
+          zoko_base_url?: string | null
+          zoko_business_phone?: string | null
         }
         Relationships: []
       }
