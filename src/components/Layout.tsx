@@ -39,7 +39,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 <img 
                   src="/lovable-uploads/e6db2000-16be-4362-bb02-9bb7800e39bd.png" 
                   alt="Link2Pay" 
-                  className="h-16 w-auto"
+                  className="h-20 w-auto"
                 />
               </Link>
               
