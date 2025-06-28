@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,6 +49,7 @@ const Settings = () => {
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [whatsappLoading, setWhatsappLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
   const [profile, setProfile] = useState<Profile>({
     business_name: '',
     whatsapp_number: '',
@@ -211,6 +213,96 @@ const Settings = () => {
     }
   };
 
+  const tabOptions = [
+    { value: 'profile', label: isMobile ? 'Profile' : 'Business Profile' },
+    { value: 'customize', label: isMobile ? 'Store' : 'Customize Store' },
+    { value: 'design', label: 'Design' },
+    { value: 'payments', label: 'Payments' },
+    { value: 'whatsapp', label: 'WhatsApp' }
+  ];
+
+  if (isMobile) {
+    return (
+      <Layout>
+        <div className="max-w-full mx-auto space-y-4 px-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+            <p className="text-gray-600 mt-1 text-sm">
+              Manage your store settings and business information.
+            </p>
+          </div>
+
+          {/* Mobile Tab Selection */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              {tabOptions.map((tab) => (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    activeTab === tab.value
+                      ? 'bg-[#4C9F70] text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mobile Tab Content */}
+          <div className="space-y-4">
+            {activeTab === 'profile' && (
+              <BusinessProfileTab
+                profile={profile}
+                setProfile={setProfile}
+                onSave={saveProfile}
+                loading={loading}
+              />
+            )}
+
+            {activeTab === 'customize' && (
+              <StorefrontCustomizationTab
+                profile={profile}
+                setProfile={setProfile}
+                onSave={saveProfile}
+                loading={loading}
+              />
+            )}
+
+            {activeTab === 'design' && (
+              <StoreDesignTab
+                profile={profile}
+                setProfile={setProfile}
+                onSave={saveProfile}
+                loading={loading}
+              />
+            )}
+
+            {activeTab === 'payments' && (
+              <PaymentSettingsTab
+                profile={profile}
+                setProfile={setProfile}
+                onSave={saveProfile}
+                loading={loading}
+              />
+            )}
+
+            {activeTab === 'whatsapp' && (
+              <WhatsAppAutomationTab
+                platformSettings={platformSettings}
+                setPlatformSettings={setPlatformSettings}
+                onSave={savePlatformSettings}
+                loading={whatsappLoading}
+              />
+            )}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto space-y-4 px-2 sm:px-4">
@@ -222,44 +314,23 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
-          <div className="overflow-x-auto">
-            <TabsList className={`${isMobile ? 'w-full grid-cols-2' : 'grid w-full grid-cols-5'} h-auto`}>
-              <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-                {isMobile ? 'Profile' : 'Business Profile'}
-              </TabsTrigger>
-              <TabsTrigger value="customize" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-                {isMobile ? 'Store' : 'Customize Store'}
-              </TabsTrigger>
-              {!isMobile && (
-                <>
-                  <TabsTrigger value="design" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-                    Store Design
-                  </TabsTrigger>
-                  <TabsTrigger value="payments" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-                    Payment Settings
-                  </TabsTrigger>
-                  <TabsTrigger value="whatsapp" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-                    WhatsApp Automation
-                  </TabsTrigger>
-                </>
-              )}
-            </TabsList>
-          </div>
-
-          {/* Mobile Secondary Tabs */}
-          {isMobile && (
-            <div className="flex gap-1 overflow-x-auto pb-2">
-              <TabsTrigger value="design" className="text-xs px-3 py-2 whitespace-nowrap flex-shrink-0">
-                Design
-              </TabsTrigger>
-              <TabsTrigger value="payments" className="text-xs px-3 py-2 whitespace-nowrap flex-shrink-0">
-                Payments
-              </TabsTrigger>
-              <TabsTrigger value="whatsapp" className="text-xs px-3 py-2 whitespace-nowrap flex-shrink-0">
-                WhatsApp
-              </TabsTrigger>
-            </div>
-          )}
+          <TabsList className="grid w-full grid-cols-5 h-auto">
+            <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+              Business Profile
+            </TabsTrigger>
+            <TabsTrigger value="customize" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+              Customize Store
+            </TabsTrigger>
+            <TabsTrigger value="design" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+              Store Design
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+              Payment Settings
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+              WhatsApp Automation
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="profile" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
             <BusinessProfileTab
