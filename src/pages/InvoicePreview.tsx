@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ExternalLink, FileText, Download } from 'lucide-react';
+import { ExternalLink, FileText, Download, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
+import DeliveryForm from '@/components/DeliveryForm';
 
 interface InvoiceItem {
   id: string;
@@ -41,6 +42,7 @@ interface Profile {
   snapscan_link: string;
   payfast_link: string;
   eft_details: string;
+  whatsapp_number: string;
 }
 
 const InvoicePreview = () => {
@@ -49,6 +51,7 @@ const InvoicePreview = () => {
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showDeliveryForm, setShowDeliveryForm] = useState(false);
 
   useEffect(() => {
     if (invoiceId) {
@@ -80,7 +83,7 @@ const InvoicePreview = () => {
       // Fetch business profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('business_name, logo_url, snapscan_link, payfast_link, eft_details')
+        .select('business_name, logo_url, snapscan_link, payfast_link, eft_details, whatsapp_number')
         .eq('id', invoiceData.user_id)
         .single();
 
@@ -106,7 +109,11 @@ const InvoicePreview = () => {
     window.open(link, '_blank');
   };
 
-  const downloadPDF = async () => {
+  const handleOrderNow = () => {
+    setShowDeliveryForm(true);
+  };
+
+  const downloadInvoicePDF = async () => {
     if (!invoice || !profile) {
       toast.error('Invoice not found. Please try again later.');
       return;
@@ -176,7 +183,7 @@ const InvoicePreview = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm p-8 mb-6">
@@ -224,44 +231,93 @@ const InvoicePreview = () => {
             )}
           </div>
 
-          {/* Items Table */}
-          <div className="mb-8">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 font-medium text-gray-900">Description</th>
-                    <th className="text-right py-3 font-medium text-gray-900">Qty</th>
-                    <th className="text-right py-3 font-medium text-gray-900">Unit Price</th>
-                    <th className="text-right py-3 font-medium text-gray-900">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoiceItems.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-100">
-                      <td className="py-3">
-                        <div>
-                          <p className="font-medium text-gray-900">{item.title}</p>
-                          {item.description && (
-                            <p className="text-sm text-gray-600">{item.description}</p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="text-right py-3 text-gray-600">{item.quantity}</td>
-                      <td className="text-right py-3 text-gray-600">R{item.unit_price.toFixed(2)}</td>
-                      <td className="text-right py-3 font-medium text-gray-900">
-                        R{item.total_price.toFixed(2)}
-                      </td>
+          {/* Invoice Details */}
+          <Card className="mb-6 sm:mb-8">
+            <CardHeader>
+              <CardTitle>Invoice Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Invoice Number:</h3>
+                <p className="text-gray-600">#{invoice.invoice_number}</p>
+              </div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Client Name:</h3>
+                <p className="text-gray-600">{invoice.client_name}</p>
+              </div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Client Email:</h3>
+                <p className="text-gray-600">{invoice.client_email}</p>
+              </div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Client Phone:</h3>
+                <p className="text-gray-600">{invoice.client_phone}</p>
+              </div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Subtotal:</h3>
+                <p className="text-gray-600">R{invoice.subtotal.toFixed(2)}</p>
+              </div>
+              {invoice.vat_enabled && (
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">VAT (15%):</h3>
+                  <p className="text-gray-600">R{invoice.vat_amount.toFixed(2)}</p>
+                </div>
+              )}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Total:</h3>
+                <p className="text-lg font-bold text-[#4C9F70]">
+                  R{invoice.total_amount.toFixed(2)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Items */}
+          <Card className="mb-6 sm:mb-8">
+            <CardHeader>
+              <CardTitle>Items</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 font-medium text-gray-900">Description</th>
+                      <th className="text-right py-3 font-medium text-gray-900">Qty</th>
+                      <th className="text-right py-3 font-medium text-gray-900">Unit Price</th>
+                      <th className="text-right py-3 font-medium text-gray-900">Total</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                  </thead>
+                  <tbody>
+                    {invoiceItems.map((item) => (
+                      <tr key={item.id} className="border-b border-gray-100">
+                        <td className="py-3">
+                          <div>
+                            <p className="font-medium text-gray-900">{item.title}</p>
+                            {item.description && (
+                              <p className="text-sm text-gray-600">{item.description}</p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="text-right py-3 text-gray-600">{item.quantity}</td>
+                        <td className="text-right py-3 text-gray-600">R{item.unit_price.toFixed(2)}</td>
+                        <td className="text-right py-3 font-medium text-gray-900">
+                          R{item.total_price.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Totals */}
-          <div className="flex justify-end mb-8">
-            <div className="w-64">
+          <Card className="mb-6 sm:mb-8">
+            <CardHeader>
+              <CardTitle>Totals</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="flex justify-between py-2">
                 <span className="text-gray-600">Subtotal:</span>
                 <span className="font-medium">R{invoice.subtotal.toFixed(2)}</span>
@@ -279,7 +335,43 @@ const InvoicePreview = () => {
                   R{invoice.total_amount.toFixed(2)}
                 </span>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Delivery Form */}
+          {showDeliveryForm && profile?.whatsapp_number && (
+            <div className="mb-6 sm:mb-8 flex justify-center">
+              <DeliveryForm
+                productTitle={`Invoice ${invoice.invoice_number}`}
+                invoiceLink={window.location.href}
+                whatsappNumber={profile.whatsapp_number}
+                onSubmit={() => setShowDeliveryForm(false)}
+              />
             </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            {!showDeliveryForm && profile?.whatsapp_number && (
+              <Button
+                size="lg"
+                onClick={handleOrderNow}
+                className="bg-[#4C9F70] hover:bg-[#3d8159] text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Order Now
+              </Button>
+            )}
+
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => downloadInvoicePDF(invoice)}
+              className="px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download PDF
+            </Button>
           </div>
 
           {/* Payment Instructions */}
@@ -305,39 +397,6 @@ const InvoicePreview = () => {
               </div>
             </div>
           )}
-
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-4 justify-center mb-6">
-            <Button
-              onClick={downloadPDF}
-              variant="outline"
-              className="flex items-center gap-2"
-              disabled={!invoice || !profile}
-            >
-              <Download className="w-4 h-4" />
-              Download PDF
-            </Button>
-            
-            {invoice.payment_enabled && profile?.snapscan_link && (
-              <Button
-                onClick={() => handlePayment('snapscan')}
-                className="bg-[#4C9F70] hover:bg-[#3d8159] text-white"
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Pay Now via SnapScan
-              </Button>
-            )}
-            
-            {invoice.payment_enabled && profile?.payfast_link && (
-              <Button
-                onClick={() => handlePayment('payfast')}
-                className="bg-[#4C9F70] hover:bg-[#3d8159] text-white"
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Pay Now via PayFast
-              </Button>
-            )}
-          </div>
 
           {/* Status Badge */}
           <div className="flex justify-center">

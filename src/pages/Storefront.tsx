@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, ShoppingCart, MapPin, Phone, Mail } from 'lucide-react';
+import DeliveryForm from '@/components/DeliveryForm';
 
 interface Product {
   id: string;
@@ -57,6 +57,7 @@ const Storefront = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [sections, setSections] = useState<StoreSection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     fetchStorefrontData();
@@ -111,11 +112,7 @@ const Storefront = () => {
   };
 
   const handleWhatsAppOrder = (product: Product) => {
-    if (!profile?.whatsapp_number) return;
-    
-    const message = `Hi! I'd like to order ${product.title} for ${getCurrencySymbol()}${product.price.toFixed(2)}.`;
-    const whatsappLink = `https://wa.me/${profile.whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappLink, '_blank');
+    setSelectedProduct(product);
   };
 
   const handleHeroCTA = () => {
@@ -161,6 +158,28 @@ const Storefront = () => {
         return (
           <div key={section.id} className="mb-8 sm:mb-12 px-4">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">{section.section_title}</h2>
+            
+            {/* Delivery Form Modal */}
+            {selectedProduct && profile?.whatsapp_number && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="relative">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute -top-2 -right-2 z-10 bg-white hover:bg-gray-100 rounded-full p-2"
+                    onClick={() => setSelectedProduct(null)}
+                  >
+                    ×
+                  </Button>
+                  <DeliveryForm
+                    productTitle={selectedProduct.title}
+                    whatsappNumber={profile.whatsapp_number}
+                    onSubmit={() => setSelectedProduct(null)}
+                  />
+                </div>
+              </div>
+            )}
+            
             <div className={getLayoutClass()}>
               {products.map((product) => (
                 <Card key={product.id} className="hover:shadow-lg transition-shadow flex-shrink-0 w-full" style={{ minWidth: profile.store_layout === 'carousel' ? '280px' : 'auto' }}>
