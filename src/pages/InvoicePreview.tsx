@@ -202,7 +202,9 @@ const InvoicePreview = () => {
             </div>
             <div className="text-right">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">INVOICE</h2>
-              <p className="text-gray-600">#{invoice.invoice_number}</p>
+              <p className="text-gray-600 mb-4">
+                #{invoice.invoice_number}
+              </p>
               <p className="text-sm text-gray-500">
                 {new Date(invoice.created_at).toLocaleDateString()}
               </p>
@@ -366,7 +368,7 @@ const InvoicePreview = () => {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => downloadInvoicePDF(invoice)}
+              onClick={downloadInvoicePDF}
               className="px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
             >
               <Download className="w-4 h-4 mr-2" />
