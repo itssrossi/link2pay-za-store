@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessageCircle, Truck } from 'lucide-react';
@@ -16,6 +18,9 @@ interface DeliveryFormProps {
 const DeliveryForm = ({ productTitle, invoiceLink, whatsappNumber, onSubmit }: DeliveryFormProps) => {
   const [deliveryMethod, setDeliveryMethod] = useState<string>('');
   const [deliveryAddress, setDeliveryAddress] = useState<string>('');
+  const [customerName, setCustomerName] = useState<string>('');
+  const [customerEmail, setCustomerEmail] = useState<string>('');
+  const [customerPhone, setCustomerPhone] = useState<string>('');
 
   const deliveryOptions = [
     { value: 'pickup', label: 'Local Pickup' },
@@ -26,11 +31,18 @@ const DeliveryForm = ({ productTitle, invoiceLink, whatsappNumber, onSubmit }: D
   ];
 
   const handleSubmit = () => {
-    if (!deliveryMethod) return;
+    if (!deliveryMethod || !customerName) return;
 
     const message = `Hi, I'd like to order ${productTitle}.
+
+Customer Details:
+Name: ${customerName}
+${customerEmail ? `Email: ${customerEmail}` : ''}
+${customerPhone ? `Phone: ${customerPhone}` : ''}
+
 Delivery: ${deliveryOptions.find(opt => opt.value === deliveryMethod)?.label || deliveryMethod}
 ${deliveryAddress ? `Address: ${deliveryAddress}` : ''}
+
 ${invoiceLink ? `Here's my invoice: ${invoiceLink}` : ''}`;
 
     const whatsappLink = `https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
@@ -46,14 +58,54 @@ ${invoiceLink ? `Here's my invoice: ${invoiceLink}` : ''}`;
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Truck className="w-5 h-5" />
-          Delivery Options
+          Order Details
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <Label htmlFor="customerName" className="text-sm font-medium text-gray-700">
+              Full Name *
+            </Label>
+            <Input
+              id="customerName"
+              placeholder="Enter your full name"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="customerEmail" className="text-sm font-medium text-gray-700">
+              Email Address
+            </Label>
+            <Input
+              id="customerEmail"
+              type="email"
+              placeholder="Enter your email"
+              value={customerEmail}
+              onChange={(e) => setCustomerEmail(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="customerPhone" className="text-sm font-medium text-gray-700">
+              Phone Number
+            </Label>
+            <Input
+              id="customerPhone"
+              type="tel"
+              placeholder="Enter your phone number"
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+            />
+          </div>
+        </div>
+
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <Label className="text-sm font-medium text-gray-700 mb-2">
             Select Delivery Method *
-          </label>
+          </Label>
           <Select value={deliveryMethod} onValueChange={setDeliveryMethod}>
             <SelectTrigger>
               <SelectValue placeholder="Choose delivery method" />
@@ -69,10 +121,11 @@ ${invoiceLink ? `Here's my invoice: ${invoiceLink}` : ''}`;
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <Label htmlFor="deliveryAddress" className="text-sm font-medium text-gray-700 mb-2">
             Delivery Address / Notes
-          </label>
+          </Label>
           <Textarea
+            id="deliveryAddress"
             placeholder="Enter your delivery address or special instructions..."
             value={deliveryAddress}
             onChange={(e) => setDeliveryAddress(e.target.value)}
@@ -82,7 +135,7 @@ ${invoiceLink ? `Here's my invoice: ${invoiceLink}` : ''}`;
 
         <Button
           onClick={handleSubmit}
-          disabled={!deliveryMethod}
+          disabled={!deliveryMethod || !customerName}
           className="w-full bg-[#4C9F70] hover:bg-[#3d8159] text-white"
         >
           <MessageCircle className="w-4 h-4 mr-2" />
