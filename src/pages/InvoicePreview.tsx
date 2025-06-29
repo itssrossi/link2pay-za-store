@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ExternalLink, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { generateInvoicePDF } from '@/utils/pdfGenerator';
 
 interface InvoiceItem {
   id: string;
@@ -106,10 +106,46 @@ const InvoicePreview = () => {
     window.open(link, '_blank');
   };
 
-  const downloadPDF = () => {
-    // This is a placeholder for PDF generation
-    // In a real implementation, you would use a library like jsPDF or html2pdf
-    toast.info('PDF download feature coming soon!');
+  const downloadPDF = async () => {
+    if (!invoice || !profile) {
+      toast.error('Invoice not found. Please try again later.');
+      return;
+    }
+
+    try {
+      toast.info('Generating PDF...');
+      
+      await generateInvoicePDF({
+        invoice_number: invoice.invoice_number,
+        client_name: invoice.client_name,
+        client_email: invoice.client_email,
+        client_phone: invoice.client_phone,
+        business_name: profile.business_name,
+        logo_url: profile.logo_url,
+        items: invoiceItems.map(item => ({
+          title: item.title,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+        })),
+        subtotal: invoice.subtotal,
+        vat_amount: invoice.vat_amount,
+        total_amount: invoice.total_amount,
+        delivery_method: invoice.delivery_method,
+        payment_instructions: invoice.payment_instructions,
+        eft_details: profile.eft_details,
+        snapscan_link: profile.snapscan_link,
+        payfast_link: profile.payfast_link,
+        payment_enabled: invoice.payment_enabled,
+        created_at: invoice.created_at,
+      });
+      
+      toast.success('PDF downloaded successfully!');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF. Please try again.');
+    }
   };
 
   if (loading) {
@@ -276,6 +312,7 @@ const InvoicePreview = () => {
               onClick={downloadPDF}
               variant="outline"
               className="flex items-center gap-2"
+              disabled={!invoice || !profile}
             >
               <Download className="w-4 h-4" />
               Download PDF

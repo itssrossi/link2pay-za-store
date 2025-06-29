@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,9 +12,12 @@ import {
   DollarSign,
   User,
   FileText,
-  ExternalLink
+  ExternalLink,
+  Download
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { generateInvoicePDF } from '@/utils/pdfGenerator';
 
 interface Invoice {
   id: string;
@@ -33,12 +35,31 @@ const Orders = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
       fetchInvoices();
+      fetchProfile();
     }
   }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('business_name, logo_url, eft_details, snapscan_link, payfast_link')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
 
   const fetchInvoices = async () => {
     if (!user) return;
@@ -86,6 +107,53 @@ const Orders = () => {
   const pendingAmount = invoices
     .filter(invoice => invoice.status === 'pending')
     .reduce((sum, invoice) => sum + Number(invoice.total_amount), 0);
+
+  const downloadInvoicePDF = async (invoice: Invoice) => {
+    if (!profile) {
+      toast.error('Profile not found. Please try again later.');
+      return;
+    }
+
+    try {
+      toast.info('Generating PDF...');
+
+      // Fetch invoice items
+      const { data: invoiceItems, error } = await supabase
+        .from('invoice_items')
+        .select('*')
+        .eq('invoice_id', invoice.id);
+
+      if (error) throw error;
+
+      await generateInvoicePDF({
+        invoice_number: invoice.invoice_number,
+        client_name: invoice.client_name,
+        client_email: invoice.client_email,
+        business_name: profile.business_name,
+        logo_url: profile.logo_url,
+        items: invoiceItems?.map(item => ({
+          title: item.title,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+        })) || [],
+        subtotal: invoice.total_amount - (invoice.vat_enabled ? invoice.total_amount * 0.15 : 0),
+        vat_amount: invoice.vat_enabled ? invoice.total_amount * 0.15 : 0,
+        total_amount: invoice.total_amount,
+        eft_details: profile.eft_details,
+        snapscan_link: profile.snapscan_link,
+        payfast_link: profile.payfast_link,
+        payment_enabled: true,
+        created_at: invoice.created_at,
+      });
+
+      toast.success('PDF downloaded successfully!');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF. Please try again.');
+    }
+  };
 
   if (loading) {
     return (
@@ -227,20 +295,31 @@ const Orders = () => {
                         </div>
                       </div>
                       
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        asChild
-                      >
-                        <a 
-                          href={`/invoice/${invoice.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          asChild
                         >
-                          <ExternalLink className="w-4 h-4 mr-1" />
-                          View
-                        </a>
-                      </Button>
+                          <a 
+                            href={`/invoice/${invoice.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="w-4 h-4 mr-1" />
+                            View
+                          </a>
+                        </Button>
+                        
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => downloadInvoicePDF(invoice)}
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          PDF
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
