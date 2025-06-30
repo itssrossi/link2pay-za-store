@@ -57,20 +57,7 @@ const WhatsAppAutomationTab = ({ platformSettings, setPlatformSettings, onSave, 
                 placeholder="e.g., +27821234567"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Your WhatsApp Business phone number in E.164 format
-              </p>
-            </div>
-
-            <div>
-              <Label htmlFor="zoko_base_url">Zoko Base API URL</Label>
-              <Input
-                id="zoko_base_url"
-                value={platformSettings.zoko_base_url}
-                onChange={(e) => setPlatformSettings({ ...platformSettings, zoko_base_url: e.target.value })}
-                placeholder="https://app.zoko.io/api/v2/messages/"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                The base URL for Zoko API endpoints (usually default is fine)
+                Your WhatsApp Business phone number in E.164 format (for reference only)
               </p>
             </div>
           </div>
@@ -80,7 +67,7 @@ const WhatsAppAutomationTab = ({ platformSettings, setPlatformSettings, onSave, 
             <ul className="text-sm text-green-800 space-y-1">
               <li>• Automatic invoice messaging via l2p: command</li>
               <li>• Manual WhatsApp option in invoice creation form</li>
-              <li>• Template-based messaging with invoice details</li>
+              <li>• Simple text-based messaging with invoice details</li>
               <li>• Reliable delivery with professional WhatsApp Business API</li>
             </ul>
           </div>

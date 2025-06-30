@@ -31,7 +31,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Get platform settings
     const { data: settings, error: settingsError } = await supabase
       .from('platform_settings')
-      .select('zoko_api_key, zoko_business_phone, zoko_base_url')
+      .select('zoko_api_key')
       .single();
 
     if (settingsError || !settings?.zoko_api_key) {
@@ -45,35 +45,49 @@ const handler = async (req: Request): Promise<Response> => {
     // Construct invoice link
     const invoiceLink = `${req.headers.get('origin') || 'https://link2pay-za-store.lovable.app'}/invoice/${invoiceId}`;
     
-    // Prepare Zoko API payload
+    // Format phone number for Zoko (remove + if present)
+    const formattedPhone = phone.startsWith('+') ? phone.substring(1) : phone;
+    
+    // Prepare Zoko API payload according to their documentation
     const messagePayload = {
-      phone: phone,
-      template_name: 'invoice_notification',
-      params: {
-        name: clientName,
-        amount: amount,
-        link: invoiceLink
-      }
+      channel: "whatsapp",
+      recipient: formattedPhone,
+      type: "template",
+      message: `Hi ${clientName}! Your invoice for ${amount} is ready. Please click the link to view and pay: ${invoiceLink}`
     };
 
     console.log('Sending WhatsApp message via Zoko:', {
-      phone: phone,
-      template: 'invoice_notification',
+      phone: formattedPhone,
       clientName,
-      amount
+      amount,
+      invoiceId
     });
 
-    // Call Zoko API
-    const zokoResponse = await fetch(settings.zoko_base_url, {
+    // Call Zoko API with correct endpoint and authentication
+    const zokoResponse = await fetch('https://chat.zoko.io/v2/message', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${settings.zoko_api_key}`,
         'Content-Type': 'application/json',
+        'apikey': settings.zoko_api_key
       },
       body: JSON.stringify(messagePayload)
     });
 
-    const responseData = await zokoResponse.json();
+    let responseData;
+    const responseText = await zokoResponse.text();
+    
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse Zoko response as JSON:', responseText);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Zoko API returned invalid response: ${responseText.substring(0, 200)}...`
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!zokoResponse.ok) {
       console.error('Zoko API error:', responseData);
@@ -86,7 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('WhatsApp message sent successfully via Zoko');
+    console.log('WhatsApp message sent successfully via Zoko:', responseData);
     return new Response(
       JSON.stringify({
         success: true,
