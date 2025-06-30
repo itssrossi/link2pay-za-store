@@ -48,19 +48,20 @@ const handler = async (req: Request): Promise<Response> => {
     // Format phone number for Zoko (remove + if present)
     const formattedPhone = phone.startsWith('+') ? phone.substring(1) : phone;
     
-    // Prepare Zoko API payload according to their documentation
+    // Prepare Zoko API payload for text message (not template)
     const messagePayload = {
       channel: "whatsapp",
       recipient: formattedPhone,
-      type: "template",
+      type: "text",
       message: `Hi ${clientName}! Your invoice for ${amount} is ready. Please click the link to view and pay: ${invoiceLink}`
     };
 
-    console.log('Sending WhatsApp message via Zoko:', {
+    console.log('Sending WhatsApp text message via Zoko:', {
       phone: formattedPhone,
       clientName,
       amount,
-      invoiceId
+      invoiceId,
+      messageType: 'text'
     });
 
     // Call Zoko API with correct endpoint and authentication
@@ -100,7 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('WhatsApp message sent successfully via Zoko:', responseData);
+    console.log('WhatsApp text message sent successfully via Zoko:', responseData);
     return new Response(
       JSON.stringify({
         success: true,
