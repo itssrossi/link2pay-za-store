@@ -33,6 +33,7 @@ import { Link } from 'react-router-dom';
 import QuickInvoiceWhatsApp from '@/components/QuickInvoiceWhatsApp';
 import GrowthCTA from '@/components/GrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
+import InvoicesModal from '@/components/InvoicesModal';
 
 interface DashboardStats {
   totalProducts: number;
@@ -65,6 +66,7 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [showGrowthForm, setShowGrowthForm] = useState(false);
+  const [showInvoicesModal, setShowInvoicesModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -214,7 +216,10 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-md transition-shadow" 
+            onClick={() => setShowInvoicesModal(true)}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
@@ -226,6 +231,7 @@ const Dashboard = () => {
                   {stats.pendingInvoices} pending
                 </Badge>
               </p>
+              <p className="text-xs text-blue-600 mt-1">Click to view all invoices</p>
             </CardContent>
           </Card>
 
@@ -312,6 +318,11 @@ const Dashboard = () => {
       <GrowthApplicationForm 
         isOpen={showGrowthForm} 
         onClose={() => setShowGrowthForm(false)} 
+      />
+
+      <InvoicesModal 
+        isOpen={showInvoicesModal} 
+        onClose={() => setShowInvoicesModal(false)} 
       />
     </Layout>
   );
