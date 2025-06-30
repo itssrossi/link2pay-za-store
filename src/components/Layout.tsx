@@ -1,5 +1,5 @@
-
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -11,11 +11,14 @@ import {
   DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
 import { Home, Package, FileText, Settings, LogOut, BarChart3 } from 'lucide-react';
+import MobileStickyGrowthCTA from '@/components/MobileStickyGrowthCTA';
+import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [showGrowthForm, setShowGrowthForm] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -117,6 +120,16 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           })}
         </div>
       </div>
+
+      {/* Mobile Sticky Growth CTA - only show on dashboard */}
+      {location.pathname === '/dashboard' && (
+        <MobileStickyGrowthCTA onClick={() => setShowGrowthForm(true)} />
+      )}
+
+      <GrowthApplicationForm 
+        isOpen={showGrowthForm} 
+        onClose={() => setShowGrowthForm(false)} 
+      />
     </div>
   );
 };

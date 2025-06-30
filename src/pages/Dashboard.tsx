@@ -31,6 +31,8 @@ import {
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import QuickInvoiceWhatsApp from '@/components/QuickInvoiceWhatsApp';
+import GrowthCTA from '@/components/GrowthCTA';
+import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 
 interface DashboardStats {
   totalProducts: number;
@@ -62,6 +64,7 @@ const Dashboard = () => {
     statusData: []
   });
   const [loading, setLoading] = useState(true);
+  const [showGrowthForm, setShowGrowthForm] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -180,6 +183,7 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
+            <GrowthCTA onClick={() => setShowGrowthForm(true)} />
             <Button size="sm" className="flex-1 sm:flex-none">
               <Link to="/add-product" className="flex items-center">
                 <Plus className="w-4 h-4 mr-2" />
@@ -304,6 +308,11 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
+
+      <GrowthApplicationForm 
+        isOpen={showGrowthForm} 
+        onClose={() => setShowGrowthForm(false)} 
+      />
     </Layout>
   );
 };
