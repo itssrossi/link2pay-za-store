@@ -55,7 +55,7 @@ const handler = async (req: Request): Promise<Response> => {
         channel: "whatsapp",
         recipient: formattedPhone,
         type: "text",
-        message: `Hi ${clientName}, thank you for your payment! Your invoice #${invoiceId} is now marked as **paid**. We appreciate your business. 🙏`
+        message: `Hi ${clientName}, thank you for your payment! Your invoice #${invoiceId} is now marked as paid. We appreciate your business.`
       };
 
       console.log('Sending WhatsApp payment confirmation using platform credentials:', {
@@ -65,14 +65,14 @@ const handler = async (req: Request): Promise<Response> => {
         messageType: 'payment_confirmation'
       });
     } else {
-      // Regular invoice notification
+      // Regular invoice notification - use simpler format to avoid template restrictions
       const invoiceLink = `${req.headers.get('origin') || 'https://link2pay-za-store.lovable.app'}/invoice/${invoiceId}`;
       
       messagePayload = {
         channel: "whatsapp",
         recipient: formattedPhone,
         type: "text",
-        message: `Hi ${clientName}! 📄 You have a new invoice for ${amount}.\n\nView & pay here: ${invoiceLink}\n\nThank you for your business! 🙏`
+        message: `Hello ${clientName}! You have a new invoice for ${amount}. Please view and pay here: ${invoiceLink}. Thank you!`
       };
 
       console.log('Sending WhatsApp invoice notification using platform credentials:', {
@@ -111,10 +111,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!zokoResponse.ok) {
       console.error('Zoko API error:', responseData);
+      
+      // Handle specific Zoko errors more gracefully
+      let errorMessage = responseData.message || `HTTP ${zokoResponse.status}: ${zokoResponse.statusText}`;
+      
+      if (responseData.message && responseData.message.includes('template message')) {
+        errorMessage = 'This appears to be a new customer. WhatsApp Business API requires approved template messages for first contact. Please contact the customer directly first, or use a different communication method.';
+      }
+      
       return new Response(
         JSON.stringify({
           success: false,
-          error: responseData.message || `HTTP ${zokoResponse.status}: ${zokoResponse.statusText}`
+          error: errorMessage
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
