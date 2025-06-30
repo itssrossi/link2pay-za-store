@@ -29,6 +29,7 @@ import {
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
+import InvoiceStatusDropdown from './InvoiceStatusDropdown';
 
 interface Invoice {
   id: string;
@@ -98,6 +99,14 @@ const InvoicesModal = ({ isOpen, onClose }: InvoicesModalProps) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleStatusChange = (invoiceId: string, newStatus: string) => {
+    setInvoices(invoices.map(invoice => 
+      invoice.id === invoiceId 
+        ? { ...invoice, status: newStatus }
+        : invoice
+    ));
   };
 
   const getStatusColor = (status: string) => {
@@ -245,9 +254,14 @@ const InvoicesModal = ({ isOpen, onClose }: InvoicesModalProps) => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(invoice.status)}>
-                          {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                        </Badge>
+                        <InvoiceStatusDropdown
+                          invoiceId={invoice.id}
+                          currentStatus={invoice.status}
+                          clientName={invoice.client_name}
+                          invoiceNumber={invoice.invoice_number}
+                          clientPhone={invoice.client_phone}
+                          onStatusChange={(newStatus) => handleStatusChange(invoice.id, newStatus)}
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">

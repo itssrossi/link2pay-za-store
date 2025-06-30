@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +9,7 @@ import { ExternalLink, FileText, Download, MessageCircle, CreditCard } from 'luc
 import { toast } from 'sonner';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import DeliveryForm from '@/components/DeliveryForm';
+import InvoiceStatusBadge from '@/components/InvoiceStatusBadge';
 
 interface InvoiceItem {
   id: string;
@@ -103,6 +103,12 @@ const InvoicePreview = () => {
   const handlePayment = (method: 'snapscan' | 'payfast') => {
     if (!profile) return;
     
+    // Check if invoice is already paid
+    if (invoice?.status === 'paid') {
+      toast.info('This invoice has already been paid. Thank you!');
+      return;
+    }
+    
     const link = method === 'snapscan' ? profile.snapscan_link : profile.payfast_link;
     if (!link) {
       toast.error(`${method === 'snapscan' ? 'SnapScan' : 'PayFast'} payment link not available`);
@@ -185,6 +191,8 @@ const InvoicePreview = () => {
     );
   }
 
+  const isInvoicePaid = invoice.status === 'paid';
+
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -208,9 +216,14 @@ const InvoicePreview = () => {
               <p className="text-gray-600 mb-4">
                 #{invoice.invoice_number}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 mb-4">
                 {new Date(invoice.created_at).toLocaleDateString()}
               </p>
+              
+              {/* Status Badge */}
+              <div className="flex justify-end">
+                <InvoiceStatusBadge status={invoice.status} size="lg" />
+              </div>
             </div>
           </div>
 
@@ -308,53 +321,64 @@ const InvoicePreview = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
-                  Quick Payment Options
+                  {isInvoicePaid ? 'Payment Received' : 'Quick Payment Options'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  {invoice.show_snapscan && (
-                    <>
-                      {profile?.snapscan_link ? (
-                        <Button
-                          size="lg"
-                          onClick={() => handlePayment('snapscan')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
-                        >
-                          <CreditCard className="w-4 h-4 mr-2" />
-                          Pay Now with SnapScan
-                        </Button>
-                      ) : (
-                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
-                          <p className="text-orange-700 text-sm">
-                            ⚠️ SnapScan payment link missing. Please contact the business to update their payment information.
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  )}
+                {isInvoicePaid ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                    <div className="text-green-700 mb-2 text-lg font-semibold">
+                      🎉 Payment already received — thank you!
+                    </div>
+                    <p className="text-green-600 text-sm">
+                      This invoice has been marked as paid. No further payment is required.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    {invoice.show_snapscan && (
+                      <>
+                        {profile?.snapscan_link ? (
+                          <Button
+                            size="lg"
+                            onClick={() => handlePayment('snapscan')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
+                          >
+                            <CreditCard className="w-4 h-4 mr-2" />
+                            Pay Now with SnapScan
+                          </Button>
+                        ) : (
+                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+                            <p className="text-orange-700 text-sm">
+                              ⚠️ SnapScan payment link missing. Please contact the business to update their payment information.
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
 
-                  {invoice.show_payfast && (
-                    <>
-                      {profile?.payfast_link ? (
-                        <Button
-                          size="lg"
-                          onClick={() => handlePayment('payfast')}
-                          className="bg-purple-600 hover:bg-purple-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
-                        >
-                          <CreditCard className="w-4 h-4 mr-2" />
-                          Pay Now with PayFast
-                        </Button>
-                      ) : (
-                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
-                          <p className="text-orange-700 text-sm">
-                            ⚠️ PayFast payment link missing. Please contact the business to update their payment information.
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+                    {invoice.show_payfast && (
+                      <>
+                        {profile?.payfast_link ? (
+                          <Button
+                            size="lg"
+                            onClick={() => handlePayment('payfast')}
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
+                          >
+                            <CreditCard className="w-4 h-4 mr-2" />
+                            Pay Now with PayFast
+                          </Button>
+                        ) : (
+                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+                            <p className="text-orange-700 text-sm">
+                              ⚠️ PayFast payment link missing. Please contact the business to update their payment information.
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

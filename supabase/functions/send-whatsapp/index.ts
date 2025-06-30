@@ -12,6 +12,7 @@ interface WhatsAppRequest {
   clientName: string;
   amount: string;
   invoiceId: string;
+  messageType?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -21,7 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { phone, clientName, amount, invoiceId }: WhatsAppRequest = await req.json();
+    const { phone, clientName, amount, invoiceId, messageType }: WhatsAppRequest = await req.json();
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -42,36 +43,54 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Construct invoice link
-    const invoiceLink = `${req.headers.get('origin') || 'https://link2pay-za-store.lovable.app'}/invoice/${invoiceId}`;
-    
     // Format phone number for Zoko (remove + if present)
     const formattedPhone = phone.startsWith('+') ? phone.substring(1) : phone;
     
-    // Prepare Zoko API payload using their correct format
-    const messagePayload = {
-      channel: "whatsapp",
-      recipient: formattedPhone,
-      type: "template",
-      templateId: "invoice_notification",
-      templateArgs: [
+    let messagePayload;
+
+    // Check if this is a payment confirmation message
+    if (messageType === 'payment_confirmation') {
+      // Payment confirmation message
+      messagePayload = {
+        channel: "whatsapp",
+        recipient: formattedPhone,
+        type: "text",
+        message: `Hi ${clientName}, thank you for your payment! Your invoice #${invoiceId} is now marked as **paid**. We appreciate your business. 🙏`
+      };
+
+      console.log('Sending WhatsApp payment confirmation:', {
+        phone: formattedPhone,
+        clientName,
+        invoiceId,
+        messageType: 'payment_confirmation'
+      });
+    } else {
+      // Regular invoice notification
+      const invoiceLink = `${req.headers.get('origin') || 'https://link2pay-za-store.lovable.app'}/invoice/${invoiceId}`;
+      
+      messagePayload = {
+        channel: "whatsapp",
+        recipient: formattedPhone,
+        type: "template",
+        templateId: "invoice_notification",
+        templateArgs: [
+          clientName,
+          amount,
+          invoiceLink
+        ],
+        templateLanguage: "en"
+      };
+
+      console.log('Sending WhatsApp invoice notification:', {
+        phone: formattedPhone,
         clientName,
         amount,
-        invoiceLink
-      ],
-      templateLanguage: "en"
-    };
+        invoiceId,
+        templateId: 'invoice_notification'
+      });
+    }
 
-    console.log('Sending WhatsApp template message via Zoko with correct format:', {
-      phone: formattedPhone,
-      clientName,
-      amount,
-      invoiceId,
-      templateId: 'invoice_notification',
-      templateArgs: messagePayload.templateArgs
-    });
-
-    // Call Zoko API with correct endpoint and authentication
+    // Call Zoko API
     const zokoResponse = await fetch('https://chat.zoko.io/v2/message', {
       method: 'POST',
       headers: {
@@ -108,11 +127,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('WhatsApp template message sent successfully via Zoko:', responseData);
+    const messageTypeLabel = messageType === 'payment_confirmation' ? 'payment confirmation' : 'invoice notification';
+    console.log(`WhatsApp ${messageTypeLabel} sent successfully:`, responseData);
+    
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'WhatsApp message sent successfully'
+        message: `WhatsApp ${messageTypeLabel} sent successfully`
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
