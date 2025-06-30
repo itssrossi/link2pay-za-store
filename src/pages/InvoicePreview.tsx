@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ExternalLink, FileText, Download, MessageCircle } from 'lucide-react';
+import { ExternalLink, FileText, Download, MessageCircle, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import DeliveryForm from '@/components/DeliveryForm';
@@ -34,6 +35,8 @@ interface Invoice {
   payment_enabled: boolean;
   status: string;
   created_at: string;
+  show_snapscan: boolean;
+  show_payfast: boolean;
 }
 
 interface Profile {
@@ -233,47 +236,6 @@ const InvoicePreview = () => {
             )}
           </div>
 
-          {/* Invoice Details */}
-          <Card className="mb-6 sm:mb-8">
-            <CardHeader>
-              <CardTitle>Invoice Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Invoice Number:</h3>
-                <p className="text-gray-600">#{invoice.invoice_number}</p>
-              </div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Client Name:</h3>
-                <p className="text-gray-600">{invoice.client_name}</p>
-              </div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Client Email:</h3>
-                <p className="text-gray-600">{invoice.client_email}</p>
-              </div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Client Phone:</h3>
-                <p className="text-gray-600">{invoice.client_phone}</p>
-              </div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Subtotal:</h3>
-                <p className="text-gray-600">R{invoice.subtotal.toFixed(2)}</p>
-              </div>
-              {invoice.vat_enabled && (
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">VAT (15%):</h3>
-                  <p className="text-gray-600">R{invoice.vat_amount.toFixed(2)}</p>
-                </div>
-              )}
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Total:</h3>
-                <p className="text-lg font-bold text-[#4C9F70]">
-                  R{invoice.total_amount.toFixed(2)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Items */}
           <Card className="mb-6 sm:mb-8">
             <CardHeader>
@@ -340,6 +302,63 @@ const InvoicePreview = () => {
             </CardContent>
           </Card>
 
+          {/* Payment Buttons */}
+          {(invoice.show_snapscan || invoice.show_payfast) && (
+            <Card className="mb-6 sm:mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Quick Payment Options
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  {invoice.show_snapscan && (
+                    <>
+                      {profile?.snapscan_link ? (
+                        <Button
+                          size="lg"
+                          onClick={() => handlePayment('snapscan')}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
+                        >
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          Pay Now with SnapScan
+                        </Button>
+                      ) : (
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+                          <p className="text-orange-700 text-sm">
+                            ⚠️ SnapScan payment link missing. Please contact the business to update their payment information.
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {invoice.show_payfast && (
+                    <>
+                      {profile?.payfast_link ? (
+                        <Button
+                          size="lg"
+                          onClick={() => handlePayment('payfast')}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
+                        >
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          Pay Now with PayFast
+                        </Button>
+                      ) : (
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+                          <p className="text-orange-700 text-sm">
+                            ⚠️ PayFast payment link missing. Please contact the business to update their payment information.
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Delivery Form */}
           {showDeliveryForm && profile?.whatsapp_number && (
             <div className="mb-6 sm:mb-8 flex justify-center">
@@ -353,7 +372,7 @@ const InvoicePreview = () => {
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             {!showDeliveryForm && profile?.whatsapp_number && (
               <Button
                 size="lg"

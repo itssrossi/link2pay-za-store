@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { ExternalLink, TestTube } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Profile {
   business_name: string;
@@ -41,41 +43,77 @@ interface PaymentSettingsTabProps {
 }
 
 const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSettingsTabProps) => {
+  const testPaymentLink = (type: 'snapscan' | 'payfast') => {
+    const link = type === 'snapscan' ? profile.snapscan_link : profile.payfast_link;
+    if (!link) {
+      toast.error(`No ${type === 'snapscan' ? 'SnapScan' : 'PayFast'} link configured`);
+      return;
+    }
+    
+    window.open(link, '_blank');
+    toast.success(`Opened ${type === 'snapscan' ? 'SnapScan' : 'PayFast'} link in new tab`);
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Payment Methods</CardTitle>
         <CardDescription>
-          Paste your SnapScan or PayFast link here to enable fast payments on invoices.
+          Configure your payment options to enable quick payments on invoices.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Digital Payments</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 gap-6">
+            <div className="space-y-3">
               <Label htmlFor="snapscan_link">SnapScan Payment Link</Label>
               <Input
                 id="snapscan_link"
                 value={profile.snapscan_link}
                 onChange={(e) => setProfile({ ...profile, snapscan_link: e.target.value })}
-                placeholder="https://pos.snapscan.io/..."
+                placeholder="https://pos.snapscan.io/qr/..."
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Paste your SnapScan link to enable "Pay Now via SnapScan" buttons
+              <p className="text-xs text-gray-500">
+                Paste your SnapScan link here to enable "Pay Now with SnapScan" buttons on your invoices.
               </p>
+              {profile.snapscan_link && (
+                <Button 
+                  type="button"
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => testPaymentLink('snapscan')}
+                  className="w-fit"
+                >
+                  <TestTube className="w-4 h-4 mr-2" />
+                  Test SnapScan Link
+                </Button>
+              )}
             </div>
-            <div>
+            
+            <div className="space-y-3">
               <Label htmlFor="payfast_link">PayFast Payment Link</Label>
               <Input
                 id="payfast_link"
                 value={profile.payfast_link}
                 onChange={(e) => setProfile({ ...profile, payfast_link: e.target.value })}
-                placeholder="https://www.payfast.co.za/..."
+                placeholder="https://www.payfast.co.za/eng/process?..."
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Paste your PayFast link to enable "Pay Now via PayFast" buttons
+              <p className="text-xs text-gray-500">
+                Paste your PayFast link here to enable "Pay Now with PayFast" buttons on your invoices.
               </p>
+              {profile.payfast_link && (
+                <Button 
+                  type="button"
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => testPaymentLink('payfast')}
+                  className="w-fit"
+                >
+                  <TestTube className="w-4 h-4 mr-2" />
+                  Test PayFast Link
+                </Button>
+              )}
             </div>
           </div>
         </div>

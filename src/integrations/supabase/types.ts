@@ -95,6 +95,8 @@ export type Database = {
           payment_enabled: boolean | null
           payment_instructions: string | null
           reminder_sent_at: string | null
+          show_payfast: boolean | null
+          show_snapscan: boolean | null
           status: string | null
           subtotal: number
           total_amount: number
@@ -115,6 +117,8 @@ export type Database = {
           payment_enabled?: boolean | null
           payment_instructions?: string | null
           reminder_sent_at?: string | null
+          show_payfast?: boolean | null
+          show_snapscan?: boolean | null
           status?: string | null
           subtotal: number
           total_amount: number
@@ -135,6 +139,8 @@ export type Database = {
           payment_enabled?: boolean | null
           payment_instructions?: string | null
           reminder_sent_at?: string | null
+          show_payfast?: boolean | null
+          show_snapscan?: boolean | null
           status?: string | null
           subtotal?: number
           total_amount?: number

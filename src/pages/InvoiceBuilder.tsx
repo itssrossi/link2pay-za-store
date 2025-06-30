@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Plus, Send } from 'lucide-react';
+import { Trash2, Plus, Send, CreditCard } from 'lucide-react';
 import { ZokoService } from '@/utils/zokoService';
 
 interface InvoiceItem {
@@ -46,9 +45,16 @@ const InvoiceBuilder = () => {
   const [paymentInstructions, setPaymentInstructions] = useState('');
   const [vatEnabled, setVatEnabled] = useState(false);
   
+  // Payment button toggles
+  const [showSnapScan, setShowSnapScan] = useState(false);
+  const [showPayFast, setShowPayFast] = useState(false);
+  
   // WhatsApp settings
   const [sendWhatsApp, setSendWhatsApp] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  
+  // Profile data for payment links
+  const [profile, setProfile] = useState<any>(null);
   
   // Invoice items
   const [items, setItems] = useState<InvoiceItem[]>([
@@ -65,8 +71,26 @@ const InvoiceBuilder = () => {
   useEffect(() => {
     if (user) {
       fetchProducts();
+      fetchProfile();
     }
   }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('snapscan_link, payfast_link')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
 
   const fetchProducts = async () => {
     if (!user) return;
@@ -187,6 +211,8 @@ const InvoiceBuilder = () => {
           total_amount: totalAmount,
           vat_enabled: vatEnabled,
           payment_instructions: paymentInstructions || null,
+          show_snapscan: showSnapScan,
+          show_payfast: showPayFast,
           status: 'pending'
         })
         .select()
@@ -287,6 +313,53 @@ const InvoiceBuilder = () => {
                     />
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Options */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
+                  Payment Options
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="showSnapScan"
+                    checked={showSnapScan}
+                    onCheckedChange={(checked) => setShowSnapScan(!!checked)}
+                    disabled={!profile?.snapscan_link}
+                  />
+                  <Label htmlFor="showSnapScan">Show SnapScan Payment Button</Label>
+                  {!profile?.snapscan_link && (
+                    <Badge variant="outline" className="text-xs text-orange-600">
+                      Link Missing
+                    </Badge>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="showPayFast"
+                    checked={showPayFast}
+                    onCheckedChange={(checked) => setShowPayFast(!!checked)}
+                    disabled={!profile?.payfast_link}
+                  />
+                  <Label htmlFor="showPayFast">Show PayFast Payment Button</Label>
+                  {!profile?.payfast_link && (
+                    <Badge variant="outline" className="text-xs text-orange-600">
+                      Link Missing
+                    </Badge>
+                  )}
+                </div>
+
+                {(!profile?.snapscan_link || !profile?.payfast_link) && (
+                  <p className="text-xs text-gray-500">
+                    💡 Configure payment links in Settings to enable payment buttons
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -483,14 +556,23 @@ const InvoiceBuilder = () => {
                   <span>R{calculateTotal().toFixed(2)}</span>
                 </div>
                 
-                {sendWhatsApp && (
-                  <div className="mt-4 p-2 bg-green-50 border border-green-200 rounded">
-                    <Badge variant="secondary" className="bg-green-500 text-white">
-                      WhatsApp Enabled
-                    </Badge>
-                    <p className="text-xs text-green-700 mt-1">
-                      Will be sent to: {whatsappNumber}
-                    </p>
+                {(sendWhatsApp || showSnapScan || showPayFast) && (
+                  <div className="mt-4 p-2 bg-blue-50 border border-blue-200 rounded space-y-1">
+                    {sendWhatsApp && (
+                      <Badge variant="secondary" className="bg-green-500 text-white mr-1">
+                        WhatsApp Enabled
+                      </Badge>
+                    )}
+                    {showSnapScan && profile?.snapscan_link && (
+                      <Badge variant="secondary" className="bg-blue-500 text-white mr-1">
+                        SnapScan
+                      </Badge>
+                    )}
+                    {showPayFast && profile?.payfast_link && (
+                      <Badge variant="secondary" className="bg-purple-500 text-white mr-1">
+                        PayFast
+                      </Badge>
+                    )}
                   </div>
                 )}
               </CardContent>

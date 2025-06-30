@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +23,8 @@ import {
   Download,
   ExternalLink,
   Calendar,
-  User
+  User,
+  CreditCard
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -41,6 +41,8 @@ interface Invoice {
   created_at: string;
   vat_enabled: boolean;
   delivery_method: string;
+  show_snapscan: boolean;
+  show_payfast: boolean;
 }
 
 interface InvoicesModalProps {
@@ -207,6 +209,7 @@ const InvoicesModal = ({ isOpen, onClose }: InvoicesModalProps) => {
                     <TableHead>Client</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Payment Options</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -245,6 +248,31 @@ const InvoicesModal = ({ isOpen, onClose }: InvoicesModalProps) => {
                         <Badge className={getStatusColor(invoice.status)}>
                           {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {invoice.show_snapscan && (
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${profile?.snapscan_link ? 'text-blue-600 border-blue-600' : 'text-orange-600 border-orange-600'}`}
+                            >
+                              <CreditCard className="w-3 h-3 mr-1" />
+                              SnapScan {!profile?.snapscan_link && '⚠️'}
+                            </Badge>
+                          )}
+                          {invoice.show_payfast && (
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${profile?.payfast_link ? 'text-purple-600 border-purple-600' : 'text-orange-600 border-orange-600'}`}
+                            >
+                              <CreditCard className="w-3 h-3 mr-1" />
+                              PayFast {!profile?.payfast_link && '⚠️'}
+                            </Badge>
+                          )}
+                          {!invoice.show_snapscan && !invoice.show_payfast && (
+                            <span className="text-xs text-gray-400">None enabled</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm text-gray-600">
