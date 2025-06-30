@@ -12,6 +12,8 @@ const corsHeaders = {
 interface GrowthApplicationRequest {
   businessName: string;
   ownerName: string;
+  email: string;
+  phoneNumber: string;
   businessCategory: string;
   businessOffer: string;
   monthlyRevenue: number;
@@ -53,7 +55,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Validate required fields
-    const requiredFields = ['businessName', 'ownerName', 'businessCategory', 'businessOffer', 'monthlyRevenue', 'growthGoals', 'businessLocation'];
+    const requiredFields = ['businessName', 'ownerName', 'email', 'phoneNumber', 'businessCategory', 'businessOffer', 'monthlyRevenue', 'growthGoals', 'businessLocation'];
     const missingFields = requiredFields.filter(field => !applicationData[field as keyof GrowthApplicationRequest]);
     
     if (missingFields.length > 0) {
@@ -110,6 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
         .field-label { font-weight: bold; color: #4C9F70; }
         .field-value { margin-top: 5px; }
         .revenue-highlight { background-color: #f0f8f4; padding: 10px; border-left: 4px solid #4C9F70; }
+        .contact-info { background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; }
     </style>
 </head>
 <body>
@@ -119,14 +122,25 @@ const handler = async (req: Request): Promise<Response> => {
     <div class="content">
         <p>A new business has applied for growth services through Link2Pay. Here are the details:</p>
         
-        <div class="field">
-            <div class="field-label">🏢 Business Name:</div>
-            <div class="field-value">${applicationData.businessName}</div>
+        <div class="contact-info">
+            <h3 style="margin-top: 0; color: #4C9F70;">📞 Contact Information</h3>
+            <div class="field">
+                <div class="field-label">👤 Owner Name:</div>
+                <div class="field-value">${applicationData.ownerName}</div>
+            </div>
+            <div class="field">
+                <div class="field-label">📧 Email:</div>
+                <div class="field-value"><a href="mailto:${applicationData.email}">${applicationData.email}</a></div>
+            </div>
+            <div class="field">
+                <div class="field-label">📱 Phone:</div>
+                <div class="field-value"><a href="tel:${applicationData.phoneNumber}">${applicationData.phoneNumber}</a></div>
+            </div>
         </div>
         
         <div class="field">
-            <div class="field-label">👤 Owner Name:</div>
-            <div class="field-value">${applicationData.ownerName}</div>
+            <div class="field-label">🏢 Business Name:</div>
+            <div class="field-value">${applicationData.businessName}</div>
         </div>
         
         <div class="field">
@@ -159,7 +173,8 @@ const handler = async (req: Request): Promise<Response> => {
         <p><strong>Next Steps:</strong></p>
         <ul>
             <li>Review the application within 48 hours</li>
-            <li>Contact the business owner to discuss growth opportunities</li>
+            <li>Contact the business owner via email: <a href="mailto:${applicationData.email}">${applicationData.email}</a></li>
+            <li>Or call them at: <a href="tel:${applicationData.phoneNumber}">${applicationData.phoneNumber}</a></li>
             <li>Assess fit for marketing services and growth programs</li>
         </ul>
         
@@ -174,6 +189,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Growth Application Received:', {
       businessName: applicationData.businessName,
       ownerName: applicationData.ownerName,
+      email: applicationData.email,
+      phoneNumber: applicationData.phoneNumber,
       businessCategory: applicationData.businessCategory,
       businessLocation: applicationData.businessLocation,
       monthlyRevenue: formatCurrency(applicationData.monthlyRevenue),
@@ -187,7 +204,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "Link2Pay Growth <onboarding@resend.dev>",
       to: ["johnrosspersonal@gmail.com"],
-      subject: "New Link2Pay Growth Application",
+      subject: `New Link2Pay Growth Application - ${applicationData.businessName}`,
       html: emailContent,
     });
 

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,11 +32,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Loader2, Building2, Target, MapPin } from 'lucide-react';
+import { Loader2, Building2, Target, MapPin, Mail, Phone } from 'lucide-react';
 
 const formSchema = z.object({
   businessName: z.string().min(2, 'Business name must be at least 2 characters'),
   ownerName: z.string().min(2, 'Owner name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  phoneNumber: z.string().min(10, 'Please enter a valid phone number'),
   businessCategory: z.string().min(1, 'Please select a business category'),
   businessOffer: z.string().min(10, 'Please describe what your business offers (at least 10 characters)'),
   monthlyRevenue: z.array(z.number()).length(1),
@@ -59,6 +62,8 @@ const GrowthApplicationForm = ({ isOpen, onClose }: GrowthApplicationFormProps) 
     defaultValues: {
       businessName: '',
       ownerName: '',
+      email: '',
+      phoneNumber: '',
       businessCategory: '',
       businessOffer: '',
       monthlyRevenue: [10000],
@@ -228,6 +233,42 @@ const GrowthApplicationForm = ({ isOpen, onClose }: GrowthApplicationFormProps) 
                     <FormLabel>Owner Full Name</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter your full name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center space-x-2">
+                      <Mail className="w-4 h-4" />
+                      <span>Email Address</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Enter your email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center space-x-2">
+                      <Phone className="w-4 h-4" />
+                      <span>Phone Number</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input type="tel" placeholder="Enter your phone number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
