@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -78,27 +77,66 @@ const GrowthApplicationForm = ({ isOpen, onClose }: GrowthApplicationFormProps) 
   };
 
   const onSubmit = async (data: FormData) => {
+    console.log('🚀 Growth Application Form Submission Started');
+    console.log('📋 Form Data:', data);
+    
     setIsSubmitting(true);
+    
     try {
+      // Test Supabase connection first
+      console.log('🔍 Testing Supabase connection...');
+      const { data: testData, error: testError } = await supabase
+        .from('profiles')
+        .select('id')
+        .limit(1);
+      
+      if (testError) {
+        console.error('❌ Supabase connection test failed:', testError);
+        throw new Error(`Supabase connection failed: ${testError.message}`);
+      }
+      
+      console.log('✅ Supabase connection successful');
+
       const formattedData = {
         ...data,
         monthlyRevenue: data.monthlyRevenue[0],
       };
 
-      const { error } = await supabase.functions.invoke('send-growth-application', {
+      console.log('📤 Sending data to edge function:', formattedData);
+      console.log('🌐 Supabase URL:', 'https://mpzqlidtvlbijloeusuj.supabase.co');
+
+      const { data: response, error } = await supabase.functions.invoke('send-growth-application', {
         body: formattedData,
       });
 
+      console.log('📨 Edge function response:', response);
+      console.log('❌ Edge function error:', error);
+
       if (error) {
-        throw error;
+        console.error('💥 Edge function error details:', {
+          message: error.message,
+          context: error.context,
+          details: error.context?.body || error.context?.response
+        });
+        throw new Error(`Edge function failed: ${error.message}`);
       }
 
+      console.log('✅ Application submitted successfully!');
       setIsSuccess(true);
       form.reset();
       toast.success('Application submitted successfully!');
+      
     } catch (error) {
-      console.error('Error submitting application:', error);
-      toast.error('Failed to submit application. Please try again.');
+      console.error('💥 Complete error details:', error);
+      console.error('💥 Error stack:', error instanceof Error ? error.stack : 'No stack available');
+      
+      let errorMessage = 'Failed to submit application. Please try again.';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

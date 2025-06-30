@@ -1,5 +1,4 @@
 
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -21,13 +20,72 @@ interface GrowthApplicationRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log(`🚀 Edge Function Called: ${req.method} ${req.url}`);
+  console.log('📋 Request Headers:', Object.fromEntries(req.headers.entries()));
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('✅ Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const applicationData: GrowthApplicationRequest = await req.json();
+    console.log('📥 Reading request body...');
+    const requestText = await req.text();
+    console.log('📝 Raw request body:', requestText);
+    
+    let applicationData: GrowthApplicationRequest;
+    try {
+      applicationData = JSON.parse(requestText);
+      console.log('✅ Successfully parsed JSON:', applicationData);
+    } catch (parseError) {
+      console.error('❌ JSON parsing error:', parseError);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid JSON in request body'
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Validate required fields
+    const requiredFields = ['businessName', 'ownerName', 'businessCategory', 'businessOffer', 'monthlyRevenue', 'growthGoals', 'businessLocation'];
+    const missingFields = requiredFields.filter(field => !applicationData[field as keyof GrowthApplicationRequest]);
+    
+    if (missingFields.length > 0) {
+      console.error('❌ Missing required fields:', missingFields);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Missing required fields: ${missingFields.join(', ')}`
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('🔍 Checking Resend API key...');
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error('❌ RESEND_API_KEY not found in environment');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Email service configuration error'
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    console.log('✅ Resend API key found');
 
     // Format currency
     const formatCurrency = (value: number) => {
@@ -124,6 +182,7 @@ const handler = async (req: Request): Promise<Response> => {
       timestamp: new Date().toISOString()
     });
 
+    console.log('📧 Sending email via Resend...');
     // Send email using Resend
     const emailResponse = await resend.emails.send({
       from: "Link2Pay Growth <onboarding@resend.dev>",
@@ -132,7 +191,7 @@ const handler = async (req: Request): Promise<Response> => {
       html: emailContent,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("✅ Email sent successfully:", emailResponse);
 
     return new Response(
       JSON.stringify({
@@ -147,7 +206,9 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error) {
-    console.error('Error processing growth application:', error);
+    console.error('💥 Error processing growth application:', error);
+    console.error('💥 Error stack:', error instanceof Error ? error.stack : 'No stack available');
+    
     return new Response(
       JSON.stringify({
         success: false,
@@ -162,4 +223,3 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
-
