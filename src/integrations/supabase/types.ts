@@ -255,6 +255,7 @@ export type Database = {
           id: string
           last_customized_at: string | null
           logo_url: string | null
+          onboarding_completed: boolean | null
           payfast_link: string | null
           payment_method: string | null
           primary_color: string | null
@@ -288,6 +289,7 @@ export type Database = {
           id: string
           last_customized_at?: string | null
           logo_url?: string | null
+          onboarding_completed?: boolean | null
           payfast_link?: string | null
           payment_method?: string | null
           primary_color?: string | null
@@ -321,6 +323,7 @@ export type Database = {
           id?: string
           last_customized_at?: string | null
           logo_url?: string | null
+          onboarding_completed?: boolean | null
           payfast_link?: string | null
           payment_method?: string | null
           primary_color?: string | null
