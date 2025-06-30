@@ -14,24 +14,6 @@ interface ZokoApiResponse {
 }
 
 export class ZokoService {
-  private static async getPlatformSettings() {
-    const { data, error } = await supabase
-      .from('platform_settings')
-      .select('zoko_api_key, zoko_business_phone, zoko_base_url')
-      .single();
-
-    if (error) {
-      console.error('Error fetching Zoko settings:', error);
-      throw new Error('Failed to load WhatsApp settings');
-    }
-
-    if (!data?.zoko_api_key) {
-      throw new Error('Zoko API key not configured');
-    }
-
-    return data;
-  }
-
   static async sendInvoiceMessage(
     clientPhone: string,
     clientName: string,
@@ -45,48 +27,40 @@ export class ZokoService {
         throw new Error('Invalid phone number format. Please use E.164 format (e.g., +27821234567)');
       }
 
-      const settings = await this.getPlatformSettings();
-      
-      // Construct invoice link
-      const invoiceLink = `${window.location.origin}/invoice/${invoiceId}`;
-      
-      const messagePayload = {
+      console.log('Sending WhatsApp message via Edge Function:', {
         phone: clientPhone,
-        template_name: 'invoice_notification',
-        params: {
-          name: clientName,
-          amount: amount,
-          link: invoiceLink
-        }
-      };
-
-      console.log('Sending WhatsApp message via Zoko:', {
-        phone: clientPhone,
-        template: 'invoice_notification',
         clientName,
-        amount
+        amount,
+        invoiceId
       });
 
-      const response = await fetch(settings.zoko_base_url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${settings.zoko_api_key}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(messagePayload)
+      // Call the Edge Function instead of Zoko API directly
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: {
+          phone: clientPhone,
+          clientName: clientName,
+          amount: amount,
+          invoiceId: invoiceId
+        }
       });
 
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        console.error('Zoko API error:', responseData);
+      if (error) {
+        console.error('Edge Function error:', error);
         return {
           success: false,
-          error: responseData.message || `HTTP ${response.status}: ${response.statusText}`
+          error: error.message || 'Failed to send WhatsApp message'
         };
       }
 
-      console.log('WhatsApp message sent successfully via Zoko');
+      if (!data.success) {
+        console.error('WhatsApp send failed:', data.error);
+        return {
+          success: false,
+          error: data.error || 'Failed to send WhatsApp message'
+        };
+      }
+
+      console.log('WhatsApp message sent successfully');
       return {
         success: true,
         message: 'WhatsApp message sent successfully'
