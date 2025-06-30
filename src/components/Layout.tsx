@@ -14,6 +14,9 @@ import {
 import { Home, Package, FileText, Settings, LogOut, BarChart3 } from 'lucide-react';
 import MobileStickyGrowthCTA from '@/components/MobileStickyGrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
+import OnboardingFlow from '@/components/onboarding/OnboardingFlow';
+import OverlayTutorial from '@/components/onboarding/OverlayTutorial';
+import HelpButton from '@/components/HelpButton';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
@@ -131,6 +134,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         isOpen={showGrowthForm} 
         onClose={() => setShowGrowthForm(false)} 
       />
+
+      {/* New Onboarding Components */}
+      <OnboardingFlow />
+      <OverlayTutorial />
+      <HelpButton />
     </div>
   );
 };
