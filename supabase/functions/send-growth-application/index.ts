@@ -1,5 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { Resend } from "npm:resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -109,8 +112,6 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
     `;
 
-    // Send email using a simple HTTP request to a mail service
-    // For now, we'll log the data and return success
     console.log('Growth Application Received:', {
       businessName: applicationData.businessName,
       ownerName: applicationData.ownerName,
@@ -122,16 +123,21 @@ const handler = async (req: Request): Promise<Response> => {
       timestamp: new Date().toISOString()
     });
 
-    // In a real implementation, you would integrate with an email service like Resend
-    // For now, we'll simulate success
-    console.log('Email would be sent to: jrsnell@zuecomedia.com');
-    console.log('Email subject: New Link2Pay Growth Application');
-    console.log('Email content prepared and ready to send');
+    // Send email using Resend
+    const emailResponse = await resend.emails.send({
+      from: "Link2Pay Growth <onboarding@resend.dev>",
+      to: ["jrsnell@zuecomedia.com"],
+      subject: "New Link2Pay Growth Application",
+      html: emailContent,
+    });
+
+    console.log("Email sent successfully:", emailResponse);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Growth application submitted successfully'
+        message: 'Growth application submitted successfully',
+        emailId: emailResponse.data?.id
       }),
       { 
         status: 200, 
