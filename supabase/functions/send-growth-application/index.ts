@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
@@ -126,7 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email using Resend
     const emailResponse = await resend.emails.send({
       from: "Link2Pay Growth <onboarding@resend.dev>",
-      to: ["jrsnell@zuecomedia.com"],
+      to: ["johnrosspersonal@gmail.com"],
       subject: "New Link2Pay Growth Application",
       html: emailContent,
     });
@@ -161,3 +162,4 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
+
