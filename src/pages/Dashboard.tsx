@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -178,38 +179,42 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className="space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-gray-600 mt-1 text-sm sm:text-base">
               Welcome back! Here's an overview of your business.
             </p>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <GrowthCTA onClick={() => setShowGrowthForm(true)} />
-            <Button size="sm" className="flex-1 sm:flex-none">
-              <Link to="/add-product" className="flex items-center">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Product
-              </Link>
-            </Button>
-            <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="flex gap-2">
+              <GrowthCTA onClick={() => setShowGrowthForm(true)} />
+              <Button size="sm" className="flex-1 sm:flex-none">
+                <Link to="/add-product" className="flex items-center">
+                  <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span className="hidden xs:inline">Add Product</span>
+                  <span className="xs:hidden">Add</span>
+                </Link>
+              </Button>
+            </div>
+            <Button size="sm" variant="outline" className="w-full sm:w-auto">
               <Link to="/invoice-builder" className="flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
-                New Invoice
+                <FileText className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">New Invoice</span>
+                <span className="xs:hidden">Invoice</span>
               </Link>
             </Button>
           </div>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="p-4 sm:p-6">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
               <CardTitle className="text-sm font-medium">Total Products</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 pt-2">
               <div className="text-2xl font-bold">{stats.totalProducts}</div>
               <p className="text-xs text-muted-foreground">
                 Active products in your store
@@ -218,17 +223,17 @@ const Dashboard = () => {
           </Card>
 
           <Card 
-            className="cursor-pointer hover:shadow-md transition-shadow" 
+            className="cursor-pointer hover:shadow-md transition-shadow p-4 sm:p-6" 
             onClick={() => setShowInvoicesModal(true)}
           >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
               <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 pt-2">
               <div className="text-2xl font-bold">{stats.totalInvoices}</div>
               <p className="text-xs text-muted-foreground">
-                <Badge variant={stats.pendingInvoices > 0 ? "destructive" : "secondary"}>
+                <Badge variant={stats.pendingInvoices > 0 ? "destructive" : "secondary"} className="text-xs">
                   {stats.pendingInvoices} pending
                 </Badge>
               </p>
@@ -236,13 +241,13 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="p-4 sm:p-6">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">R{stats.totalRevenue.toFixed(2)}</div>
+            <CardContent className="p-0 pt-2">
+              <div className="text-xl sm:text-2xl font-bold">R{stats.totalRevenue.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground">
                 <TrendingUp className="w-3 h-3 inline mr-1" />
                 All time revenue
@@ -250,26 +255,26 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="p-4 sm:p-6">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
               <CardTitle className="text-sm font-medium">Store Link</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 pt-2">
               {stats.storeHandle ? (
                 <>
                   <div className="text-sm font-medium truncate">
                     /store/{stats.storeHandle}
                   </div>
-                  <div className="flex gap-1 mt-2">
-                    <Button onClick={copyStoreLink} size="sm" variant="outline" className="flex-1">
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy Link
+                  <div className="flex flex-col sm:flex-row gap-1 mt-2">
+                    <Button onClick={copyStoreLink} size="sm" variant="outline" className="flex-1 text-xs">
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copy
                     </Button>
-                    <Button size="sm" variant="outline" className="flex-1">
+                    <Button size="sm" variant="outline" className="flex-1 text-xs">
                       <Link to={`/store/${stats.storeHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Preview
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        View
                       </Link>
                     </Button>
                   </div>
@@ -277,12 +282,12 @@ const Dashboard = () => {
               ) : (
                 <>
                   <div className="text-sm text-gray-500">Not set up</div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs text-gray-600 mb-2">
                     Set up your store handle to enable your public store
                   </p>
-                  <Button size="sm" className="w-full sm:w-auto">
+                  <Button size="sm" className="w-full text-xs">
                     <Link to="/settings" className="flex items-center">
-                      <Settings className="w-4 h-4 mr-2" />
+                      <Settings className="w-3 h-3 mr-1" />
                       Go to Settings
                     </Link>
                   </Button>
@@ -298,8 +303,8 @@ const Dashboard = () => {
         {/* Recent Activity */}
         <div className="grid gap-4 md:grid-cols-1">
           <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Recent Activity</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

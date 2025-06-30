@@ -123,17 +123,17 @@ const Products = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Products</h1>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">
               Manage your store inventory and product listings
             </p>
           </div>
-          <Link to="/products/add">
-            <Button className="bg-[#4C9F70] hover:bg-[#3d8159]">
+          <Link to="/products/add" className="w-full sm:w-auto">
+            <Button className="bg-[#4C9F70] hover:bg-[#3d8159] w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Add Product
             </Button>
@@ -141,7 +141,7 @@ const Products = () => {
         </div>
 
         {/* Search */}
-        <div className="relative max-w-md">
+        <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             placeholder="Search products..."
@@ -153,8 +153,8 @@ const Products = () => {
 
         {/* Products Grid */}
         {filteredProducts.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
+          <Card className="text-center py-8 sm:py-12">
+            <CardContent className="px-4">
               <div className="text-gray-500 mb-4">
                 {searchTerm ? 'No products found matching your search.' : 'No products found.'}
               </div>
@@ -169,12 +169,12 @@ const Products = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {filteredProducts.map((product) => (
               <Card key={product.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-4">
+                <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
                   {product.image_url && (
-                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-4">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-3 sm:mb-4">
                       <img
                         src={product.image_url}
                         alt={product.title}
@@ -182,69 +182,69 @@ const Products = () => {
                       />
                     </div>
                   )}
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{product.title}</CardTitle>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base sm:text-lg truncate">{product.title}</CardTitle>
+                      <div className="flex items-center gap-1 sm:gap-2 mt-2 flex-wrap">
+                        <Badge variant={product.is_active ? 'default' : 'secondary'} className="text-xs">
                           {product.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                         {product.category && (
-                          <Badge variant="outline">{product.category}</Badge>
+                          <Badge variant="outline" className="text-xs">{product.category}</Badge>
                         )}
                         <Badge variant="secondary" className="text-xs">
                           {product.product_id}
                         </Badge>
                       </div>
                     </div>
-                    <div className="text-right ml-4">
-                      <div className="text-xl font-bold text-[#4C9F70]">
+                    <div className="text-right">
+                      <div className="text-lg sm:text-xl font-bold text-[#4C9F70]">
                         R{product.price.toFixed(2)}
                       </div>
                       {product.inventory_enabled && (
-                        <div className="text-sm text-gray-500">
+                        <div className="text-xs sm:text-sm text-gray-500">
                           Stock: {product.stock_quantity}
                         </div>
                       )}
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6 pt-0">
                   {product.description && (
-                    <CardDescription className="mb-4 line-clamp-2">
+                    <CardDescription className="mb-3 sm:mb-4 line-clamp-2 text-sm">
                       {product.description}
                     </CardDescription>
                   )}
                   
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-3 gap-1 sm:gap-2">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => toggleProductStatus(product.id, product.is_active)}
-                      className="flex-1"
+                      className="text-xs p-2"
                     >
                       {product.is_active ? (
                         <>
-                          <EyeOff className="w-4 h-4 mr-1" />
-                          Hide
+                          <EyeOff className="w-3 h-3 sm:mr-1" />
+                          <span className="hidden sm:inline">Hide</span>
                         </>
                       ) : (
                         <>
-                          <Eye className="w-4 h-4 mr-1" />
-                          Show
+                          <Eye className="w-3 h-3 sm:mr-1" />
+                          <span className="hidden sm:inline">Show</span>
                         </>
                       )}
                     </Button>
-                    <Button size="sm" variant="outline">
-                      <Edit className="w-4 h-4" />
+                    <Button size="sm" variant="outline" className="text-xs p-2">
+                      <Edit className="w-3 h-3" />
                     </Button>
                     <Button 
                       size="sm" 
                       variant="outline"
                       onClick={() => deleteProduct(product.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs p-2"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
                 </CardContent>

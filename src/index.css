@@ -106,4 +106,27 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Mobile responsive text utilities */
+  @media (max-width: 374px) {
+    .xs\:hidden {
+      display: none;
+    }
+    
+    .xs\:inline {
+      display: inline;
+    }
+  }
+}
+
+/* Mobile-first responsive design improvements */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
 }

@@ -1,3 +1,4 @@
+
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,19 +35,19 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8">
+      <nav className="bg-white border-b border-gray-200 px-3 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-8">
-              <Link to="/dashboard" className="flex items-center space-x-3">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center space-x-4 sm:space-x-8">
+              <Link to="/dashboard" className="flex items-center space-x-2 sm:space-x-3">
                 <img 
                   src="/lovable-uploads/e6db2000-16be-4362-bb02-9bb7800e39bd.png" 
                   alt="Link2Pay" 
-                  className="h-20 w-auto"
+                  className="h-16 sm:h-20 w-auto"
                 />
               </Link>
               
-              <div className="hidden md:flex space-x-6">
+              <div className="hidden md:flex space-x-4 lg:space-x-6">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.href;
@@ -54,14 +55,14 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                     <Link
                       key={item.name}
                       to={item.href}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      className={`flex items-center space-x-2 px-2 lg:px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                         isActive
                           ? 'bg-[#4C9F70] text-white'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                       }`}
                     >
                       <Icon className="w-4 h-4" />
-                      <span>{item.name}</span>
+                      <span className="hidden lg:block">{item.name}</span>
                     </Link>
                   );
                 })}
@@ -80,7 +81,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuItem disabled>
-                  <span className="text-sm text-gray-600">{user?.email}</span>
+                  <span className="text-sm text-gray-600 truncate">{user?.email}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
@@ -93,12 +94,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 md:pb-8">
         {children}
       </main>
 
       {/* Mobile Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-pb">
         <div className="grid grid-cols-4 gap-1 p-2">
           {navItems.map((item) => {
             const Icon = item.icon;
