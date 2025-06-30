@@ -34,7 +34,7 @@ export class ZokoService {
         invoiceId
       });
 
-      // Call the Edge Function instead of Zoko API directly
+      // Call the Edge Function which will use the stored platform Zoko credentials
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
           phone: clientPhone,
@@ -60,7 +60,7 @@ export class ZokoService {
         };
       }
 
-      console.log('WhatsApp message sent successfully');
+      console.log('WhatsApp message sent successfully using platform Zoko credentials');
       return {
         success: true,
         message: 'WhatsApp message sent successfully'

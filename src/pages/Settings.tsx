@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import BusinessProfileTab from '@/components/settings/BusinessProfileTab';
 import StoreDesignTab from '@/components/settings/StoreDesignTab';
 import PaymentSettingsTab from '@/components/settings/PaymentSettingsTab';
-import WhatsAppAutomationTab from '@/components/settings/WhatsAppAutomationTab';
 import StorefrontCustomizationTab from '@/components/settings/StorefrontCustomizationTab';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -39,19 +38,10 @@ interface Profile {
   delivery_note: string;
 }
 
-interface PlatformSettings {
-  whatsapp_api_token: string;
-  whatsapp_phone_id: string;
-  zoko_api_key: string;
-  zoko_business_phone: string;
-  zoko_base_url: string;
-}
-
 const Settings = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
-  const [whatsappLoading, setWhatsappLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [profile, setProfile] = useState<Profile>({
     business_name: '',
@@ -80,18 +70,9 @@ const Settings = () => {
     delivery_note: ''
   });
 
-  const [platformSettings, setPlatformSettings] = useState<PlatformSettings>({
-    whatsapp_api_token: '',
-    whatsapp_phone_id: '',
-    zoko_api_key: '',
-    zoko_business_phone: '',
-    zoko_base_url: 'https://app.zoko.io/api/v2/messages/'
-  });
-
   useEffect(() => {
     if (user) {
       fetchSettings();
-      fetchPlatformSettings();
     }
   }, [user]);
 
@@ -138,32 +119,6 @@ const Settings = () => {
     }
   };
 
-  const fetchPlatformSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('platform_settings')
-        .select('whatsapp_api_token, whatsapp_phone_id, zoko_api_key, zoko_business_phone, zoko_base_url')
-        .single();
-
-      if (error) {
-        console.error('Error fetching platform settings:', error);
-        return;
-      }
-
-      if (data) {
-        setPlatformSettings({
-          whatsapp_api_token: data.whatsapp_api_token || '',
-          whatsapp_phone_id: data.whatsapp_phone_id || '',
-          zoko_api_key: data.zoko_api_key || '',
-          zoko_business_phone: data.zoko_business_phone || '',
-          zoko_base_url: data.zoko_base_url || 'https://app.zoko.io/api/v2/messages/'
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching platform settings:', error);
-    }
-  };
-
   const saveProfile = async () => {
     if (!user) return;
     setLoading(true);
@@ -191,46 +146,11 @@ const Settings = () => {
     }
   };
 
-  const savePlatformSettings = async () => {
-    setWhatsappLoading(true);
-
-    try {
-      // First get the existing platform settings ID
-      const { data: existingSettings } = await supabase
-        .from('platform_settings')
-        .select('id')
-        .single();
-
-      if (existingSettings?.id) {
-        const { error } = await supabase
-          .from('platform_settings')
-          .update({
-            whatsapp_api_token: platformSettings.whatsapp_api_token,
-            whatsapp_phone_id: platformSettings.whatsapp_phone_id,
-            zoko_api_key: platformSettings.zoko_api_key,
-            zoko_business_phone: platformSettings.zoko_business_phone,
-            zoko_base_url: platformSettings.zoko_base_url,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingSettings.id);
-
-        if (error) throw error;
-        toast.success('WhatsApp settings updated successfully!');
-      }
-    } catch (error) {
-      console.error('Error saving WhatsApp settings:', error);
-      toast.error('Failed to update WhatsApp settings');
-    } finally {
-      setWhatsappLoading(false);
-    }
-  };
-
   const tabOptions = [
     { value: 'profile', label: isMobile ? 'Profile' : 'Business Profile' },
     { value: 'customize', label: isMobile ? 'Store' : 'Customize Store' },
     { value: 'design', label: 'Design' },
-    { value: 'payments', label: 'Payments' },
-    { value: 'whatsapp', label: 'WhatsApp' }
+    { value: 'payments', label: 'Payments' }
   ];
 
   if (isMobile) {
@@ -300,15 +220,6 @@ const Settings = () => {
                 loading={loading}
               />
             )}
-
-            {activeTab === 'whatsapp' && (
-              <WhatsAppAutomationTab
-                platformSettings={platformSettings}
-                setPlatformSettings={setPlatformSettings}
-                onSave={savePlatformSettings}
-                loading={whatsappLoading}
-              />
-            )}
           </div>
         </div>
       </Layout>
@@ -326,7 +237,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-4 h-auto">
             <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
               Business Profile
             </TabsTrigger>
@@ -338,9 +249,6 @@ const Settings = () => {
             </TabsTrigger>
             <TabsTrigger value="payments" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
               Payment Settings
-            </TabsTrigger>
-            <TabsTrigger value="whatsapp" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-              WhatsApp Automation
             </TabsTrigger>
           </TabsList>
 
@@ -377,15 +285,6 @@ const Settings = () => {
               setProfile={(updatedProfile) => setProfile(updatedProfile)}
               onSave={saveProfile}
               loading={loading}
-            />
-          </TabsContent>
-
-          <TabsContent value="whatsapp" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-            <WhatsAppAutomationTab
-              platformSettings={platformSettings}
-              setPlatformSettings={setPlatformSettings}
-              onSave={savePlatformSettings}
-              loading={whatsappLoading}
             />
           </TabsContent>
         </Tabs>
