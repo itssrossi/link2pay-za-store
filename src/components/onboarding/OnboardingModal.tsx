@@ -84,7 +84,7 @@ const OnboardingModal: React.FC = () => {
 
   return (
     <Dialog open={showOnboarding} onOpenChange={() => {}}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden" hideClose>
+      <DialogContent className="max-w-2xl p-0 overflow-hidden">
         <div className="relative">
           {/* Header with progress and skip button */}
           <div className="flex items-center justify-between p-6 border-b bg-white">
