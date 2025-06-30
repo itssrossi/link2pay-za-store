@@ -48,35 +48,27 @@ const handler = async (req: Request): Promise<Response> => {
     // Format phone number for Zoko (remove + if present)
     const formattedPhone = phone.startsWith('+') ? phone.substring(1) : phone;
     
-    // Prepare Zoko API payload for template message
+    // Prepare Zoko API payload using their correct format
     const messagePayload = {
       channel: "whatsapp",
       recipient: formattedPhone,
       type: "template",
-      template: {
-        name: "invoice_notification",
-        language: {
-          code: "en"
-        },
-        components: [
-          {
-            type: "body",
-            parameters: [
-              { type: "text", text: clientName },
-              { type: "text", text: amount },
-              { type: "text", text: invoiceLink }
-            ]
-          }
-        ]
-      }
+      templateId: "invoice_notification",
+      templateArgs: [
+        clientName,
+        amount,
+        invoiceLink
+      ],
+      templateLanguage: "en"
     };
 
-    console.log('Sending WhatsApp template message via Zoko:', {
+    console.log('Sending WhatsApp template message via Zoko with correct format:', {
       phone: formattedPhone,
       clientName,
       amount,
       invoiceId,
-      template: 'invoice_notification'
+      templateId: 'invoice_notification',
+      templateArgs: messagePayload.templateArgs
     });
 
     // Call Zoko API with correct endpoint and authentication
