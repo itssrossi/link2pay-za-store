@@ -73,7 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
         recipient: formattedPhone,
         type: "template",
         template: {
-          name: "invoice_notification",
+          templateId: "invoice_notification",
           language: {
             code: "en"
           },
