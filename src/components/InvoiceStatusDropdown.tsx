@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { ZokoService } from '@/utils/zokoService';
 
 interface InvoiceStatusDropdownProps {
   invoiceId: string;
@@ -16,6 +17,8 @@ interface InvoiceStatusDropdownProps {
   clientName: string;
   invoiceNumber: string;
   clientPhone?: string;
+  totalAmount?: number;
+  whatsappPaidSent?: boolean;
   onStatusChange?: (newStatus: string) => void;
 }
 
@@ -25,6 +28,8 @@ const InvoiceStatusDropdown = ({
   clientName, 
   invoiceNumber, 
   clientPhone,
+  totalAmount,
+  whatsappPaidSent = false,
   onStatusChange 
 }: InvoiceStatusDropdownProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -41,27 +46,69 @@ const InvoiceStatusDropdown = ({
         newStatus,
         clientPhone,
         clientName,
-        invoiceNumber
+        invoiceNumber,
+        totalAmount,
+        whatsappPaidSent
       });
+
+      // Prepare update data
+      const updateData: any = { 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      };
+
+      // If changing to paid and WhatsApp confirmation hasn't been sent yet
+      const shouldSendPaymentConfirmation = 
+        currentStatus !== 'paid' && 
+        newStatus === 'paid' && 
+        clientPhone && 
+        !whatsappPaidSent;
+
+      if (shouldSendPaymentConfirmation) {
+        updateData.whatsapp_paid_sent = true;
+      }
 
       // Update invoice status
       const { error } = await supabase
         .from('invoices')
-        .update({ status: newStatus })
+        .update(updateData)
         .eq('id', invoiceId);
 
       if (error) throw error;
 
-      // Send WhatsApp confirmation if status changed to "paid"
-      if (currentStatus !== 'paid' && newStatus === 'paid' && clientPhone) {
+      // Send WhatsApp confirmation if status changed to "paid" and not sent before
+      if (shouldSendPaymentConfirmation) {
         console.log('Invoice marked as paid, sending WhatsApp confirmation...');
         
         try {
-          await sendPaymentConfirmation(clientName, invoiceNumber, clientPhone);
+          const result = await ZokoService.sendPaymentConfirmation(
+            clientPhone,
+            clientName,
+            invoiceNumber,
+            totalAmount ? `R${totalAmount.toFixed(2)}` : undefined
+          );
+
+          if (result.success) {
+            toast.success('Payment confirmation sent via WhatsApp! 🎉');
+          } else {
+            console.error('WhatsApp confirmation failed:', result.error);
+            toast.error('Invoice updated but WhatsApp confirmation failed');
+            
+            // Revert the whatsapp_paid_sent flag if sending failed
+            await supabase
+              .from('invoices')
+              .update({ whatsapp_paid_sent: false })
+              .eq('id', invoiceId);
+          }
         } catch (whatsappError) {
           console.error('WhatsApp confirmation failed:', whatsappError);
-          // Don't fail the status update if WhatsApp fails
           toast.error('Invoice updated but WhatsApp confirmation failed');
+          
+          // Revert the whatsapp_paid_sent flag if sending failed
+          await supabase
+            .from('invoices')
+            .update({ whatsapp_paid_sent: false })
+            .eq('id', invoiceId);
         }
       }
 
@@ -74,38 +121,6 @@ const InvoiceStatusDropdown = ({
     } finally {
       setIsUpdating(false);
     }
-  };
-
-  const sendPaymentConfirmation = async (clientName: string, invoiceNumber: string, phone: string) => {
-    console.log('Calling WhatsApp edge function for payment confirmation:', {
-      phone,
-      clientName,
-      invoiceNumber,
-      messageType: 'payment_confirmation'
-    });
-
-    const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-      body: {
-        phone: phone,
-        clientName: clientName,
-        amount: 'PAID',
-        invoiceId: invoiceNumber,
-        messageType: 'payment_confirmation'
-      }
-    });
-
-    if (error) {
-      console.error('Edge function error:', error);
-      throw new Error(`WhatsApp function error: ${error.message}`);
-    }
-
-    if (!data?.success) {
-      console.error('WhatsApp send failed:', data?.error);
-      throw new Error(`WhatsApp send failed: ${data?.error || 'Unknown error'}`);
-    }
-
-    console.log('WhatsApp payment confirmation sent successfully:', data);
-    toast.success('Payment confirmation sent via WhatsApp! 🎉');
   };
 
   return (

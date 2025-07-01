@@ -104,6 +104,7 @@ export type Database = {
           user_id: string
           vat_amount: number | null
           vat_enabled: boolean | null
+          whatsapp_paid_sent: boolean | null
         }
         Insert: {
           auto_reminder_enabled?: boolean | null
@@ -126,6 +127,7 @@ export type Database = {
           user_id: string
           vat_amount?: number | null
           vat_enabled?: boolean | null
+          whatsapp_paid_sent?: boolean | null
         }
         Update: {
           auto_reminder_enabled?: boolean | null
@@ -148,6 +150,7 @@ export type Database = {
           user_id?: string
           vat_amount?: number | null
           vat_enabled?: boolean | null
+          whatsapp_paid_sent?: boolean | null
         }
         Relationships: []
       }

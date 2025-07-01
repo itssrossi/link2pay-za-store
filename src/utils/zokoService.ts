@@ -1,12 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-interface ZokoMessageParams {
-  name: string;
-  amount: string;
-  link: string;
-}
-
 interface ZokoApiResponse {
   success: boolean;
   message?: string;
@@ -18,7 +12,8 @@ export class ZokoService {
     clientPhone: string,
     clientName: string,
     amount: string,
-    invoiceId: string
+    invoiceId: string,
+    invoiceUrl?: string
   ): Promise<ZokoApiResponse> {
     try {
       // Validate phone number format (E.164)
@@ -27,20 +22,23 @@ export class ZokoService {
         throw new Error('Invalid phone number format. Please use E.164 format (e.g., +27821234567)');
       }
 
-      console.log('Sending WhatsApp message via Edge Function:', {
+      console.log('Sending WhatsApp invoice notification via Edge Function:', {
         phone: clientPhone,
         clientName,
         amount,
-        invoiceId
+        invoiceId,
+        invoiceUrl
       });
 
-      // Call the Edge Function instead of Zoko API directly
+      // Call the Edge Function for invoice notification using template
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
           phone: clientPhone,
           clientName: clientName,
           amount: amount,
-          invoiceId: invoiceId
+          invoiceId: invoiceId,
+          messageType: 'invoice_notification',
+          invoiceUrl: invoiceUrl || `https://link2pay-za-store.lovable.app/invoice/${invoiceId}`
         }
       });
 
@@ -48,26 +46,26 @@ export class ZokoService {
         console.error('Edge Function error:', error);
         return {
           success: false,
-          error: error.message || 'Failed to send WhatsApp message'
+          error: error.message || 'Failed to send WhatsApp invoice notification'
         };
       }
 
       if (!data?.success) {
-        console.error('WhatsApp send failed:', data?.error);
+        console.error('WhatsApp invoice notification failed:', data?.error);
         return {
           success: false,
-          error: data?.error || 'Failed to send WhatsApp message'
+          error: data?.error || 'Failed to send WhatsApp invoice notification'
         };
       }
 
-      console.log('WhatsApp message sent successfully');
+      console.log('WhatsApp invoice notification sent successfully');
       return {
         success: true,
-        message: 'WhatsApp message sent successfully'
+        message: 'WhatsApp invoice notification sent successfully'
       };
 
     } catch (error) {
-      console.error('Error sending WhatsApp message:', error);
+      console.error('Error sending WhatsApp invoice notification:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -78,7 +76,8 @@ export class ZokoService {
   static async sendPaymentConfirmation(
     clientPhone: string,
     clientName: string,
-    invoiceNumber: string
+    invoiceNumber: string,
+    amount?: string
   ): Promise<ZokoApiResponse> {
     try {
       // Validate phone number format (E.164)
@@ -90,15 +89,16 @@ export class ZokoService {
       console.log('Sending payment confirmation via Edge Function:', {
         phone: clientPhone,
         clientName,
-        invoiceNumber
+        invoiceNumber,
+        amount
       });
 
-      // Call the Edge Function for payment confirmation
+      // Call the Edge Function for payment confirmation using template
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
           phone: clientPhone,
           clientName: clientName,
-          amount: 'PAID',
+          amount: amount || 'PAID',
           invoiceId: invoiceNumber,
           messageType: 'payment_confirmation'
         }
