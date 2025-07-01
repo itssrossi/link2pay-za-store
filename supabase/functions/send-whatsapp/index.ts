@@ -2,19 +2,18 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface WhatsAppRequest {
-  phone: string;
-  clientName: string;
-  amount: string;
-  invoiceId: string;
-  messageType?: string;
-  invoiceUrl?: string;
-}
+import type { WhatsAppRequest } from './types.ts';
+import { corsHeaders, formatPhoneNumber, generateInvoiceUrl } from './utils.ts';
+import {
+  createPaymentConfirmationPayload,
+  createInvoiceNotificationPayload,
+  createFallbackTextPayload
+} from './messageTemplates.ts';
+import {
+  sendZokoMessage,
+  handleZokoResponse,
+  sendFallbackMessage
+} from './zokoService.ts';
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -53,12 +52,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Format phone number for Zoko (remove + if present)
-    const formattedPhone = phone.startsWith('+') ? phone.substring(1) : phone;
+    // Format phone number for Zoko
+    const formattedPhone = formatPhoneNumber(phone);
     
     let messagePayload;
 
-    // Check message type and create appropriate payload
+    // Create appropriate message payload based on type
     if (messageType === 'payment_confirmation') {
       console.log('Preparing payment confirmation template for:', {
         phone: formattedPhone,
@@ -66,19 +65,10 @@ const handler = async (req: Request): Promise<Response> => {
         invoiceId
       });
 
-      // Use the invoice_paid template for payment confirmations
-      messagePayload = {
-        channel: "whatsapp",
-        recipient: formattedPhone,
-        type: "template",
-        templateId: "invoice_paid",
-        templateArgs: [clientName, invoiceId]
-      };
-
+      messagePayload = createPaymentConfirmationPayload(formattedPhone, clientName, invoiceId);
       console.log('Using invoice_paid template with payload:', messagePayload);
     } else {
-      // Regular invoice notification - use invoice_notification template
-      const finalInvoiceUrl = invoiceUrl || `https://link2pay-za-store.lovable.app/invoice/${invoiceId}`;
+      const finalInvoiceUrl = generateInvoiceUrl(invoiceId, invoiceUrl);
       
       console.log('Preparing invoice notification template for:', {
         phone: formattedPhone,
@@ -88,156 +78,51 @@ const handler = async (req: Request): Promise<Response> => {
         invoiceUrl: finalInvoiceUrl
       });
 
-      // Add space after URL to prevent template from corrupting the link
-      messagePayload = {
-        channel: "whatsapp",
-        recipient: formattedPhone,
-        type: "template",
-        templateId: "invoice_notification",
-        templateArgs: [clientName, finalInvoiceUrl + " ", amount]
-      };
-
+      messagePayload = createInvoiceNotificationPayload(formattedPhone, clientName, finalInvoiceUrl, amount);
       console.log('Using invoice_notification template with payload:', messagePayload);
     }
 
-    // Call Zoko API
-    console.log('Calling Zoko API with payload:', JSON.stringify(messagePayload, null, 2));
+    // Send message via Zoko
+    const zokoResponse = await sendZokoMessage(messagePayload, settings);
     
-    const zokoResponse = await fetch('https://chat.zoko.io/v2/message', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': settings.zoko_api_key
-      },
-      body: JSON.stringify(messagePayload)
-    });
+    // Handle successful response
+    if (zokoResponse.ok) {
+      return await handleZokoResponse(zokoResponse, messageType || 'invoice_notification');
+    }
 
-    let responseData;
+    // Handle failed response - try fallback if template error
     const responseText = await zokoResponse.text();
+    const isTemplateError = responseText.includes('template') || responseText.includes('Template');
     
-    console.log('Zoko API response status:', zokoResponse.status);
-    console.log('Zoko API response text:', responseText);
-    
+    if (isTemplateError) {
+      console.log('Template error detected, trying fallback text message...');
+      
+      const fallbackPayload = createFallbackTextPayload(
+        formattedPhone,
+        clientName,
+        messageType || 'invoice_notification',
+        invoiceId,
+        amount,
+        messageType !== 'payment_confirmation' ? generateInvoiceUrl(invoiceId, invoiceUrl) : undefined
+      );
+
+      return await sendFallbackMessage(fallbackPayload, settings);
+    }
+
+    // Return error if not a template issue
+    let errorData;
     try {
-      responseData = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('Failed to parse Zoko response as JSON:', responseText);
-      
-      // If template failed, try fallback text message
-      if (responseText.includes('template') || responseText.includes('Template')) {
-        console.log('Template failed, trying fallback text message...');
-        
-        let fallbackMessage;
-        if (messageType === 'payment_confirmation') {
-          fallbackMessage = `Hello ${clientName},\n\nPayment received! ✅\n\nYour invoice #${invoiceId} has been marked as PAID. Thank you for your business with us.`;
-        } else {
-          const finalInvoiceUrl = invoiceUrl || `https://link2pay-za-store.lovable.app/invoice/${invoiceId}`;
-          fallbackMessage = `Hi ${clientName}!\n\nYou have a new invoice for R${amount}.\n\nView and pay your invoice here: ${finalInvoiceUrl}\n\nThank you! 🙏`;
-        }
-
-        const fallbackPayload = {
-          channel: "whatsapp",
-          recipient: formattedPhone,
-          type: "text",
-          message: fallbackMessage
-        };
-
-        const fallbackResponse = await fetch('https://chat.zoko.io/v2/message', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': settings.zoko_api_key
-          },
-          body: JSON.stringify(fallbackPayload)
-        });
-
-        const fallbackText = await fallbackResponse.text();
-        console.log('Fallback response:', fallbackText);
-
-        if (fallbackResponse.ok) {
-          return new Response(
-            JSON.stringify({
-              success: true,
-              message: 'Message sent via fallback text (template not available)',
-              data: { fallback: true }
-            }),
-            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-      }
-      
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: `Zoko API returned invalid response: ${responseText.substring(0, 200)}...`
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      errorData = JSON.parse(responseText);
+    } catch {
+      errorData = { message: responseText };
     }
 
-    if (!zokoResponse.ok) {
-      console.error('Zoko API error:', responseData);
-      
-      // If template error, try fallback
-      if ((responseData.message || '').toLowerCase().includes('template')) {
-        console.log('Template error detected, trying fallback text message...');
-        
-        let fallbackMessage;
-        if (messageType === 'payment_confirmation') {
-          fallbackMessage = `Hello ${clientName},\n\nPayment received! ✅\n\nYour invoice #${invoiceId} has been marked as PAID. Thank you for your business with us.`;
-        } else {
-          const finalInvoiceUrl = invoiceUrl || `https://link2pay-za-store.lovable.app/invoice/${invoiceId}`;
-          fallbackMessage = `Hi ${clientName}!\n\nYou have a new invoice for R${amount}.\n\nView and pay your invoice here: ${finalInvoiceUrl}\n\nThank you! 🙏`;
-        }
-
-        const fallbackPayload = {
-          channel: "whatsapp",
-          recipient: formattedPhone,
-          type: "text",
-          message: fallbackMessage
-        };
-
-        const fallbackResponse = await fetch('https://chat.zoko.io/v2/message', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': settings.zoko_api_key
-          },
-          body: JSON.stringify(fallbackPayload)
-        });
-
-        if (fallbackResponse.ok) {
-          const fallbackData = await fallbackResponse.json();
-          return new Response(
-            JSON.stringify({
-              success: true,
-              message: 'Message sent via fallback text (template not approved)',
-              data: fallbackData
-            }),
-            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-      }
-      
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: responseData.message || `HTTP ${zokoResponse.status}: ${zokoResponse.statusText}`
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const messageTypeLabel = messageType === 'payment_confirmation' ? 'payment confirmation' : 'invoice notification';
-    console.log(`WhatsApp ${messageTypeLabel} sent successfully:`, responseData);
-    
     return new Response(
       JSON.stringify({
-        success: true,
-        message: `WhatsApp ${messageTypeLabel} sent successfully`,
-        data: responseData
+        success: false,
+        error: errorData.message || `HTTP ${zokoResponse.status}: Failed to send message`
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
