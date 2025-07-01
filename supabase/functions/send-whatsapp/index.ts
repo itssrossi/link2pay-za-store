@@ -50,7 +50,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Check if this is a payment confirmation message
     if (messageType === 'payment_confirmation') {
-      // Payment confirmation message
+      // Payment confirmation message - use text for existing conversations
       messagePayload = {
         channel: "whatsapp",
         recipient: formattedPhone,
@@ -65,21 +65,46 @@ const handler = async (req: Request): Promise<Response> => {
         messageType: 'payment_confirmation'
       });
     } else {
-      // Regular invoice notification - use simpler format to avoid template restrictions
+      // Regular invoice notification - use template message for new customers
       const invoiceLink = `${req.headers.get('origin') || 'https://link2pay-za-store.lovable.app'}/invoice/${invoiceId}`;
       
       messagePayload = {
         channel: "whatsapp",
         recipient: formattedPhone,
-        type: "text",
-        message: `Hello ${clientName}! You have a new invoice for ${amount}. Please view and pay here: ${invoiceLink}. Thank you!`
+        type: "template",
+        template: {
+          name: "invoice_notification",
+          language: {
+            code: "en"
+          },
+          components: [
+            {
+              type: "body",
+              parameters: [
+                {
+                  type: "text",
+                  text: clientName
+                },
+                {
+                  type: "text", 
+                  text: amount
+                },
+                {
+                  type: "text",
+                  text: invoiceLink
+                }
+              ]
+            }
+          ]
+        }
       };
 
-      console.log('Sending WhatsApp invoice notification using platform credentials:', {
+      console.log('Sending WhatsApp invoice notification using template:', {
         phone: formattedPhone,
         clientName,
         amount,
-        invoiceId
+        invoiceId,
+        template: 'invoice_notification'
       });
     }
 
@@ -115,8 +140,10 @@ const handler = async (req: Request): Promise<Response> => {
       // Handle specific Zoko errors more gracefully
       let errorMessage = responseData.message || `HTTP ${zokoResponse.status}: ${zokoResponse.statusText}`;
       
-      if (responseData.message && responseData.message.includes('template message')) {
-        errorMessage = 'This appears to be a new customer. WhatsApp Business API requires approved template messages for first contact. Please contact the customer directly first, or use a different communication method.';
+      if (responseData.message && responseData.message.includes('template')) {
+        errorMessage = 'The WhatsApp template "invoice_notification" is not approved or found. Please ensure the template is set up in your WhatsApp Business account with parameters for customer name, amount, and payment link.';
+      } else if (responseData.message && responseData.message.includes('New customer')) {
+        errorMessage = 'This appears to be a new customer. The template message should resolve this, but it may not be properly configured.';
       }
       
       return new Response(
