@@ -35,6 +35,15 @@ const InvoiceStatusDropdown = ({
     setIsUpdating(true);
     
     try {
+      console.log('Updating invoice status:', {
+        invoiceId,
+        currentStatus,
+        newStatus,
+        clientPhone,
+        clientName,
+        invoiceNumber
+      });
+
       // Update invoice status
       const { error } = await supabase
         .from('invoices')
@@ -45,13 +54,15 @@ const InvoiceStatusDropdown = ({
 
       // Send WhatsApp confirmation if status changed to "paid"
       if (currentStatus !== 'paid' && newStatus === 'paid' && clientPhone) {
-        console.log('Sending payment confirmation WhatsApp for:', {
-          clientName,
-          invoiceNumber,
-          clientPhone
-        });
+        console.log('Invoice marked as paid, sending WhatsApp confirmation...');
         
-        await sendPaymentConfirmation(clientName, invoiceNumber, clientPhone);
+        try {
+          await sendPaymentConfirmation(clientName, invoiceNumber, clientPhone);
+        } catch (whatsappError) {
+          console.error('WhatsApp confirmation failed:', whatsappError);
+          // Don't fail the status update if WhatsApp fails
+          toast.error('Invoice updated but WhatsApp confirmation failed');
+        }
       }
 
       toast.success(`Invoice status updated to ${newStatus}`);
@@ -66,44 +77,35 @@ const InvoiceStatusDropdown = ({
   };
 
   const sendPaymentConfirmation = async (clientName: string, invoiceNumber: string, phone: string) => {
-    try {
-      console.log('Calling WhatsApp edge function with:', {
-        phone,
-        clientName,
+    console.log('Calling WhatsApp edge function for payment confirmation:', {
+      phone,
+      clientName,
+      invoiceNumber,
+      messageType: 'payment_confirmation'
+    });
+
+    const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+      body: {
+        phone: phone,
+        clientName: clientName,
         amount: 'PAID',
         invoiceId: invoiceNumber,
         messageType: 'payment_confirmation'
-      });
-
-      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
-        body: {
-          phone: phone,
-          clientName: clientName,
-          amount: 'PAID',
-          invoiceId: invoiceNumber,
-          messageType: 'payment_confirmation'
-        }
-      });
-
-      if (error) {
-        console.error('WhatsApp confirmation error:', error);
-        toast.error('Status updated but WhatsApp confirmation failed');
-        return;
       }
+    });
 
-      if (!data?.success) {
-        console.error('WhatsApp send failed:', data?.error);
-        toast.error(`Status updated but WhatsApp failed: ${data?.error || 'Unknown error'}`);
-        return;
-      }
-
-      console.log('WhatsApp payment confirmation sent successfully');
-      toast.success('Payment confirmation sent via WhatsApp! 🎉');
-      
-    } catch (error) {
-      console.error('Error sending WhatsApp confirmation:', error);
-      toast.error('Status updated but WhatsApp confirmation failed');
+    if (error) {
+      console.error('Edge function error:', error);
+      throw new Error(`WhatsApp function error: ${error.message}`);
     }
+
+    if (!data?.success) {
+      console.error('WhatsApp send failed:', data?.error);
+      throw new Error(`WhatsApp send failed: ${data?.error || 'Unknown error'}`);
+    }
+
+    console.log('WhatsApp payment confirmation sent successfully:', data);
+    toast.success('Payment confirmation sent via WhatsApp! 🎉');
   };
 
   return (
