@@ -88,12 +88,13 @@ const handler = async (req: Request): Promise<Response> => {
         invoiceUrl: finalInvoiceUrl
       });
 
+      // Add space after URL to prevent template from corrupting the link
       messagePayload = {
         channel: "whatsapp",
         recipient: formattedPhone,
         type: "template",
         templateId: "invoice_notification",
-        templateArgs: [clientName, finalInvoiceUrl, amount]
+        templateArgs: [clientName, finalInvoiceUrl + " ", amount]
       };
 
       console.log('Using invoice_notification template with payload:', messagePayload);
