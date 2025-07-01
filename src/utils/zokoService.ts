@@ -52,11 +52,11 @@ export class ZokoService {
         };
       }
 
-      if (!data.success) {
-        console.error('WhatsApp send failed:', data.error);
+      if (!data?.success) {
+        console.error('WhatsApp send failed:', data?.error);
         return {
           success: false,
-          error: data.error || 'Failed to send WhatsApp message'
+          error: data?.error || 'Failed to send WhatsApp message'
         };
       }
 
@@ -68,6 +68,66 @@ export class ZokoService {
 
     } catch (error) {
       console.error('Error sending WhatsApp message:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+    }
+  }
+
+  static async sendPaymentConfirmation(
+    clientPhone: string,
+    clientName: string,
+    invoiceNumber: string
+  ): Promise<ZokoApiResponse> {
+    try {
+      // Validate phone number format (E.164)
+      const phoneRegex = /^\+[1-9]\d{1,14}$/;
+      if (!phoneRegex.test(clientPhone)) {
+        throw new Error('Invalid phone number format. Please use E.164 format (e.g., +27821234567)');
+      }
+
+      console.log('Sending payment confirmation via Edge Function:', {
+        phone: clientPhone,
+        clientName,
+        invoiceNumber
+      });
+
+      // Call the Edge Function for payment confirmation
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: {
+          phone: clientPhone,
+          clientName: clientName,
+          amount: 'PAID',
+          invoiceId: invoiceNumber,
+          messageType: 'payment_confirmation'
+        }
+      });
+
+      if (error) {
+        console.error('Edge Function error:', error);
+        return {
+          success: false,
+          error: error.message || 'Failed to send payment confirmation'
+        };
+      }
+
+      if (!data?.success) {
+        console.error('Payment confirmation send failed:', data?.error);
+        return {
+          success: false,
+          error: data?.error || 'Failed to send payment confirmation'
+        };
+      }
+
+      console.log('Payment confirmation sent successfully');
+      return {
+        success: true,
+        message: 'Payment confirmation sent successfully'
+      };
+
+    } catch (error) {
+      console.error('Error sending payment confirmation:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'

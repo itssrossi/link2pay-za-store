@@ -45,6 +45,12 @@ const InvoiceStatusDropdown = ({
 
       // Send WhatsApp confirmation if status changed to "paid"
       if (currentStatus !== 'paid' && newStatus === 'paid' && clientPhone) {
+        console.log('Sending payment confirmation WhatsApp for:', {
+          clientName,
+          invoiceNumber,
+          clientPhone
+        });
+        
         await sendPaymentConfirmation(clientName, invoiceNumber, clientPhone);
       }
 
@@ -61,7 +67,15 @@ const InvoiceStatusDropdown = ({
 
   const sendPaymentConfirmation = async (clientName: string, invoiceNumber: string, phone: string) => {
     try {
-      const response = await supabase.functions.invoke('send-whatsapp', {
+      console.log('Calling WhatsApp edge function with:', {
+        phone,
+        clientName,
+        amount: 'PAID',
+        invoiceId: invoiceNumber,
+        messageType: 'payment_confirmation'
+      });
+
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
           phone: phone,
           clientName: clientName,
@@ -71,14 +85,24 @@ const InvoiceStatusDropdown = ({
         }
       });
 
-      if (response.error) {
-        console.error('WhatsApp confirmation error:', response.error);
+      if (error) {
+        console.error('WhatsApp confirmation error:', error);
         toast.error('Status updated but WhatsApp confirmation failed');
-      } else {
-        toast.success('Payment confirmation sent via WhatsApp!');
+        return;
       }
+
+      if (!data?.success) {
+        console.error('WhatsApp send failed:', data?.error);
+        toast.error(`Status updated but WhatsApp failed: ${data?.error || 'Unknown error'}`);
+        return;
+      }
+
+      console.log('WhatsApp payment confirmation sent successfully');
+      toast.success('Payment confirmation sent via WhatsApp! 🎉');
+      
     } catch (error) {
       console.error('Error sending WhatsApp confirmation:', error);
+      toast.error('Status updated but WhatsApp confirmation failed');
     }
   };
 

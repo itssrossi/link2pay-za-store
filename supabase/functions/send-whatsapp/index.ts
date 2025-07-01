@@ -24,6 +24,14 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { phone, clientName, amount, invoiceId, messageType }: WhatsAppRequest = await req.json();
 
+    console.log('WhatsApp request received:', {
+      phone,
+      clientName,
+      amount,
+      invoiceId,
+      messageType: messageType || 'invoice_notification'
+    });
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -50,12 +58,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Check if this is a payment confirmation message
     if (messageType === 'payment_confirmation') {
-      // Payment confirmation message
+      // Payment confirmation message - use simple text message
       messagePayload = {
         channel: "whatsapp",
         recipient: formattedPhone,
         type: "text",
-        message: `Hi ${clientName}, thank you for your payment! Your invoice #${invoiceId} is now marked as **paid**. We appreciate your business. 🙏`
+        message: `🎉 Hi ${clientName}!\n\nThank you for your payment! Your invoice #${invoiceId} has been marked as PAID.\n\nWe appreciate your business! 🙏`
       };
 
       console.log('Sending WhatsApp payment confirmation:', {
@@ -65,20 +73,15 @@ const handler = async (req: Request): Promise<Response> => {
         messageType: 'payment_confirmation'
       });
     } else {
-      // Regular invoice notification
+      // Regular invoice notification - use template if available, fallback to text
       const invoiceLink = `${req.headers.get('origin') || 'https://link2pay-za-store.lovable.app'}/invoice/${invoiceId}`;
       
+      // Try template first
       messagePayload = {
         channel: "whatsapp",
         recipient: formattedPhone,
-        type: "template",
-        templateId: "invoice_notification",
-        templateArgs: [
-          clientName,
-          amount,
-          invoiceLink
-        ],
-        templateLanguage: "en"
+        type: "text",
+        message: `Hi ${clientName}!\n\nYou have a new invoice for R${amount}.\n\nView and pay your invoice here: ${invoiceLink}\n\nThank you! 🙏`
       };
 
       console.log('Sending WhatsApp invoice notification:', {
@@ -86,7 +89,7 @@ const handler = async (req: Request): Promise<Response> => {
         clientName,
         amount,
         invoiceId,
-        templateId: 'invoice_notification'
+        invoiceLink
       });
     }
 
@@ -133,7 +136,8 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `WhatsApp ${messageTypeLabel} sent successfully`
+        message: `WhatsApp ${messageTypeLabel} sent successfully`,
+        data: responseData
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
