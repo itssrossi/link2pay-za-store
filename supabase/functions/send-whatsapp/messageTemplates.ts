@@ -10,7 +10,7 @@ export function createPaymentConfirmationPayload(
     channel: "whatsapp",
     recipient: formattedPhone,
     type: "template",
-    templateId: "invoice_paid",
+    templateId: "b1134df2-b45d-42c2-a3b2-1c88c736efcb",
     templateArgs: [clientName, invoiceId]
   };
 }
@@ -21,13 +21,12 @@ export function createInvoiceNotificationPayload(
   finalInvoiceUrl: string,
   amount: string
 ): MessagePayload {
-  // Add space after URL to prevent template from corrupting the link
   return {
     channel: "whatsapp",
     recipient: formattedPhone,
     type: "template",
-    templateId: "invoice_notification",
-    templateArgs: [clientName, finalInvoiceUrl + " ", amount]
+    templateId: "baf7308f-237c-4c93-8926-633e3d82636b",
+    templateArgs: [clientName, finalInvoiceUrl, amount]
   };
 }
 

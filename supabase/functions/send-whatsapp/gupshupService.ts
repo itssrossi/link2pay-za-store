@@ -15,8 +15,10 @@ export async function sendGupshupMessage(
   };
   
   const formData = new URLSearchParams();
+  formData.append('channel', 'whatsapp');
   formData.append('source', settings.gupshup_source_phone);
   formData.append('destination', messagePayload.recipient);
+  formData.append('src.name', 'Link2pay');
   formData.append('template', JSON.stringify(template));
   
   const gupshupResponse = await fetch('https://api.gupshup.io/wa/api/v1/template/msg', {
