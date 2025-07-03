@@ -111,7 +111,7 @@ export class PayFastService {
     // Create final URL data WITH merchant_key (PayFast requires it)
     const finalUrlData = {
       ...paymentData,
-      signature
+      //signature
     };
 
     console.log('PayFast: Final URL data:', finalUrlData);
