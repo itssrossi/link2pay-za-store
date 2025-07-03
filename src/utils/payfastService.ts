@@ -31,22 +31,26 @@ export class PayFastService {
   }
 
   private static generateSignature(data: Record<string, string>, passphrase?: string): string {
-    // Sort parameters alphabetically
-    const sortedData = Object.keys(data)
-      .sort()
-      .reduce((result, key) => {
-        result[key] = data[key];
-        return result;
-      }, {} as Record<string, string>);
+    // Remove empty values and sort parameters alphabetically
+    const filteredData: Record<string, string> = {};
+    Object.keys(data).forEach(key => {
+      const value = data[key];
+      if (value !== undefined && value !== null && value.toString().trim() !== '') {
+        filteredData[key] = value.toString().trim();
+      }
+    });
 
-    // Create query string
-    const queryString = Object.entries(sortedData)
-      .map(([key, value]) => `${key}=${encodeURIComponent(value.trim())}`)
+    // Sort parameters alphabetically by key
+    const sortedKeys = Object.keys(filteredData).sort();
+    
+    // Create query string without URL encoding (PayFast expects raw values for signature)
+    const queryString = sortedKeys
+      .map(key => `${key}=${filteredData[key]}`)
       .join('&');
 
     // Add passphrase if provided
-    const finalString = passphrase 
-      ? `${queryString}&passphrase=${encodeURIComponent(passphrase.trim())}`
+    const finalString = passphrase && passphrase.trim() 
+      ? `${queryString}&passphrase=${passphrase.trim()}`
       : queryString;
 
     // Generate MD5 hash
@@ -59,9 +63,10 @@ export class PayFastService {
   ): string {
     const { return_url, cancel_url, notify_url } = this.getReturnUrls(invoiceData.invoice_id);
     
-    const paymentData = {
-      merchant_id: credentials.merchant_id,
-      merchant_key: credentials.merchant_key,
+    // Prepare payment data (without signature first)
+    const paymentData: Record<string, string> = {
+      merchant_id: credentials.merchant_id.trim(),
+      merchant_key: credentials.merchant_key.trim(),
       amount: invoiceData.amount.toFixed(2),
       item_name: `Invoice #${invoiceData.invoice_number}`,
       return_url,
@@ -69,16 +74,16 @@ export class PayFastService {
       notify_url
     };
 
-    // Generate signature
+    // Generate signature using the payment data
     const signature = this.generateSignature(paymentData, credentials.passphrase);
     
-    // Add signature to data
+    // Add signature to the final data for URL construction
     const finalData = {
       ...paymentData,
       signature
     };
 
-    // Build final URL
+    // Build final URL with proper encoding
     const baseUrl = this.getBaseUrl(credentials.mode);
     const queryString = Object.entries(finalData)
       .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
