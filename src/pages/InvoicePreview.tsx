@@ -101,16 +101,24 @@ const InvoicePreview = () => {
 
       // Load PayFast credentials for automated payment links
       if (profileData?.payfast_merchant_id && profileData?.payfast_merchant_key) {
-        setPayfastCredentials({
+        const credentials = {
           merchant_id: profileData.payfast_merchant_id,
           merchant_key: profileData.payfast_merchant_key,
           passphrase: profileData.payfast_passphrase || '',
           mode: (profileData.payfast_mode as 'sandbox' | 'live') || 'sandbox'
+        };
+        
+        console.log('PayFast: Loaded credentials from profile:', { 
+          merchant_id: credentials.merchant_id, 
+          mode: credentials.mode 
         });
+        
+        setPayfastCredentials(credentials);
       }
 
     } catch (error) {
       console.error('Error fetching invoice data:', error);
+      toast.error('Failed to load invoice data');
     } finally {
       setLoading(false);
     }
@@ -136,24 +144,39 @@ const InvoicePreview = () => {
       // Try automated PayFast first, then fall back to manual link
       if (payfastCredentials.merchant_id && payfastCredentials.merchant_key) {
         try {
+          console.log('PayFast: Attempting to generate payment link...');
+          
+          // Validate credentials first
+          const validation = PayFastService.validateCredentials(payfastCredentials);
+          if (!validation.isValid) {
+            console.error('PayFast: Invalid credentials:', validation.errors);
+            validation.errors.forEach(error => toast.error(error));
+            return;
+          }
+
           const paymentLink = PayFastService.generatePaymentLink(
             payfastCredentials as PayFastCredentials,
             {
               amount: invoice.total_amount,
               invoice_number: invoice.invoice_number,
               client_name: invoice.client_name,
+              client_email: invoice.client_email || undefined,
               invoice_id: invoice.id
             }
           );
+          
+          console.log('PayFast: Generated payment link successfully');
           window.open(paymentLink, '_blank');
+          toast.success('PayFast payment link opened in new tab');
         } catch (error) {
-          console.error('Error generating PayFast link:', error);
-          toast.error('Failed to generate PayFast payment link');
+          console.error('PayFast: Error generating payment link:', error);
+          toast.error('Failed to generate PayFast payment link. Please check your credentials.');
         }
       } else if (profile.payfast_link) {
+        console.log('PayFast: Using manual link fallback');
         window.open(profile.payfast_link, '_blank');
       } else {
-        toast.error('PayFast payment not configured');
+        toast.error('PayFast payment not configured. Please contact the business owner.');
       }
     }
   };
@@ -376,46 +399,43 @@ const InvoicePreview = () => {
                   </div>
                 ) : (
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    {invoice.show_snapscan && (
-                      <>
-                        {profile?.snapscan_link ? (
-                          <Button
-                            size="lg"
-                            onClick={() => handlePayment('snapscan')}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
-                          >
-                            <CreditCard className="w-4 h-4 mr-2" />
-                            Pay Now with SnapScan
-                          </Button>
-                        ) : (
-                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
-                            <p className="text-orange-700 text-sm">
-                              ⚠️ SnapScan payment link missing. Please contact the business to update their payment information.
-                            </p>
-                          </div>
-                        )}
-                      </>
+                    {invoice.show_snapscan && profile?.snapscan_link && (
+                      <Button
+                        size="lg"
+                        onClick={() => handlePayment('snapscan')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
+                      >
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Pay Now with SnapScan
+                      </Button>
                     )}
 
-                    {invoice.show_payfast && (
-                      <>
-                        {(payfastCredentials.merchant_id || profile?.payfast_link) ? (
-                          <Button
-                            size="lg"
-                            onClick={() => handlePayment('payfast')}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
-                          >
-                            <CreditCard className="w-4 h-4 mr-2" />
-                            Pay Now with PayFast
-                          </Button>
-                        ) : (
-                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
-                            <p className="text-orange-700 text-sm">
-                              ⚠️ PayFast payment not configured. Please contact the business to update their payment information.
-                            </p>
-                          </div>
-                        )}
-                      </>
+                    {invoice.show_payfast && (payfastCredentials.merchant_id || profile?.payfast_link) && (
+                      <Button
+                        size="lg"
+                        onClick={() => handlePayment('payfast')}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
+                      >
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Pay Now with PayFast
+                      </Button>
+                    )}
+
+                    {/* Show configuration warnings */}
+                    {invoice.show_snapscan && !profile?.snapscan_link && (
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+                        <p className="text-orange-700 text-sm">
+                          ⚠️ SnapScan payment link missing. Please contact the business to update their payment information.
+                        </p>
+                      </div>
+                    )}
+
+                    {invoice.show_payfast && !payfastCredentials.merchant_id && !profile?.payfast_link && (
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+                        <p className="text-orange-700 text-sm">
+                          ⚠️ PayFast payment not configured. Please contact the business to update their payment information.
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}

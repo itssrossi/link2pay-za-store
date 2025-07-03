@@ -25,8 +25,14 @@ const PayFastCredentialsTab = ({
   const [testLoading, setTestLoading] = useState(false);
 
   const handleTestPayment = () => {
+    console.log('PayFast: Testing payment with credentials:', { 
+      merchant_id: credentials.merchant_id, 
+      mode: credentials.mode 
+    });
+    
     const validation = PayFastService.validateCredentials(credentials);
     if (!validation.isValid) {
+      console.error('PayFast: Validation failed:', validation.errors);
       validation.errors.forEach(error => toast.error(error));
       return;
     }
@@ -34,10 +40,11 @@ const PayFastCredentialsTab = ({
     setTestLoading(true);
     try {
       const testLink = PayFastService.generateTestLink(credentials as PayFastCredentials);
+      console.log('PayFast: Generated test link:', testLink);
       window.open(testLink, '_blank');
       toast.success('Test payment link opened in new tab');
     } catch (error) {
-      console.error('Error generating test link:', error);
+      console.error('PayFast: Error generating test link:', error);
       toast.error('Failed to generate test payment link');
     } finally {
       setTestLoading(false);
@@ -91,7 +98,7 @@ const PayFastCredentialsTab = ({
                 placeholder="10000100"
               />
               <p className="text-xs text-gray-500">
-                Found in your PayFast dashboard under Integration
+                Found in your PayFast dashboard under Integration (must be numeric)
               </p>
             </div>
             
@@ -162,6 +169,18 @@ const PayFastCredentialsTab = ({
         </div>
 
         <Separator />
+
+        {/* Debug Info */}
+        {credentials.merchant_id && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Debug Information</h4>
+            <div className="space-y-1 text-xs text-gray-600">
+              <p>Merchant ID: {credentials.merchant_id}</p>
+              <p>Mode: {credentials.mode || 'sandbox'}</p>
+              <p>Has Passphrase: {credentials.passphrase ? 'Yes' : 'No'}</p>
+            </div>
+          </div>
+        )}
 
         {/* Test & Save Actions */}
         <div className="flex flex-col sm:flex-row gap-3">

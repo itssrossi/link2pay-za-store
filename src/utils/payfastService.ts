@@ -1,3 +1,4 @@
+
 import CryptoJS from 'crypto-js';
 
 export interface PayFastCredentials {
@@ -11,6 +12,7 @@ export interface PayFastInvoiceData {
   amount: number;
   invoice_number: string;
   client_name: string;
+  client_email?: string;
   invoice_id: string;
 }
 
@@ -24,13 +26,15 @@ export class PayFastService {
   private static getReturnUrls(invoiceId: string) {
     const baseUrl = window.location.origin;
     return {
-      return_url: `${baseUrl}/invoice/${invoiceId}?payment=success`,
-      cancel_url: `${baseUrl}/invoice/${invoiceId}?payment=cancelled`,
-      notify_url: `${baseUrl}/api/payfast/notify/${invoiceId}`
+      return_url: `${baseUrl}/invoice/${invoiceId}?status=success`,
+      cancel_url: `${baseUrl}/invoice/${invoiceId}?status=cancelled`,
+      notify_url: `${baseUrl}/api/payfast/notify`
     };
   }
 
   private static generateSignature(data: Record<string, string>, passphrase?: string): string {
+    console.log('PayFast: Generating signature for data:', data);
+    
     // Remove empty values and sort parameters alphabetically
     const filteredData: Record<string, string> = {};
     Object.keys(data).forEach(key => {
@@ -40,6 +44,8 @@ export class PayFastService {
       }
     });
 
+    console.log('PayFast: Filtered data for signature:', filteredData);
+
     // Sort parameters alphabetically by key
     const sortedKeys = Object.keys(filteredData).sort();
     
@@ -48,31 +54,55 @@ export class PayFastService {
       .map(key => `${key}=${filteredData[key]}`)
       .join('&');
 
+    console.log('PayFast: Query string for signature:', queryString);
+
     // Add passphrase if provided
     const finalString = passphrase && passphrase.trim() 
       ? `${queryString}&passphrase=${passphrase.trim()}`
       : queryString;
 
+    console.log('PayFast: Final string for signature:', finalString);
+
     // Generate MD5 hash
-    return CryptoJS.MD5(finalString).toString();
+    const signature = CryptoJS.MD5(finalString).toString();
+    console.log('PayFast: Generated signature:', signature);
+    
+    return signature;
   }
 
   public static generatePaymentLink(
     credentials: PayFastCredentials,
     invoiceData: PayFastInvoiceData
   ): string {
+    console.log('PayFast: Generating payment link with credentials:', { 
+      merchant_id: credentials.merchant_id, 
+      mode: credentials.mode 
+    });
+    console.log('PayFast: Invoice data:', invoiceData);
+
     const { return_url, cancel_url, notify_url } = this.getReturnUrls(invoiceData.invoice_id);
     
-    // Prepare payment data (without signature first)
+    // Split client name into first and last name
+    const nameParts = invoiceData.client_name.trim().split(' ');
+    const firstName = nameParts[0] || 'Customer';
+    const lastName = nameParts.slice(1).join(' ') || 'Customer';
+    
+    // Prepare payment data with all required PayFast fields
     const paymentData: Record<string, string> = {
       merchant_id: credentials.merchant_id.trim(),
       merchant_key: credentials.merchant_key.trim(),
       amount: invoiceData.amount.toFixed(2),
       item_name: `Invoice #${invoiceData.invoice_number}`,
+      item_description: `Payment for Invoice #${invoiceData.invoice_number}`,
+      name_first: firstName,
+      name_last: lastName,
+      email_address: invoiceData.client_email || 'noreply@example.com',
       return_url,
       cancel_url,
       notify_url
     };
+
+    console.log('PayFast: Payment data before signature:', paymentData);
 
     // Generate signature using the payment data
     const signature = this.generateSignature(paymentData, credentials.passphrase);
@@ -83,13 +113,18 @@ export class PayFastService {
       signature
     };
 
+    console.log('PayFast: Final data with signature:', finalData);
+
     // Build final URL with proper encoding
     const baseUrl = this.getBaseUrl(credentials.mode);
     const queryString = Object.entries(finalData)
       .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
       .join('&');
 
-    return `${baseUrl}?${queryString}`;
+    const finalUrl = `${baseUrl}?${queryString}`;
+    console.log('PayFast: Generated payment URL:', finalUrl);
+
+    return finalUrl;
   }
 
   public static validateCredentials(credentials: Partial<PayFastCredentials>): {
@@ -110,6 +145,11 @@ export class PayFastService {
       errors.push('Mode must be either sandbox or live');
     }
 
+    // Validate merchant ID format (should be numeric for PayFast)
+    if (credentials.merchant_id && !/^\d+$/.test(credentials.merchant_id.trim())) {
+      errors.push('Merchant ID should be numeric');
+    }
+
     return {
       isValid: errors.length === 0,
       errors
@@ -120,7 +160,8 @@ export class PayFastService {
     const testData: PayFastInvoiceData = {
       amount: 100.00,
       invoice_number: 'TEST-001',
-      client_name: 'Test Client',
+      client_name: 'Test Customer',
+      client_email: 'test@example.com',
       invoice_id: 'test-invoice-id'
     };
 
