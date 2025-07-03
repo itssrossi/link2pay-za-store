@@ -17,6 +17,7 @@ export interface MessagePayload {
   message?: string;
 }
 
-export interface ZokoSettings {
-  zoko_api_key: string;
+export interface GupshupSettings {
+  gupshup_api_key: string;
+  gupshup_source_phone: string;
 }

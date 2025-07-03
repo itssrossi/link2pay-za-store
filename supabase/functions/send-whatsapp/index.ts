@@ -10,10 +10,10 @@ import {
   createFallbackTextPayload
 } from './messageTemplates.ts';
 import {
-  sendZokoMessage,
-  handleZokoResponse,
+  sendGupshupMessage,
+  handleGupshupResponse,
   sendFallbackMessage
-} from './zokoService.ts';
+} from './gupshupService.ts';
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -41,18 +41,18 @@ const handler = async (req: Request): Promise<Response> => {
     // Get platform settings
     const { data: settings, error: settingsError } = await supabase
       .from('platform_settings')
-      .select('zoko_api_key')
+      .select('gupshup_api_key, gupshup_source_phone')
       .single();
 
-    if (settingsError || !settings?.zoko_api_key) {
-      console.error('Error fetching Zoko settings:', settingsError);
+    if (settingsError || !settings?.gupshup_api_key) {
+      console.error('Error fetching Gupshup settings:', settingsError);
       return new Response(
-        JSON.stringify({ success: false, error: 'Zoko API not configured' }),
+        JSON.stringify({ success: false, error: 'Gupshup API not configured' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Format phone number for Zoko
+    // Format phone number for Gupshup
     const formattedPhone = formatPhoneNumber(phone);
     
     let messagePayload;
@@ -82,16 +82,16 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('Using invoice_notification template with payload:', messagePayload);
     }
 
-    // Send message via Zoko
-    const zokoResponse = await sendZokoMessage(messagePayload, settings);
+    // Send message via Gupshup
+    const gupshupResponse = await sendGupshupMessage(messagePayload, settings);
     
     // Handle successful response
-    if (zokoResponse.ok) {
-      return await handleZokoResponse(zokoResponse, messageType || 'invoice_notification');
+    if (gupshupResponse.ok) {
+      return await handleGupshupResponse(gupshupResponse, messageType || 'invoice_notification');
     }
 
     // Handle failed response - try fallback if template error
-    const responseText = await zokoResponse.text();
+    const responseText = await gupshupResponse.text();
     const isTemplateError = responseText.includes('template') || responseText.includes('Template');
     
     if (isTemplateError) {
@@ -120,7 +120,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: errorData.message || `HTTP ${zokoResponse.status}: Failed to send message`
+        error: errorData.message || `HTTP ${gupshupResponse.status}: Failed to send message`
       }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
