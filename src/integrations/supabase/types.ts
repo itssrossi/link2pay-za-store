@@ -266,6 +266,10 @@ export type Database = {
           logo_url: string | null
           onboarding_completed: boolean | null
           payfast_link: string | null
+          payfast_merchant_id: string | null
+          payfast_merchant_key: string | null
+          payfast_mode: string | null
+          payfast_passphrase: string | null
           payment_method: string | null
           primary_color: string | null
           snapscan_link: string | null
@@ -300,6 +304,10 @@ export type Database = {
           logo_url?: string | null
           onboarding_completed?: boolean | null
           payfast_link?: string | null
+          payfast_merchant_id?: string | null
+          payfast_merchant_key?: string | null
+          payfast_mode?: string | null
+          payfast_passphrase?: string | null
           payment_method?: string | null
           primary_color?: string | null
           snapscan_link?: string | null
@@ -334,6 +342,10 @@ export type Database = {
           logo_url?: string | null
           onboarding_completed?: boolean | null
           payfast_link?: string | null
+          payfast_merchant_id?: string | null
+          payfast_merchant_key?: string | null
+          payfast_mode?: string | null
+          payfast_passphrase?: string | null
           payment_method?: string | null
           primary_color?: string | null
           snapscan_link?: string | null

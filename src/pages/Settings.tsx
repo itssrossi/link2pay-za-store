@@ -8,8 +8,10 @@ import { toast } from 'sonner';
 import BusinessProfileTab from '@/components/settings/BusinessProfileTab';
 import StoreDesignTab from '@/components/settings/StoreDesignTab';
 import PaymentSettingsTab from '@/components/settings/PaymentSettingsTab';
+import PayFastCredentialsTab from '@/components/settings/PayFastCredentialsTab';
 import WhatsAppAutomationTab from '@/components/settings/WhatsAppAutomationTab';
 import StorefrontCustomizationTab from '@/components/settings/StorefrontCustomizationTab';
+import { PayFastCredentials } from '@/utils/payfastService';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Profile {
@@ -86,6 +88,15 @@ const Settings = () => {
     gupshup_source_phone: ''
   });
 
+  const [payfastCredentials, setPayfastCredentials] = useState<Partial<PayFastCredentials>>({
+    merchant_id: '',
+    merchant_key: '',
+    passphrase: '',
+    mode: 'sandbox'
+  });
+
+  const [payfastLoading, setPayfastLoading] = useState(false);
+
   useEffect(() => {
     if (user) {
       fetchSettings();
@@ -129,6 +140,14 @@ const Settings = () => {
           default_currency: profileData.default_currency || 'ZAR',
           store_location: profileData.store_location || '',
           delivery_note: profileData.delivery_note || ''
+        });
+
+        // Load PayFast credentials
+        setPayfastCredentials({
+          merchant_id: profileData.payfast_merchant_id || '',
+          merchant_key: profileData.payfast_merchant_key || '',
+          passphrase: profileData.payfast_passphrase || '',
+          mode: (profileData.payfast_mode as 'sandbox' | 'live') || 'sandbox'
         });
       }
     } catch (error) {
@@ -188,6 +207,32 @@ const Settings = () => {
     }
   };
 
+  const savePayfastCredentials = async () => {
+    if (!user) return;
+    setPayfastLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          payfast_merchant_id: payfastCredentials.merchant_id,
+          payfast_merchant_key: payfastCredentials.merchant_key,
+          payfast_passphrase: payfastCredentials.passphrase,
+          payfast_mode: payfastCredentials.mode,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+      toast.success('PayFast credentials saved successfully!');
+    } catch (error) {
+      console.error('Error saving PayFast credentials:', error);
+      toast.error('Failed to save PayFast credentials');
+    } finally {
+      setPayfastLoading(false);
+    }
+  };
+
   const savePlatformSettings = async () => {
     setWhatsappLoading(true);
 
@@ -226,6 +271,7 @@ const Settings = () => {
     { value: 'customize', label: isMobile ? 'Store' : 'Customize Store' },
     { value: 'design', label: 'Design' },
     { value: 'payments', label: 'Payments' },
+    { value: 'payfast', label: 'PayFast' },
     { value: 'whatsapp', label: 'WhatsApp' }
   ];
 
@@ -297,6 +343,15 @@ const Settings = () => {
               />
             )}
 
+            {activeTab === 'payfast' && (
+              <PayFastCredentialsTab
+                credentials={payfastCredentials}
+                setCredentials={setPayfastCredentials}
+                onSave={savePayfastCredentials}
+                loading={payfastLoading}
+              />
+            )}
+
             {activeTab === 'whatsapp' && (
               <WhatsAppAutomationTab
                 platformSettings={platformSettings}
@@ -322,7 +377,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-6 h-auto">
             <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
               Business Profile
             </TabsTrigger>
@@ -334,6 +389,9 @@ const Settings = () => {
             </TabsTrigger>
             <TabsTrigger value="payments" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
               Payment Settings
+            </TabsTrigger>
+            <TabsTrigger value="payfast" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+              PayFast Integration
             </TabsTrigger>
             <TabsTrigger value="whatsapp" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
               WhatsApp Automation
@@ -373,6 +431,15 @@ const Settings = () => {
               setProfile={(updatedProfile) => setProfile(updatedProfile)}
               onSave={saveProfile}
               loading={loading}
+            />
+          </TabsContent>
+
+          <TabsContent value="payfast" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+            <PayFastCredentialsTab
+              credentials={payfastCredentials}
+              setCredentials={setPayfastCredentials}
+              onSave={savePayfastCredentials}
+              loading={payfastLoading}
             />
           </TabsContent>
 

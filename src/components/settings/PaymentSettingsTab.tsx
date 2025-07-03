@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ExternalLink, TestTube } from 'lucide-react';
+import { ExternalLink, TestTube, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Profile {
@@ -92,7 +92,23 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
             </div>
             
             <div className="space-y-3">
-              <Label htmlFor="payfast_link">PayFast Payment Link</Label>
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-orange-900">
+                      PayFast Integration Available
+                    </p>
+                    <p className="text-sm text-orange-700">
+                      Instead of manually pasting PayFast links, you can now configure your PayFast credentials 
+                      once in the <strong>PayFast Integration</strong> tab. The platform will automatically generate 
+                      secure payment links for each invoice.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <Label htmlFor="payfast_link">Manual PayFast Payment Link (Legacy)</Label>
               <Input
                 id="payfast_link"
                 value={profile.payfast_link}
@@ -100,7 +116,7 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
                 placeholder="https://www.payfast.co.za/eng/process?..."
               />
               <p className="text-xs text-gray-500">
-                Paste your PayFast link here to enable "Pay Now with PayFast" buttons on your invoices.
+                This field is for manual PayFast links. Consider using the automated PayFast Integration instead.
               </p>
               {profile.payfast_link && (
                 <Button 
