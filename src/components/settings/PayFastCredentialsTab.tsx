@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { ExternalLink, TestTube, Shield, Info } from 'lucide-react';
+import { ExternalLink, TestTube, Shield, Info, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { PayFastService, type PayFastCredentials } from '@/utils/payfastService';
 
@@ -23,16 +24,20 @@ const PayFastCredentialsTab = ({
   loading 
 }: PayFastCredentialsTabProps) => {
   const [testLoading, setTestLoading] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
 
-  const handleTestPayment = () => {
+  const handleTestPayment = async () => {
     console.log('PayFast: Testing payment with credentials:', { 
       merchant_id: credentials.merchant_id, 
       mode: credentials.mode 
     });
     
+    setTestError(null);
     const validation = PayFastService.validateCredentials(credentials);
+    
     if (!validation.isValid) {
       console.error('PayFast: Validation failed:', validation.errors);
+      setTestError(validation.errors.join(', '));
       validation.errors.forEach(error => toast.error(error));
       return;
     }
@@ -41,11 +46,23 @@ const PayFastCredentialsTab = ({
     try {
       const testLink = PayFastService.generateTestLink(credentials as PayFastCredentials);
       console.log('PayFast: Generated test link:', testLink);
+      
+      // Test the link by making a HEAD request to check if it's accessible
+      try {
+        const response = await fetch(testLink, { method: 'HEAD', mode: 'no-cors' });
+        console.log('PayFast: Test link response status:', response.status);
+      } catch (error) {
+        console.log('PayFast: Test link CORS blocked (expected), opening link');
+      }
+      
       window.open(testLink, '_blank');
       toast.success('Test payment link opened in new tab');
+      setTestError(null);
     } catch (error) {
       console.error('PayFast: Error generating test link:', error);
-      toast.error('Failed to generate test payment link');
+      const errorMessage = 'Failed to generate test payment link';
+      setTestError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setTestLoading(false);
     }
@@ -53,6 +70,10 @@ const PayFastCredentialsTab = ({
 
   const updateCredentials = (field: keyof PayFastCredentials, value: string) => {
     setCredentials({ ...credentials, [field]: value });
+    // Clear error when user starts typing
+    if (testError) {
+      setTestError(null);
+    }
   };
 
   return (
@@ -83,6 +104,23 @@ const PayFastCredentialsTab = ({
             </div>
           </div>
         </div>
+
+        {/* Error Alert */}
+        {testError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-red-900">
+                  Configuration Error
+                </p>
+                <p className="text-sm text-red-700">
+                  {testError}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Credentials Form */}
         <div className="space-y-4">
@@ -178,6 +216,7 @@ const PayFastCredentialsTab = ({
               <p>Merchant ID: {credentials.merchant_id}</p>
               <p>Mode: {credentials.mode || 'sandbox'}</p>
               <p>Has Passphrase: {credentials.passphrase ? 'Yes' : 'No'}</p>
+              <p>Notify URL: {window.location.origin.replace('lovableproject.com', 'supabase.co')}/functions/v1/payfast-notify</p>
             </div>
           </div>
         )}
