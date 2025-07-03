@@ -8,9 +8,8 @@ import { Separator } from '@/components/ui/separator';
 interface PlatformSettings {
   whatsapp_api_token: string;
   whatsapp_phone_id: string;
-  zoko_api_key: string;
-  zoko_business_phone: string;
-  zoko_base_url: string;
+  gupshup_api_key: string;
+  gupshup_source_phone: string;
 }
 
 interface WhatsAppAutomationTabProps {
@@ -23,51 +22,51 @@ interface WhatsAppAutomationTabProps {
 const WhatsAppAutomationTab = ({ platformSettings, setPlatformSettings, onSave, loading }: WhatsAppAutomationTabProps) => {
   return (
     <div className="space-y-6">
-      {/* Zoko.io Integration */}
+      {/* Gupshup.io Integration */}
       <Card>
         <CardHeader>
-          <CardTitle>Zoko.io WhatsApp Business API (Recommended)</CardTitle>
+          <CardTitle>Gupshup WhatsApp Business API (Current)</CardTitle>
           <CardDescription>
-            Configure the platform's Zoko.io WhatsApp Business API credentials for automated invoice messaging.
+            Configure the platform's Gupshup WhatsApp Business API credentials for automated invoice messaging.
             This is the primary method for WhatsApp automation across the platform.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <div>
-              <Label htmlFor="zoko_api_key">Zoko API Key</Label>
+              <Label htmlFor="gupshup_api_key">Gupshup API Key</Label>
               <Input
-                id="zoko_api_key"
+                id="gupshup_api_key"
                 type="password"
-                value={platformSettings.zoko_api_key}
-                onChange={(e) => setPlatformSettings({ ...platformSettings, zoko_api_key: e.target.value })}
-                placeholder="Enter your Zoko API key"
+                value={platformSettings.gupshup_api_key}
+                onChange={(e) => setPlatformSettings({ ...platformSettings, gupshup_api_key: e.target.value })}
+                placeholder="Enter your Gupshup API key"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Your secure API key from Zoko.io dashboard
+                Your secure API key from Gupshup dashboard
               </p>
             </div>
             
             <div>
-              <Label htmlFor="zoko_business_phone">Business Phone Number</Label>
+              <Label htmlFor="gupshup_source_phone">Source Phone Number</Label>
               <Input
-                id="zoko_business_phone"
-                value={platformSettings.zoko_business_phone}
-                onChange={(e) => setPlatformSettings({ ...platformSettings, zoko_business_phone: e.target.value })}
-                placeholder="e.g., +27821234567"
+                id="gupshup_source_phone"
+                value={platformSettings.gupshup_source_phone}
+                onChange={(e) => setPlatformSettings({ ...platformSettings, gupshup_source_phone: e.target.value })}
+                placeholder="e.g., 15557961325"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Your WhatsApp Business phone number in E.164 format (for reference only)
+                Your Gupshup WhatsApp Business source phone number
               </p>
             </div>
           </div>
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h4 className="font-medium text-green-900 mb-2">Zoko.io Features:</h4>
+            <h4 className="font-medium text-green-900 mb-2">Gupshup Features:</h4>
             <ul className="text-sm text-green-800 space-y-1">
               <li>• Automatic invoice messaging via l2p: command</li>
               <li>• Manual WhatsApp option in invoice creation form</li>
-              <li>• Simple text-based messaging with invoice details</li>
+              <li>• Template-based messaging with invoice details</li>
               <li>• Reliable delivery with professional WhatsApp Business API</li>
             </ul>
           </div>
@@ -81,7 +80,7 @@ const WhatsAppAutomationTab = ({ platformSettings, setPlatformSettings, onSave, 
         <CardHeader>
           <CardTitle>360dialog WhatsApp API (Legacy)</CardTitle>
           <CardDescription>
-            Alternative WhatsApp Business API provider. Configure only if not using Zoko.io.
+            Alternative WhatsApp Business API provider. Configure only if not using Gupshup.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

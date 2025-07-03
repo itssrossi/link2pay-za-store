@@ -157,6 +157,8 @@ export type Database = {
       platform_settings: {
         Row: {
           created_at: string | null
+          gupshup_api_key: string | null
+          gupshup_source_phone: string | null
           id: string
           updated_at: string | null
           whatsapp_api_token: string | null
@@ -167,6 +169,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          gupshup_api_key?: string | null
+          gupshup_source_phone?: string | null
           id?: string
           updated_at?: string | null
           whatsapp_api_token?: string | null
@@ -177,6 +181,8 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          gupshup_api_key?: string | null
+          gupshup_source_phone?: string | null
           id?: string
           updated_at?: string | null
           whatsapp_api_token?: string | null
