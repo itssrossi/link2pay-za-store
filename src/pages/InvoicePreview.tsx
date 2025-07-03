@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { ExternalLink, FileText, Download, MessageCircle, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
+import { PayFastService, type PayFastCredentials } from '@/utils/payfastService';
 import DeliveryForm from '@/components/DeliveryForm';
 import InvoiceStatusBadge from '@/components/InvoiceStatusBadge';
 
@@ -44,6 +45,10 @@ interface Profile {
   logo_url: string;
   snapscan_link: string;
   payfast_link: string;
+  payfast_merchant_id: string;
+  payfast_merchant_key: string;
+  payfast_passphrase: string;
+  payfast_mode: string;
   eft_details: string;
   whatsapp_number: string;
 }
@@ -55,6 +60,7 @@ const InvoicePreview = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeliveryForm, setShowDeliveryForm] = useState(false);
+  const [payfastCredentials, setPayfastCredentials] = useState<Partial<PayFastCredentials>>({});
 
   useEffect(() => {
     if (invoiceId) {
@@ -86,12 +92,22 @@ const InvoicePreview = () => {
       // Fetch business profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('business_name, logo_url, snapscan_link, payfast_link, eft_details, whatsapp_number')
+        .select('business_name, logo_url, snapscan_link, payfast_link, payfast_merchant_id, payfast_merchant_key, payfast_passphrase, payfast_mode, eft_details, whatsapp_number')
         .eq('id', invoiceData.user_id)
         .single();
 
       if (profileError) throw profileError;
       setProfile(profileData);
+
+      // Load PayFast credentials for automated payment links
+      if (profileData?.payfast_merchant_id && profileData?.payfast_merchant_key) {
+        setPayfastCredentials({
+          merchant_id: profileData.payfast_merchant_id,
+          merchant_key: profileData.payfast_merchant_key,
+          passphrase: profileData.payfast_passphrase || '',
+          mode: (profileData.payfast_mode as 'sandbox' | 'live') || 'sandbox'
+        });
+      }
 
     } catch (error) {
       console.error('Error fetching invoice data:', error);
@@ -101,7 +117,7 @@ const InvoicePreview = () => {
   };
 
   const handlePayment = (method: 'snapscan' | 'payfast') => {
-    if (!profile) return;
+    if (!profile || !invoice) return;
     
     // Check if invoice is already paid
     if (invoice?.status === 'paid') {
@@ -109,13 +125,37 @@ const InvoicePreview = () => {
       return;
     }
     
-    const link = method === 'snapscan' ? profile.snapscan_link : profile.payfast_link;
-    if (!link) {
-      toast.error(`${method === 'snapscan' ? 'SnapScan' : 'PayFast'} payment link not available`);
-      return;
+    if (method === 'snapscan') {
+      const link = profile.snapscan_link;
+      if (!link) {
+        toast.error('SnapScan payment link not available');
+        return;
+      }
+      window.open(link, '_blank');
+    } else if (method === 'payfast') {
+      // Try automated PayFast first, then fall back to manual link
+      if (payfastCredentials.merchant_id && payfastCredentials.merchant_key) {
+        try {
+          const paymentLink = PayFastService.generatePaymentLink(
+            payfastCredentials as PayFastCredentials,
+            {
+              amount: invoice.total_amount,
+              invoice_number: invoice.invoice_number,
+              client_name: invoice.client_name,
+              invoice_id: invoice.id
+            }
+          );
+          window.open(paymentLink, '_blank');
+        } catch (error) {
+          console.error('Error generating PayFast link:', error);
+          toast.error('Failed to generate PayFast payment link');
+        }
+      } else if (profile.payfast_link) {
+        window.open(profile.payfast_link, '_blank');
+      } else {
+        toast.error('PayFast payment not configured');
+      }
     }
-    
-    window.open(link, '_blank');
   };
 
   const handleOrderNow = () => {
@@ -359,7 +399,7 @@ const InvoicePreview = () => {
 
                     {invoice.show_payfast && (
                       <>
-                        {profile?.payfast_link ? (
+                        {(payfastCredentials.merchant_id || profile?.payfast_link) ? (
                           <Button
                             size="lg"
                             onClick={() => handlePayment('payfast')}
@@ -371,7 +411,7 @@ const InvoicePreview = () => {
                         ) : (
                           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
                             <p className="text-orange-700 text-sm">
-                              ⚠️ PayFast payment link missing. Please contact the business to update their payment information.
+                              ⚠️ PayFast payment not configured. Please contact the business to update their payment information.
                             </p>
                           </div>
                         )}
