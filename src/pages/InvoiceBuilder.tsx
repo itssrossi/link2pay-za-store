@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Send, CreditCard } from 'lucide-react';
 import { ZokoService } from '@/utils/zokoService';
+import { PayFastService, type PayFastCredentials } from '@/utils/payfastService';
 
 interface InvoiceItem {
   id: string;
@@ -55,6 +56,7 @@ const InvoiceBuilder = () => {
   
   // Profile data for payment links
   const [profile, setProfile] = useState<any>(null);
+  const [payfastCredentials, setPayfastCredentials] = useState<Partial<PayFastCredentials>>({});
   
   // Invoice items
   const [items, setItems] = useState<InvoiceItem[]>([
@@ -81,12 +83,22 @@ const InvoiceBuilder = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('snapscan_link, payfast_link')
+        .select('snapscan_link, payfast_link, payfast_merchant_id, payfast_merchant_key, payfast_passphrase, payfast_mode')
         .eq('id', user.id)
         .single();
 
       if (error) throw error;
       setProfile(data);
+
+      // Load PayFast credentials for automated payment links
+      if (data?.payfast_merchant_id && data?.payfast_merchant_key) {
+        setPayfastCredentials({
+          merchant_id: data.payfast_merchant_id,
+          merchant_key: data.payfast_merchant_key,
+          passphrase: data.payfast_passphrase || '',
+          mode: (data.payfast_mode as 'sandbox' | 'live') || 'sandbox'
+        });
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
@@ -345,19 +357,27 @@ const InvoiceBuilder = () => {
                     id="showPayFast"
                     checked={showPayFast}
                     onCheckedChange={(checked) => setShowPayFast(!!checked)}
-                    disabled={!profile?.payfast_link}
+                    disabled={!profile?.payfast_link && !payfastCredentials.merchant_id}
                   />
                   <Label htmlFor="showPayFast">Show PayFast Payment Button</Label>
-                  {!profile?.payfast_link && (
+                  {payfastCredentials.merchant_id ? (
+                    <Badge variant="outline" className="text-xs text-green-600">
+                      Automated
+                    </Badge>
+                  ) : !profile?.payfast_link ? (
                     <Badge variant="outline" className="text-xs text-orange-600">
-                      Link Missing
+                      Not Configured
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs text-blue-600">
+                      Manual Link
                     </Badge>
                   )}
                 </div>
 
-                {(!profile?.snapscan_link || !profile?.payfast_link) && (
+                {!profile?.snapscan_link && !payfastCredentials.merchant_id && !profile?.payfast_link && (
                   <p className="text-xs text-gray-500">
-                    💡 Configure payment links in Settings to enable payment buttons
+                    💡 Configure payment methods in Settings → Payment Settings or PayFast Integration
                   </p>
                 )}
               </CardContent>
