@@ -28,7 +28,7 @@ export class PayFastService {
     return {
       return_url: `${baseUrl}/invoice/${invoiceId}?status=success`,
       cancel_url: `${baseUrl}/invoice/${invoiceId}?status=cancelled`,
-      notify_url: `${baseUrl.replace('lovableproject.com', 'supabase.co')}/functions/v1/payfast-notify`
+      notify_url: `https://mlzqlidtvlbijloeusuq.supabase.co/functions/v1/payfast-notify`
     };
   }
 
@@ -87,8 +87,8 @@ export class PayFastService {
     const firstName = nameParts[0] || 'Customer';
     const lastName = nameParts.slice(1).join(' ') || 'Customer';
     
-    // Prepare payment data with all required PayFast fields (INCLUDING merchant_key for signature)
-    const paymentDataForSignature: Record<string, string> = {
+    // Prepare payment data with all required PayFast fields
+    const paymentData: Record<string, string> = {
       merchant_id: credentials.merchant_id.trim(),
       merchant_key: credentials.merchant_key.trim(),
       amount: invoiceData.amount.toFixed(2),
@@ -103,19 +103,18 @@ export class PayFastService {
       custom_str1: invoiceData.invoice_number // Store invoice number for tracking
     };
 
-    console.log('PayFast: Payment data for signature generation:', paymentDataForSignature);
+    console.log('PayFast: Payment data for signature generation:', paymentData);
 
     // Generate signature using ALL data including merchant_key
-    const signature = this.generateSignature(paymentDataForSignature, credentials.passphrase);
+    const signature = this.generateSignature(paymentData, credentials.passphrase);
     
-    // Create final URL data WITHOUT merchant_key (security fix)
-    const { merchant_key, ...urlData } = paymentDataForSignature;
+    // Create final URL data WITH merchant_key (PayFast requires it)
     const finalUrlData = {
-      ...urlData,
+      ...paymentData,
       signature
     };
 
-    console.log('PayFast: Final URL data (without merchant_key):', finalUrlData);
+    console.log('PayFast: Final URL data:', finalUrlData);
 
     // Build final URL with proper encoding
     const baseUrl = this.getBaseUrl(credentials.mode);
