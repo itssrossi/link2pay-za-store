@@ -42,6 +42,29 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     checkOnboardingStatus();
   }, [user, session]);
 
+  const createDefaultSections = async () => {
+    if (!user) return;
+
+    try {
+      // Create default Products section
+      await supabase
+        .from('store_sections')
+        .insert({
+          user_id: user.id,
+          section_type: 'products',
+          section_title: 'Our Products',
+          section_content: '',
+          section_order: 1,
+          is_enabled: true,
+          section_settings: {}
+        });
+
+      console.log('Default store sections created successfully');
+    } catch (error) {
+      console.error('Error creating default sections:', error);
+    }
+  };
+
   const completeOnboarding = async () => {
     if (!user) return;
 
@@ -49,6 +72,9 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       .from('profiles')
       .update({ onboarding_completed: true })
       .eq('id', user.id);
+
+    // Create default store sections
+    await createDefaultSections();
 
     setShowOnboarding(false);
   };

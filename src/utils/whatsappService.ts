@@ -22,7 +22,7 @@ export const sendWhatsAppInvoice = async (data: WhatsAppInvoiceData): Promise<bo
       return false;
     }
 
-    // Prepare the WhatsApp message payload
+    // Prepare the WhatsApp message payload with proper spacing
     const messagePayload = {
       to: `whatsapp:${data.phoneNumber}`,
       type: 'template',
@@ -35,7 +35,7 @@ export const sendWhatsAppInvoice = async (data: WhatsAppInvoiceData): Promise<bo
             parameters: [
               { type: 'text', text: data.clientName },
               { type: 'text', text: `R${data.amount.toFixed(2)}` },
-              { type: 'text', text: data.invoiceUrl }
+              { type: 'text', text: `${data.invoiceUrl} ` } // Added space after URL
             ]
           }
         ]
