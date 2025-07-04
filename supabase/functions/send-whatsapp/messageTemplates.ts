@@ -44,7 +44,7 @@ export function createFallbackTextPayload(
     fallbackMessage = `Hello ${clientName},\n\nPayment received! ✅\n\nYour invoice #${invoiceId} has been marked as PAID. Thank you for your business with us.`;
   } else {
     const invoiceUrl = finalInvoiceUrl || `https://link2pay-za-store.lovable.app/invoice/${invoiceId}`;
-    fallbackMessage = `Hi ${clientName}!\n\nYou have a new invoice for R${amount}.\n\nView and pay your invoice here: ${invoiceUrl} \n\nThank you! 🙏`;
+    fallbackMessage = `Hi ${clientName}, here's your invoice for ${invoiceUrl} : R${amount}.\nPlease reach out if you have any questions.`;
   }
 
   return {
