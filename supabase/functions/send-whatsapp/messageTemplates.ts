@@ -18,7 +18,7 @@ export function createPaymentConfirmationPayload(
 export function createInvoiceNotificationPayload(
   formattedPhone: string,
   clientName: string,
-  finalInvoiceUrl: string + " ",
+  finalInvoiceUrl: string,
   amount: string
 ): MessagePayload {
   return {
