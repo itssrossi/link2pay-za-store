@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import ImageUpload from '@/components/ui/image-upload';
 
 interface Profile {
   business_name: string;
@@ -117,12 +117,11 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
         </div>
 
         <div>
-          <Label htmlFor="logo_url">Logo URL</Label>
-          <Input
-            id="logo_url"
+          <ImageUpload
             value={profile.logo_url}
-            onChange={(e) => setProfile({ ...profile, logo_url: e.target.value })}
-            placeholder="https://example.com/logo.png"
+            onChange={(url) => setProfile({ ...profile, logo_url: url })}
+            label="Business Logo"
+            maxSize={2}
           />
         </div>
 

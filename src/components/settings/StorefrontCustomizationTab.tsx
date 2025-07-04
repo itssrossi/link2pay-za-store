@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import { toast } from 'sonner';
 import StorefrontPreview from './StorefrontPreview';
 import SectionManager from './SectionManager';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ImageUpload from '@/components/ui/image-upload';
 
 interface ExtendedProfile {
   business_name: string;
@@ -262,13 +262,11 @@ const StorefrontCustomizationTab = ({ profile, setProfile, onSave, loading }: St
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="hero_image_url" className="text-sm">Hero Image URL</Label>
-                <Input
-                  id="hero_image_url"
+                <ImageUpload
                   value={profile.hero_image_url || ''}
-                  onChange={(e) => setProfile({ ...profile, hero_image_url: e.target.value })}
-                  placeholder="https://example.com/hero-image.jpg"
-                  className="mt-1 text-xs"
+                  onChange={(url) => setProfile({ ...profile, hero_image_url: url })}
+                  label="Hero Image"
+                  maxSize={3}
                 />
               </div>
 
