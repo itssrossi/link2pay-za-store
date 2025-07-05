@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,15 +32,20 @@ interface Invoice {
   vat_enabled: boolean;
   payment_instructions: string;
   delivery_method: string;
-  delivery_address: string;
-  delivery_notes: string;
-  delivery_date: string;
-  delivery_fee: number;
+  delivery_address?: string;
+  delivery_notes?: string;
+  delivery_date?: string;
+  delivery_fee?: number;
   payment_enabled: boolean;
   status: string;
   created_at: string;
   show_snapscan: boolean;
   show_payfast: boolean;
+  auto_reminder_enabled: boolean;
+  reminder_sent_at: string | null;
+  updated_at: string;
+  user_id: string;
+  whatsapp_paid_sent: boolean;
 }
 
 interface Profile {
@@ -214,7 +218,7 @@ const InvoicePreview = () => {
         delivery_address: invoice.delivery_address,
         delivery_notes: invoice.delivery_notes,
         delivery_date: invoice.delivery_date,
-        delivery_fee: invoice.delivery_fee,
+        delivery_fee: invoice.delivery_fee || 0,
         payment_instructions: invoice.payment_instructions,
         eft_details: profile.eft_details,
         snapscan_link: profile.snapscan_link,
@@ -305,40 +309,42 @@ const InvoicePreview = () => {
             </div>
             
             {/* Delivery Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                <Truck className="w-5 h-5" />
-                Delivery Information:
-              </h3>
-              <div className="text-gray-600 space-y-1">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-sm">
-                    {invoice.delivery_method}
-                  </Badge>
+            {invoice.delivery_method && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Truck className="w-5 h-5" />
+                  Delivery Information:
+                </h3>
+                <div className="text-gray-600 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-sm">
+                      {invoice.delivery_method}
+                    </Badge>
+                  </div>
+                  
+                  {invoice.delivery_address && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Address:</p>
+                      <p className="text-sm">{invoice.delivery_address}</p>
+                    </div>
+                  )}
+                  
+                  {invoice.delivery_date && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Expected Date:</p>
+                      <p className="text-sm">{new Date(invoice.delivery_date).toLocaleDateString()}</p>
+                    </div>
+                  )}
+                  
+                  {invoice.delivery_notes && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Notes:</p>
+                      <p className="text-sm">{invoice.delivery_notes}</p>
+                    </div>
+                  )}
                 </div>
-                
-                {invoice.delivery_address && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Address:</p>
-                    <p className="text-sm">{invoice.delivery_address}</p>
-                  </div>
-                )}
-                
-                {invoice.delivery_date && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Expected Date:</p>
-                    <p className="text-sm">{new Date(invoice.delivery_date).toLocaleDateString()}</p>
-                  </div>
-                )}
-                
-                {invoice.delivery_notes && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Notes:</p>
-                    <p className="text-sm">{invoice.delivery_notes}</p>
-                  </div>
-                )}
               </div>
-            </div>
+            )}
           </div>
 
           {/* Items */}
@@ -392,10 +398,10 @@ const InvoicePreview = () => {
                 <span className="font-medium">R{(invoice.subtotal - (invoice.delivery_fee || 0)).toFixed(2)}</span>
               </div>
               
-              {invoice.delivery_fee > 0 && (
+              {(invoice.delivery_fee || 0) > 0 && (
                 <div className="flex justify-between py-2">
                   <span className="text-gray-600">Delivery Fee:</span>
-                  <span className="font-medium">R{invoice.delivery_fee.toFixed(2)}</span>
+                  <span className="font-medium">R{(invoice.delivery_fee || 0).toFixed(2)}</span>
                 </div>
               )}
               
