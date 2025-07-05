@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Plus, Send, CreditCard } from 'lucide-react';
+import { Trash2, Plus, Send, CreditCard, Truck } from 'lucide-react';
 import { ZokoService } from '@/utils/zokoService';
 import { PayFastService, type PayFastCredentials } from '@/utils/payfastService';
 
@@ -45,6 +46,13 @@ const InvoiceBuilder = () => {
   const [clientPhone, setClientPhone] = useState('');
   const [paymentInstructions, setPaymentInstructions] = useState('');
   const [vatEnabled, setVatEnabled] = useState(false);
+  
+  // Delivery details
+  const [deliveryMethod, setDeliveryMethod] = useState('Local Pickup');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [deliveryFee, setDeliveryFee] = useState(0);
   
   // Payment button toggles
   const [showSnapScan, setShowSnapScan] = useState(false);
@@ -166,7 +174,7 @@ const InvoiceBuilder = () => {
   };
 
   const calculateSubtotal = () => {
-    return items.reduce((sum, item) => sum + item.total_price, 0);
+    return items.reduce((sum, item) => sum + item.total_price, 0) + deliveryFee;
   };
 
   const calculateVAT = () => {
@@ -225,6 +233,11 @@ const InvoiceBuilder = () => {
           payment_instructions: paymentInstructions || null,
           show_snapscan: showSnapScan,
           show_payfast: showPayFast,
+          delivery_method: deliveryMethod,
+          delivery_address: deliveryAddress || null,
+          delivery_notes: deliveryNotes || null,
+          delivery_date: deliveryDate || null,
+          delivery_fee: deliveryFee,
           status: 'pending'
         })
         .select()
@@ -324,6 +337,86 @@ const InvoiceBuilder = () => {
                       placeholder="+27821234567"
                     />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Delivery Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-blue-600" />
+                  Delivery Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="deliveryMethod">Delivery Method</Label>
+                  <Select value={deliveryMethod} onValueChange={setDeliveryMethod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select delivery method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Local Pickup">Local Pickup</SelectItem>
+                      <SelectItem value="Courier Guy">Courier Guy</SelectItem>
+                      <SelectItem value="Pargo">Pargo</SelectItem>
+                      <SelectItem value="Door-to-Door">Door-to-Door</SelectItem>
+                      <SelectItem value="PostNet">PostNet</SelectItem>
+                      <SelectItem value="FastWay">FastWay</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {deliveryMethod !== 'Local Pickup' && (
+                  <>
+                    <div>
+                      <Label htmlFor="deliveryAddress">Delivery Address</Label>
+                      <Textarea
+                        id="deliveryAddress"
+                        value={deliveryAddress}
+                        onChange={(e) => setDeliveryAddress(e.target.value)}
+                        placeholder="Enter delivery address"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="deliveryDate">Expected Delivery Date</Label>
+                        <Input
+                          id="deliveryDate"
+                          type="date"
+                          value={deliveryDate}
+                          onChange={(e) => setDeliveryDate(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="deliveryFee">Delivery Fee</Label>
+                        <Input
+                          id="deliveryFee"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={deliveryFee}
+                          onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <Label htmlFor="deliveryNotes">Delivery Notes</Label>
+                  <Textarea
+                    id="deliveryNotes"
+                    value={deliveryNotes}
+                    onChange={(e) => setDeliveryNotes(e.target.value)}
+                    placeholder="Special delivery instructions or notes..."
+                    rows={2}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -559,6 +652,18 @@ const InvoiceBuilder = () => {
                 <CardTitle>Invoice Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Items Subtotal:</span>
+                  <span>R{(calculateSubtotal() - deliveryFee).toFixed(2)}</span>
+                </div>
+                
+                {deliveryFee > 0 && (
+                  <div className="flex justify-between">
+                    <span>Delivery Fee:</span>
+                    <span>R{deliveryFee.toFixed(2)}</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
                   <span>R{calculateSubtotal().toFixed(2)}</span>

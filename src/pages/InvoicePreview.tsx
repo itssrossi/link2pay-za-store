@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,11 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ExternalLink, FileText, Download, MessageCircle, CreditCard } from 'lucide-react';
+import { FileText, Download, CreditCard, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import { PayFastService, type PayFastCredentials } from '@/utils/payfastService';
-import DeliveryForm from '@/components/DeliveryForm';
 import InvoiceStatusBadge from '@/components/InvoiceStatusBadge';
 
 interface InvoiceItem {
@@ -33,6 +33,10 @@ interface Invoice {
   vat_enabled: boolean;
   payment_instructions: string;
   delivery_method: string;
+  delivery_address: string;
+  delivery_notes: string;
+  delivery_date: string;
+  delivery_fee: number;
   payment_enabled: boolean;
   status: string;
   created_at: string;
@@ -59,7 +63,6 @@ const InvoicePreview = () => {
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showDeliveryForm, setShowDeliveryForm] = useState(false);
   const [payfastCredentials, setPayfastCredentials] = useState<Partial<PayFastCredentials>>({});
 
   useEffect(() => {
@@ -181,10 +184,6 @@ const InvoicePreview = () => {
     }
   };
 
-  const handleOrderNow = () => {
-    setShowDeliveryForm(true);
-  };
-
   const downloadInvoicePDF = async () => {
     if (!invoice || !profile) {
       toast.error('Invoice not found. Please try again later.');
@@ -212,6 +211,10 @@ const InvoicePreview = () => {
         vat_amount: invoice.vat_amount,
         total_amount: invoice.total_amount,
         delivery_method: invoice.delivery_method,
+        delivery_address: invoice.delivery_address,
+        delivery_notes: invoice.delivery_notes,
+        delivery_date: invoice.delivery_date,
+        delivery_fee: invoice.delivery_fee,
         payment_instructions: invoice.payment_instructions,
         eft_details: profile.eft_details,
         snapscan_link: profile.snapscan_link,
@@ -300,16 +303,42 @@ const InvoicePreview = () => {
                 {invoice.client_phone && <p>{invoice.client_phone}</p>}
               </div>
             </div>
-            {invoice.delivery_method && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Delivery Method:</h3>
-                <div className="text-gray-600">
+            
+            {/* Delivery Information */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                <Truck className="w-5 h-5" />
+                Delivery Information:
+              </h3>
+              <div className="text-gray-600 space-y-1">
+                <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-sm">
                     {invoice.delivery_method}
                   </Badge>
                 </div>
+                
+                {invoice.delivery_address && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Address:</p>
+                    <p className="text-sm">{invoice.delivery_address}</p>
+                  </div>
+                )}
+                
+                {invoice.delivery_date && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Expected Date:</p>
+                    <p className="text-sm">{new Date(invoice.delivery_date).toLocaleDateString()}</p>
+                  </div>
+                )}
+                
+                {invoice.delivery_notes && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Notes:</p>
+                    <p className="text-sm">{invoice.delivery_notes}</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
           {/* Items */}
@@ -359,9 +388,22 @@ const InvoicePreview = () => {
             </CardHeader>
             <CardContent>
               <div className="flex justify-between py-2">
+                <span className="text-gray-600">Items Subtotal:</span>
+                <span className="font-medium">R{(invoice.subtotal - (invoice.delivery_fee || 0)).toFixed(2)}</span>
+              </div>
+              
+              {invoice.delivery_fee > 0 && (
+                <div className="flex justify-between py-2">
+                  <span className="text-gray-600">Delivery Fee:</span>
+                  <span className="font-medium">R{invoice.delivery_fee.toFixed(2)}</span>
+                </div>
+              )}
+              
+              <div className="flex justify-between py-2">
                 <span className="text-gray-600">Subtotal:</span>
                 <span className="font-medium">R{invoice.subtotal.toFixed(2)}</span>
               </div>
+              
               {invoice.vat_enabled && (
                 <div className="flex justify-between py-2">
                   <span className="text-gray-600">VAT (15%):</span>
@@ -443,31 +485,8 @@ const InvoicePreview = () => {
             </Card>
           )}
 
-          {/* Delivery Form */}
-          {showDeliveryForm && profile?.whatsapp_number && (
-            <div className="mb-6 sm:mb-8 flex justify-center">
-              <DeliveryForm
-                productTitle={`Invoice ${invoice.invoice_number}`}
-                invoiceLink={window.location.href}
-                whatsappNumber={profile.whatsapp_number}
-                onSubmit={() => setShowDeliveryForm(false)}
-              />
-            </div>
-          )}
-
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            {!showDeliveryForm && profile?.whatsapp_number && (
-              <Button
-                size="lg"
-                onClick={handleOrderNow}
-                className="bg-[#4C9F70] hover:bg-[#3d8159] text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Order Now
-              </Button>
-            )}
-
+          <div className="flex justify-center items-center mb-8">
             <Button
               size="lg"
               variant="outline"

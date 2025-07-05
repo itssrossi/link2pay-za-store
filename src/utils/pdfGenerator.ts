@@ -19,6 +19,10 @@ export interface InvoiceData {
   vat_amount?: number;
   total_amount: number;
   delivery_method?: string;
+  delivery_address?: string;
+  delivery_notes?: string;
+  delivery_date?: string;
+  delivery_fee?: number;
   payment_instructions?: string;
   eft_details?: string;
   snapscan_link?: string;
@@ -81,16 +85,43 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void
       currentY += 6;
     }
 
-    if (invoiceData.delivery_method) {
-      currentY += 4;
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Delivery Method:', margin, currentY);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(invoiceData.delivery_method, margin + 35, currentY);
-      currentY += 6;
-    }
+    currentY += 10;
 
-    currentY += 15;
+    // Delivery Information Section
+    if (invoiceData.delivery_method) {
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12);
+      pdf.text('Delivery Information:', margin, currentY);
+      currentY += 8;
+      
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      pdf.text(`Method: ${invoiceData.delivery_method}`, margin, currentY);
+      currentY += 6;
+      
+      if (invoiceData.delivery_address) {
+        pdf.text('Address:', margin, currentY);
+        currentY += 5;
+        const addressLines = pdf.splitTextToSize(invoiceData.delivery_address, pageWidth - 2 * margin - 20);
+        pdf.text(addressLines, margin + 20, currentY);
+        currentY += addressLines.length * 4 + 2;
+      }
+      
+      if (invoiceData.delivery_date) {
+        pdf.text(`Expected Date: ${new Date(invoiceData.delivery_date).toLocaleDateString()}`, margin, currentY);
+        currentY += 6;
+      }
+      
+      if (invoiceData.delivery_notes) {
+        pdf.text('Notes:', margin, currentY);
+        currentY += 5;
+        const notesLines = pdf.splitTextToSize(invoiceData.delivery_notes, pageWidth - 2 * margin - 20);
+        pdf.text(notesLines, margin + 20, currentY);
+        currentY += notesLines.length * 4 + 2;
+      }
+      
+      currentY += 10;
+    }
 
     // Items Table Header
     const tableStartY = currentY;
@@ -145,6 +176,19 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void
 
     // Totals Section
     const totalsX = pageWidth - margin - 60;
+    
+    // Calculate items subtotal (excluding delivery fee)
+    const itemsSubtotal = invoiceData.subtotal - (invoiceData.delivery_fee || 0);
+    
+    pdf.text('Items Subtotal:', totalsX, currentY);
+    pdf.text(`R${itemsSubtotal.toFixed(2)}`, totalsX + 40, currentY, { align: 'right' });
+    currentY += 8;
+    
+    if (invoiceData.delivery_fee && invoiceData.delivery_fee > 0) {
+      pdf.text('Delivery Fee:', totalsX, currentY);
+      pdf.text(`R${invoiceData.delivery_fee.toFixed(2)}`, totalsX + 40, currentY, { align: 'right' });
+      currentY += 8;
+    }
     
     pdf.text('Subtotal:', totalsX, currentY);
     pdf.text(`R${invoiceData.subtotal.toFixed(2)}`, totalsX + 40, currentY, { align: 'right' });
