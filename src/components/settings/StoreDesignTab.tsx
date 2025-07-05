@@ -1,9 +1,11 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Palette } from 'lucide-react';
+import ImageUpload from '@/components/ui/image-upload';
 
 interface Profile {
   business_name: string;
@@ -11,6 +13,7 @@ interface Profile {
   store_bio: string;
   logo_url: string;
   store_handle: string;
+  store_address: string;
   snapscan_link: string;
   payfast_link: string;
   eft_details: string;
@@ -30,6 +33,9 @@ interface Profile {
   default_currency: string;
   store_location: string;
   delivery_note: string;
+  capitec_paylink: string;
+  show_capitec: boolean;
+  [key: string]: any;
 }
 
 interface StoreDesignTabProps {
@@ -40,107 +46,124 @@ interface StoreDesignTabProps {
 }
 
 const StoreDesignTab = ({ profile, setProfile, onSave, loading }: StoreDesignTabProps) => {
+  const handleChange = (field: string, value: string) => {
+    setProfile({ ...profile, [field]: value });
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Store Design</CardTitle>
-        <CardDescription>
-          Customize the look and feel of your public store
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="w-5 h-5" />
+            Store Design
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="primary_color">Primary Color</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="primary_color"
+                  type="color"
+                  value={profile.primary_color}
+                  onChange={(e) => handleChange('primary_color', e.target.value)}
+                  className="w-16 h-10 p-1 rounded"
+                />
+                <Input
+                  value={profile.primary_color}
+                  onChange={(e) => handleChange('primary_color', e.target.value)}
+                  placeholder="#4C9F70"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="accent_color">Accent Color</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="accent_color"
+                  type="color"
+                  value={profile.accent_color}
+                  onChange={(e) => handleChange('accent_color', e.target.value)}
+                  className="w-16 h-10 p-1 rounded"
+                />
+                <Input
+                  value={profile.accent_color}
+                  onChange={(e) => handleChange('accent_color', e.target.value)}
+                  placeholder="#3d8159"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="background_color">Background Color</Label>
+            <div className="flex gap-2">
+              <Input
+                id="background_color"
+                type="color"
+                value={profile.background_color}
+                onChange={(e) => handleChange('background_color', e.target.value)}
+                className="w-16 h-10 p-1 rounded"
+              />
+              <Input
+                value={profile.background_color}
+                onChange={(e) => handleChange('background_color', e.target.value)}
+                placeholder="#ffffff"
+              />
+            </div>
+          </div>
+
           <div>
             <Label htmlFor="store_layout">Store Layout</Label>
-            <Select value={profile.store_layout} onValueChange={(value) => setProfile({ ...profile, store_layout: value })}>
+            <Select value={profile.store_layout} onValueChange={(value) => handleChange('store_layout', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose layout" />
+                <SelectValue placeholder="Select layout" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="grid">Grid</SelectItem>
                 <SelectItem value="list">List</SelectItem>
-                <SelectItem value="carousel">Carousel</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          
+
           <div>
-            <Label htmlFor="store_font">Font Style</Label>
-            <Select value={profile.store_font} onValueChange={(value) => setProfile({ ...profile, store_font: value })}>
+            <Label htmlFor="store_font">Font Family</Label>
+            <Select value={profile.store_font} onValueChange={(value) => handleChange('store_font', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose font" />
+                <SelectValue placeholder="Select font" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="inter">Inter</SelectItem>
-                <SelectItem value="poppins">Poppins</SelectItem>
                 <SelectItem value="roboto">Roboto</SelectItem>
+                <SelectItem value="poppins">Poppins</SelectItem>
+                <SelectItem value="montserrat">Montserrat</SelectItem>
               </SelectContent>
             </Select>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="primary_color">Primary Color</Label>
-            <div className="flex gap-2">
-              <Input
-                id="primary_color"
-                type="color"
-                value={profile.primary_color}
-                onChange={(e) => setProfile({ ...profile, primary_color: e.target.value })}
-                className="w-16 h-10"
-              />
-              <Input
-                value={profile.primary_color}
-                onChange={(e) => setProfile({ ...profile, primary_color: e.target.value })}
-                placeholder="#4C9F70"
-                className="flex-1"
-              />
-            </div>
+            <ImageUpload
+              value={profile.header_banner_url}
+              onChange={(url) => handleChange('header_banner_url', url)}
+              label="Header Banner"
+              accept=".jpg,.jpeg,.png"
+              maxSize={5}
+            />
           </div>
-          
-          <div>
-            <Label htmlFor="accent_color">Accent Color</Label>
-            <div className="flex gap-2">
-              <Input
-                id="accent_color"
-                type="color"
-                value={profile.accent_color}
-                onChange={(e) => setProfile({ ...profile, accent_color: e.target.value })}
-                className="w-16 h-10"
-              />
-              <Input
-                value={profile.accent_color}
-                onChange={(e) => setProfile({ ...profile, accent_color: e.target.value })}
-                placeholder="#3d8159"
-                className="flex-1"
-              />
-            </div>
-          </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div>
-          <Label htmlFor="header_banner_url">Header Banner URL (Optional)</Label>
-          <Input
-            id="header_banner_url"
-            value={profile.header_banner_url}
-            onChange={(e) => setProfile({ ...profile, header_banner_url: e.target.value })}
-            placeholder="https://example.com/banner.jpg"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Recommended size: 1200x300px
-          </p>
-        </div>
-
-        <Button 
-          onClick={onSave}
-          disabled={loading}
-          className="bg-[#4C9F70] hover:bg-[#3d8159]"
-        >
-          {loading ? 'Saving...' : 'Save Design Settings'}
-        </Button>
-      </CardContent>
-    </Card>
+      <Button 
+        onClick={onSave} 
+        disabled={loading}
+        className="w-full sm:w-auto"
+      >
+        {loading ? 'Saving...' : 'Save Changes'}
+      </Button>
+    </div>
   );
 };
 
