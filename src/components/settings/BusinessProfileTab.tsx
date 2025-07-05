@@ -1,12 +1,10 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, ExternalLink } from 'lucide-react';
-import { toast } from 'sonner';
-import ImageUpload from '@/components/ui/image-upload';
+import { Button } from '@/components/ui/button';
+import { MapPin } from 'lucide-react';
 
 interface Profile {
   business_name: string;
@@ -14,25 +12,8 @@ interface Profile {
   store_bio: string;
   logo_url: string;
   store_handle: string;
-  snapscan_link: string;
-  payfast_link: string;
-  eft_details: string;
-  store_layout: string;
-  store_font: string;
-  primary_color: string;
-  accent_color: string;
-  header_banner_url: string;
-  hero_image_url: string;
-  hero_headline: string;
-  hero_subheading: string;
-  hero_cta_text: string;
-  hero_cta_link: string;
-  background_color: string;
-  theme_preset: string;
-  store_visibility: boolean;
-  default_currency: string;
-  store_location: string;
-  delivery_note: string;
+  store_address: string;
+  [key: string]: any;
 }
 
 interface BusinessProfileTabProps {
@@ -43,117 +24,95 @@ interface BusinessProfileTabProps {
 }
 
 const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessProfileTabProps) => {
-  const copyStoreLink = () => {
-    if (!profile.store_handle) {
-      toast.error('Please set a store handle first');
-      return;
-    }
-    const storeUrl = `${window.location.origin}/store/${profile.store_handle}`;
-    navigator.clipboard.writeText(storeUrl);
-    toast.success('Store link copied to clipboard!');
-  };
-
-  const openStorePreview = () => {
-    if (!profile.store_handle) {
-      toast.error('Please set a store handle first');
-      return;
-    }
-    const storeUrl = `${window.location.origin}/store/${profile.store_handle}`;
-    window.open(storeUrl, '_blank');
+  const handleChange = (field: string, value: string) => {
+    setProfile({ ...profile, [field]: value });
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Business Information</CardTitle>
-        <CardDescription>
-          Update your business details and store settings
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Business Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div>
             <Label htmlFor="business_name">Business Name</Label>
             <Input
               id="business_name"
               value={profile.business_name}
-              onChange={(e) => setProfile({ ...profile, business_name: e.target.value })}
-              placeholder="Your Business Name"
+              onChange={(e) => handleChange('business_name', e.target.value)}
+              placeholder="Enter your business name"
             />
           </div>
+
+          <div>
+            <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
+            <Input
+              id="whatsapp_number"
+              value={profile.whatsapp_number}
+              onChange={(e) => handleChange('whatsapp_number', e.target.value)}
+              placeholder="+27821234567"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="store_bio">Store Bio</Label>
+            <Textarea
+              id="store_bio"
+              value={profile.store_bio}
+              onChange={(e) => handleChange('store_bio', e.target.value)}
+              placeholder="Tell customers about your business..."
+              rows={3}
+            />
+          </div>
+
           <div>
             <Label htmlFor="store_handle">Store Handle</Label>
             <Input
               id="store_handle"
               value={profile.store_handle}
-              onChange={(e) => setProfile({ ...profile, store_handle: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+              onChange={(e) => handleChange('store_handle', e.target.value)}
               placeholder="your-store-name"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Your store will be available at: /store/{profile.store_handle || 'your-store-name'}
+            <p className="text-sm text-gray-500 mt-1">
+              This will be your store URL: link2pay.co.za/store/{profile.store_handle}
             </p>
           </div>
-        </div>
-        
-        <div>
-          <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
-          <Input
-            id="whatsapp_number"
-            value={profile.whatsapp_number}
-            onChange={(e) => setProfile({ ...profile, whatsapp_number: e.target.value })}
-            placeholder="27821234567"
-          />
-        </div>
+        </CardContent>
+      </Card>
 
-        <div>
-          <Label htmlFor="store_bio">Store Bio</Label>
-          <Textarea
-            id="store_bio"
-            value={profile.store_bio}
-            onChange={(e) => setProfile({ ...profile, store_bio: e.target.value })}
-            placeholder="Tell customers about your business..."
-            rows={3}
-          />
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="w-5 h-5" />
+            Store Location
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="store_address">Store Address</Label>
+            <Textarea
+              id="store_address"
+              value={profile.store_address}
+              onChange={(e) => handleChange('store_address', e.target.value)}
+              placeholder="Enter your store address for local pickup/delivery..."
+              rows={3}
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              This address will appear on invoices when customers select "Local Pickup" or delivery options.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div>
-          <ImageUpload
-            value={profile.logo_url}
-            onChange={(url) => setProfile({ ...profile, logo_url: url })}
-            label="Business Logo"
-            maxSize={2}
-          />
-        </div>
-
-        <div className="flex gap-2 pt-4">
-          <Button 
-            onClick={onSave}
-            disabled={loading}
-            className="bg-[#4C9F70] hover:bg-[#3d8159]"
-          >
-            {loading ? 'Saving...' : 'Save Profile'}
-          </Button>
-          
-          <Button 
-            onClick={copyStoreLink}
-            variant="outline"
-            disabled={!profile.store_handle}
-          >
-            <Copy className="w-4 h-4 mr-2" />
-            Copy Store Link
-          </Button>
-          
-          <Button 
-            onClick={openStorePreview}
-            variant="outline"
-            disabled={!profile.store_handle}
-          >
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Preview Store
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      <Button 
+        onClick={onSave} 
+        disabled={loading}
+        className="w-full sm:w-auto"
+      >
+        {loading ? 'Saving...' : 'Save Changes'}
+      </Button>
+    </div>
   );
 };
 

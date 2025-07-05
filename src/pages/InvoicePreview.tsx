@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Download, CreditCard, Truck } from 'lucide-react';
+import { FileText, Download, CreditCard, Truck, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import { PayFastService, type PayFastCredentials } from '@/utils/payfastService';
@@ -59,6 +59,9 @@ interface Profile {
   payfast_mode: string;
   eft_details: string;
   whatsapp_number: string;
+  store_address: string;
+  capitec_paylink: string;
+  show_capitec: boolean;
 }
 
 const InvoicePreview = () => {
@@ -99,7 +102,7 @@ const InvoicePreview = () => {
       // Fetch business profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('business_name, logo_url, snapscan_link, payfast_link, payfast_merchant_id, payfast_merchant_key, payfast_passphrase, payfast_mode, eft_details, whatsapp_number')
+        .select('business_name, logo_url, snapscan_link, payfast_link, payfast_merchant_id, payfast_merchant_key, payfast_passphrase, payfast_mode, eft_details, whatsapp_number, store_address, capitec_paylink, show_capitec')
         .eq('id', invoiceData.user_id)
         .single();
 
@@ -131,7 +134,7 @@ const InvoicePreview = () => {
     }
   };
 
-  const handlePayment = (method: 'snapscan' | 'payfast') => {
+  const handlePayment = (method: 'snapscan' | 'payfast' | 'capitec') => {
     if (!profile || !invoice) return;
     
     // Check if invoice is already paid
@@ -144,6 +147,13 @@ const InvoicePreview = () => {
       const link = profile.snapscan_link;
       if (!link) {
         toast.error('SnapScan payment link not available');
+        return;
+      }
+      window.open(link, '_blank');
+    } else if (method === 'capitec') {
+      const link = profile.capitec_paylink;
+      if (!link) {
+        toast.error('Capitec Pay Me link not available');
         return;
       }
       window.open(link, '_blank');
@@ -223,6 +233,9 @@ const InvoicePreview = () => {
         eft_details: profile.eft_details,
         snapscan_link: profile.snapscan_link,
         payfast_link: profile.payfast_link,
+        capitec_paylink: profile.capitec_paylink,
+        show_capitec: profile.show_capitec,
+        store_address: profile.store_address,
         payment_enabled: invoice.payment_enabled,
         created_at: invoice.created_at,
       });
@@ -321,6 +334,19 @@ const InvoicePreview = () => {
                       {invoice.delivery_method}
                     </Badge>
                   </div>
+                  
+                  {/* Show store address for Local Pickup */}
+                  {invoice.delivery_method === 'Local Pickup' && profile?.store_address && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-blue-900">Pickup Location:</p>
+                          <p className="text-sm text-blue-800 whitespace-pre-line">{profile.store_address}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   {invoice.delivery_address && (
                     <div>
@@ -427,7 +453,7 @@ const InvoicePreview = () => {
           </Card>
 
           {/* Payment Buttons */}
-          {(invoice.show_snapscan || invoice.show_payfast) && (
+          {(invoice.show_snapscan || invoice.show_payfast || profile?.show_capitec) && (
             <Card className="mb-6 sm:mb-8">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -446,15 +472,15 @@ const InvoicePreview = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {invoice.show_snapscan && profile?.snapscan_link && (
                       <Button
                         size="lg"
                         onClick={() => handlePayment('snapscan')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
                         <CreditCard className="w-4 h-4 mr-2" />
-                        Pay Now with SnapScan
+                        Pay with SnapScan
                       </Button>
                     )}
 
@@ -462,28 +488,22 @@ const InvoicePreview = () => {
                       <Button
                         size="lg"
                         onClick={() => handlePayment('payfast')}
-                        className="bg-purple-600 hover:bg-purple-700 text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
                       >
                         <CreditCard className="w-4 h-4 mr-2" />
-                        Pay Now with PayFast
+                        Pay with PayFast
                       </Button>
                     )}
 
-                    {/* Show configuration warnings */}
-                    {invoice.show_snapscan && !profile?.snapscan_link && (
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
-                        <p className="text-orange-700 text-sm">
-                          ⚠️ SnapScan payment link missing. Please contact the business to update their payment information.
-                        </p>
-                      </div>
-                    )}
-
-                    {invoice.show_payfast && !payfastCredentials.merchant_id && !profile?.payfast_link && (
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
-                        <p className="text-orange-700 text-sm">
-                          ⚠️ PayFast payment not configured. Please contact the business to update their payment information.
-                        </p>
-                      </div>
+                    {profile?.show_capitec && profile?.capitec_paylink && (
+                      <Button
+                        size="lg"
+                        onClick={() => handlePayment('capitec')}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Pay with Capitec
+                      </Button>
                     )}
                   </div>
                 )}

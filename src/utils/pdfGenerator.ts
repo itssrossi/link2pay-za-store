@@ -27,6 +27,9 @@ export interface InvoiceData {
   eft_details?: string;
   snapscan_link?: string;
   payfast_link?: string;
+  capitec_paylink?: string;
+  show_capitec?: boolean;
+  store_address?: string;
   payment_enabled?: boolean;
   created_at: string;
 }
@@ -98,6 +101,17 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void
       pdf.setFontSize(10);
       pdf.text(`Method: ${invoiceData.delivery_method}`, margin, currentY);
       currentY += 6;
+      
+      // Show store address for Local Pickup
+      if (invoiceData.delivery_method === 'Local Pickup' && invoiceData.store_address) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Pickup Location:', margin, currentY);
+        currentY += 5;
+        pdf.setFont('helvetica', 'normal');
+        const storeAddressLines = pdf.splitTextToSize(invoiceData.store_address, pageWidth - 2 * margin - 20);
+        pdf.text(storeAddressLines, margin + 20, currentY);
+        currentY += storeAddressLines.length * 4 + 2;
+      }
       
       if (invoiceData.delivery_address) {
         pdf.text('Address:', margin, currentY);
@@ -238,7 +252,7 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void
     }
 
     // Payment Links
-    if (invoiceData.payment_enabled && (invoiceData.snapscan_link || invoiceData.payfast_link)) {
+    if (invoiceData.payment_enabled && (invoiceData.snapscan_link || invoiceData.payfast_link || (invoiceData.show_capitec && invoiceData.capitec_paylink))) {
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(11);
       pdf.text('Quick Payment Options:', margin, currentY);
@@ -259,6 +273,14 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<void
         pdf.text('PayFast: ', margin, currentY);
         pdf.setTextColor(0, 0, 255);
         pdf.text(invoiceData.payfast_link, margin + 25, currentY);
+        pdf.setTextColor(0, 0, 0);
+        currentY += 6;
+      }
+      
+      if (invoiceData.show_capitec && invoiceData.capitec_paylink) {
+        pdf.text('Capitec Pay Me: ', margin, currentY);
+        pdf.setTextColor(0, 0, 255);
+        pdf.text(invoiceData.capitec_paylink, margin + 35, currentY);
         pdf.setTextColor(0, 0, 0);
         currentY += 6;
       }

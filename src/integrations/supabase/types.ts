@@ -249,6 +249,7 @@ export type Database = {
           accent_color: string | null
           background_color: string | null
           business_name: string | null
+          capitec_paylink: string | null
           created_at: string
           customization_version: number | null
           default_currency: string | null
@@ -272,7 +273,9 @@ export type Database = {
           payfast_passphrase: string | null
           payment_method: string | null
           primary_color: string | null
+          show_capitec: boolean | null
           snapscan_link: string | null
+          store_address: string | null
           store_bio: string | null
           store_font: string | null
           store_handle: string | null
@@ -287,6 +290,7 @@ export type Database = {
           accent_color?: string | null
           background_color?: string | null
           business_name?: string | null
+          capitec_paylink?: string | null
           created_at?: string
           customization_version?: number | null
           default_currency?: string | null
@@ -310,7 +314,9 @@ export type Database = {
           payfast_passphrase?: string | null
           payment_method?: string | null
           primary_color?: string | null
+          show_capitec?: boolean | null
           snapscan_link?: string | null
+          store_address?: string | null
           store_bio?: string | null
           store_font?: string | null
           store_handle?: string | null
@@ -325,6 +331,7 @@ export type Database = {
           accent_color?: string | null
           background_color?: string | null
           business_name?: string | null
+          capitec_paylink?: string | null
           created_at?: string
           customization_version?: number | null
           default_currency?: string | null
@@ -348,7 +355,9 @@ export type Database = {
           payfast_passphrase?: string | null
           payment_method?: string | null
           primary_color?: string | null
+          show_capitec?: boolean | null
           snapscan_link?: string | null
+          store_address?: string | null
           store_bio?: string | null
           store_font?: string | null
           store_handle?: string | null

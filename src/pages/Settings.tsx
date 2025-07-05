@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +38,9 @@ interface Profile {
   default_currency: string;
   store_location: string;
   delivery_note: string;
+  store_address: string;
+  capitec_paylink: string;
+  show_capitec: boolean;
 }
 
 interface PlatformSettings {
@@ -78,7 +80,10 @@ const Settings = () => {
     store_visibility: true,
     default_currency: 'ZAR',
     store_location: '',
-    delivery_note: ''
+    delivery_note: '',
+    store_address: '',
+    capitec_paylink: '',
+    show_capitec: false
   });
 
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings>({
@@ -139,7 +144,10 @@ const Settings = () => {
           store_visibility: profileData.store_visibility !== false,
           default_currency: profileData.default_currency || 'ZAR',
           store_location: profileData.store_location || '',
-          delivery_note: profileData.delivery_note || ''
+          delivery_note: profileData.delivery_note || '',
+          store_address: profileData.store_address || '',
+          capitec_paylink: profileData.capitec_paylink || '',
+          show_capitec: profileData.show_capitec || false
         });
 
         // Load PayFast credentials
