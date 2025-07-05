@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
+import ImageUpload from '@/components/ui/image-upload';
 
 interface Profile {
   business_name: string;
@@ -63,6 +64,16 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
               value={profile.business_name}
               onChange={(e) => handleChange('business_name', e.target.value)}
               placeholder="Enter your business name"
+            />
+          </div>
+
+          <div>
+            <ImageUpload
+              value={profile.logo_url}
+              onChange={(url) => handleChange('logo_url', url)}
+              label="Business Logo"
+              accept=".jpg,.jpeg,.png"
+              maxSize={5}
             />
           </div>
 
