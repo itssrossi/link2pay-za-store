@@ -7,6 +7,10 @@ export async function sendGupshupMessage(
   settings: GupshupSettings
 ): Promise<Response> {
   console.log('Calling Gupshup API with payload:', JSON.stringify(messagePayload, null, 2));
+  console.log('Using settings:', { 
+    hasApiKey: !!settings.gupshup_api_key, 
+    sourcePhone: settings.gupshup_source_phone 
+  });
   
   // Convert payload to Gupshup format
   const template = {
@@ -21,24 +25,32 @@ export async function sendGupshupMessage(
   formData.append('src.name', 'Link2pay');
   formData.append('template', JSON.stringify(template));
   
-  const gupshupResponse = await fetch('https://api.gupshup.io/wa/api/v1/template/msg', {
-    method: 'POST',
-    headers: {
-      'apikey': settings.gupshup_api_key,
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: formData
-  });
+  console.log('Gupshup form data:', Object.fromEntries(formData.entries()));
+  
+  try {
+    const gupshupResponse = await fetch('https://api.gupshup.io/wa/api/v1/template/msg', {
+      method: 'POST',
+      headers: {
+        'apikey': settings.gupshup_api_key,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: formData
+    });
 
-  const responseText = await gupshupResponse.text();
-  
-  console.log('Gupshup API response status:', gupshupResponse.status);
-  console.log('Gupshup API response text:', responseText);
-  
-  return new Response(responseText, {
-    status: gupshupResponse.status,
-    headers: gupshupResponse.headers
-  });
+    const responseText = await gupshupResponse.text();
+    
+    console.log('Gupshup API response status:', gupshupResponse.status);
+    console.log('Gupshup API response headers:', Object.fromEntries(gupshupResponse.headers.entries()));
+    console.log('Gupshup API response text:', responseText);
+    
+    return new Response(responseText, {
+      status: gupshupResponse.status,
+      headers: gupshupResponse.headers
+    });
+  } catch (error) {
+    console.error('Error calling Gupshup API:', error);
+    throw error;
+  }
 }
 
 export async function handleGupshupResponse(
@@ -50,6 +62,7 @@ export async function handleGupshupResponse(
   
   try {
     responseData = JSON.parse(responseText);
+    console.log('Parsed Gupshup response:', responseData);
   } catch (parseError) {
     console.error('Failed to parse Gupshup response as JSON:', responseText);
     return new Response(
@@ -89,7 +102,7 @@ export async function sendFallbackMessage(
   fallbackPayload: MessagePayload,
   settings: GupshupSettings
 ): Promise<Response> {
-  console.log('Sending fallback message...');
+  console.log('Sending fallback message with payload:', fallbackPayload);
   
   // For Gupshup, we try to send as text message fallback
   const formData = new URLSearchParams();
@@ -97,34 +110,48 @@ export async function sendFallbackMessage(
   formData.append('destination', fallbackPayload.recipient);
   formData.append('message', fallbackPayload.message || '');
   
-  const fallbackResponse = await fetch('https://api.gupshup.io/wa/api/v1/msg', {
-    method: 'POST',
-    headers: {
-      'apikey': settings.gupshup_api_key,
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: formData
-  });
+  console.log('Fallback form data:', Object.fromEntries(formData.entries()));
+  
+  try {
+    const fallbackResponse = await fetch('https://api.gupshup.io/wa/api/v1/msg', {
+      method: 'POST',
+      headers: {
+        'apikey': settings.gupshup_api_key,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: formData
+    });
 
-  const fallbackText = await fallbackResponse.text();
-  console.log('Fallback response:', fallbackText);
+    const fallbackText = await fallbackResponse.text();
+    console.log('Fallback response status:', fallbackResponse.status);
+    console.log('Fallback response:', fallbackText);
 
-  if (fallbackResponse.ok) {
+    if (fallbackResponse.ok) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Message sent via fallback text (template not available)',
+          data: { fallback: true }
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
       JSON.stringify({
-        success: true,
-        message: 'Message sent via fallback text (template not available)',
-        data: { fallback: true }
+        success: false,
+        error: `Fallback also failed: ${fallbackText}`
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error in fallback message:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Both template and fallback message failed'
+      }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-
-  return new Response(
-    JSON.stringify({
-      success: false,
-      error: 'Both template and fallback message failed'
-    }),
-    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
 }

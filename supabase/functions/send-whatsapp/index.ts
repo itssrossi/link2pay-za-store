@@ -33,6 +33,15 @@ const handler = async (req: Request): Promise<Response> => {
       invoiceUrl
     });
 
+    // Validate required fields
+    if (!phone || !clientName || !invoiceId) {
+      console.error('Missing required fields:', { phone: !!phone, clientName: !!clientName, invoiceId: !!invoiceId });
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing required fields: phone, clientName, or invoiceId' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -44,6 +53,13 @@ const handler = async (req: Request): Promise<Response> => {
       .select('gupshup_api_key, gupshup_source_phone')
       .single();
 
+    console.log('Platform settings fetch result:', { 
+      hasSettings: !!settings, 
+      hasApiKey: !!settings?.gupshup_api_key,
+      hasSourcePhone: !!settings?.gupshup_source_phone,
+      error: settingsError 
+    });
+
     if (settingsError || !settings?.gupshup_api_key) {
       console.error('Error fetching Gupshup settings:', settingsError);
       return new Response(
@@ -54,6 +70,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Format phone number for Gupshup
     const formattedPhone = formatPhoneNumber(phone);
+    console.log('Phone formatting:', { original: phone, formatted: formattedPhone });
     
     let messagePayload;
 
@@ -79,19 +96,27 @@ const handler = async (req: Request): Promise<Response> => {
       });
 
       messagePayload = createInvoiceNotificationPayload(formattedPhone, clientName, finalInvoiceUrl, amount);
-      console.log('Using invoice_notification template with payload:', messagePayload);
+      console.log('Using invoice_notification template with payload:', JSON.stringify(messagePayload, null, 2));
     }
 
     // Send message via Gupshup
+    console.log('Sending message to Gupshup...');
     const gupshupResponse = await sendGupshupMessage(messagePayload, settings);
     
     // Handle successful response
     if (gupshupResponse.ok) {
+      console.log('Gupshup response successful, processing...');
       return await handleGupshupResponse(gupshupResponse, messageType || 'invoice_notification');
     }
 
     // Handle failed response - try fallback if template error
     const responseText = await gupshupResponse.text();
+    console.error('Gupshup response failed:', {
+      status: gupshupResponse.status,
+      statusText: gupshupResponse.statusText,
+      responseText: responseText.substring(0, 500)
+    });
+    
     const isTemplateError = responseText.includes('template') || responseText.includes('Template');
     
     if (isTemplateError) {

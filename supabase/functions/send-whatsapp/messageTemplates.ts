@@ -21,12 +21,15 @@ export function createInvoiceNotificationPayload(
   finalInvoiceUrl: string,
   amount: string
 ): MessagePayload {
+  // Ensure invoice URL has proper spacing
+  const invoiceUrlWithSpace = finalInvoiceUrl.endsWith(' ') ? finalInvoiceUrl : finalInvoiceUrl + ' ';
+  
   return {
     channel: "whatsapp",
     recipient: formattedPhone,
     type: "template",
     templateId: "baf7308f-237c-4c93-8926-633e3d82636b",
-    templateArgs: [clientName, finalInvoiceUrl, amount]
+    templateArgs: [clientName, invoiceUrlWithSpace, amount]
   };
 }
 
@@ -44,7 +47,8 @@ export function createFallbackTextPayload(
     fallbackMessage = `Hello ${clientName},\n\nPayment received! ✅\n\nYour invoice #${invoiceId} has been marked as PAID. Thank you for your business with us.`;
   } else {
     const invoiceUrl = finalInvoiceUrl || `https://link2pay-za-store.lovable.app/invoice/${invoiceId}`;
-    fallbackMessage = `Hi ${clientName}, here's your invoice for ${invoiceUrl} : R${amount}.\nPlease reach out if you have any questions.`;
+    const invoiceUrlWithSpace = invoiceUrl.endsWith(' ') ? invoiceUrl : invoiceUrl + ' ';
+    fallbackMessage = `Hi ${clientName}, here's your invoice for R${amount}: ${invoiceUrlWithSpace}\nPlease reach out if you have any questions.`;
   }
 
   return {

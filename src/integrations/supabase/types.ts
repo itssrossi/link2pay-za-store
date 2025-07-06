@@ -89,7 +89,11 @@ export type Database = {
           client_name: string
           client_phone: string | null
           created_at: string
+          delivery_address: string | null
+          delivery_date: string | null
+          delivery_fee: number | null
           delivery_method: string | null
+          delivery_notes: string | null
           id: string
           invoice_number: string
           payment_enabled: boolean | null
@@ -112,7 +116,11 @@ export type Database = {
           client_name: string
           client_phone?: string | null
           created_at?: string
+          delivery_address?: string | null
+          delivery_date?: string | null
+          delivery_fee?: number | null
           delivery_method?: string | null
+          delivery_notes?: string | null
           id?: string
           invoice_number: string
           payment_enabled?: boolean | null
@@ -135,7 +143,11 @@ export type Database = {
           client_name?: string
           client_phone?: string | null
           created_at?: string
+          delivery_address?: string | null
+          delivery_date?: string | null
+          delivery_fee?: number | null
           delivery_method?: string | null
+          delivery_notes?: string | null
           id?: string
           invoice_number?: string
           payment_enabled?: boolean | null

@@ -30,6 +30,10 @@ export class ZokoService {
         invoiceUrl
       });
 
+      // Ensure invoice URL ends with a space to prevent link breaking
+      const finalInvoiceUrl = invoiceUrl || `https://link2pay-za-store.lovable.app/invoice/${invoiceId}`;
+      const invoiceUrlWithSpace = finalInvoiceUrl.endsWith(' ') ? finalInvoiceUrl : finalInvoiceUrl + ' ';
+
       // Call the Edge Function for invoice notification using template
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
@@ -38,9 +42,11 @@ export class ZokoService {
           amount: amount,
           invoiceId: invoiceId,
           messageType: 'invoice_notification',
-          invoiceUrl: invoiceUrl || `https://link2pay-za-store.lovable.app/invoice/${invoiceId}`
+          invoiceUrl: invoiceUrlWithSpace
         }
       });
+
+      console.log('Edge Function response:', { data, error });
 
       if (error) {
         console.error('Edge Function error:', error);
@@ -103,6 +109,8 @@ export class ZokoService {
           messageType: 'payment_confirmation'
         }
       });
+
+      console.log('Payment confirmation response:', { data, error });
 
       if (error) {
         console.error('Edge Function error:', error);
