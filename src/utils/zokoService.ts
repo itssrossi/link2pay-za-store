@@ -5,6 +5,7 @@ interface ZokoApiResponse {
   success: boolean;
   message?: string;
   error?: string;
+  details?: any;
 }
 
 export class ZokoService {
@@ -19,22 +20,32 @@ export class ZokoService {
       // Validate phone number format (E.164)
       const phoneRegex = /^\+[1-9]\d{1,14}$/;
       if (!phoneRegex.test(clientPhone)) {
+        console.error('Invalid phone number format:', clientPhone);
         throw new Error('Invalid phone number format. Please use E.164 format (e.g., +27821234567)');
       }
 
-      console.log('Sending WhatsApp invoice notification via Edge Function:', {
+      console.log('=== Starting WhatsApp Invoice Send ===');
+      console.log('Invoice send parameters:', {
         phone: clientPhone,
         clientName,
         amount,
         invoiceId,
-        invoiceUrl
+        invoiceUrl,
+        timestamp: new Date().toISOString()
       });
 
       // Ensure invoice URL ends with a space to prevent link breaking
       const finalInvoiceUrl = invoiceUrl || `https://link2pay-za-store.lovable.app/invoice/${invoiceId}`;
       const invoiceUrlWithSpace = finalInvoiceUrl.endsWith(' ') ? finalInvoiceUrl : finalInvoiceUrl + ' ';
 
+      console.log('Processed invoice URL:', {
+        original: finalInvoiceUrl,
+        withSpace: invoiceUrlWithSpace,
+        hasSpace: invoiceUrlWithSpace.endsWith(' ')
+      });
+
       // Call the Edge Function for invoice notification using template
+      console.log('Calling send-whatsapp Edge Function...');
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
           phone: clientPhone,
@@ -46,35 +57,58 @@ export class ZokoService {
         }
       });
 
-      console.log('Edge Function response:', { data, error });
+      console.log('Edge Function response details:', { 
+        data, 
+        error,
+        dataType: typeof data,
+        hasData: !!data,
+        hasError: !!error
+      });
 
       if (error) {
-        console.error('Edge Function error:', error);
+        console.error('❌ Edge Function returned error:', error);
         return {
           success: false,
-          error: error.message || 'Failed to send WhatsApp invoice notification'
+          error: error.message || 'Failed to send WhatsApp invoice notification',
+          details: error
         };
       }
 
-      if (!data?.success) {
-        console.error('WhatsApp invoice notification failed:', data?.error);
+      if (!data) {
+        console.error('❌ Edge Function returned no data');
         return {
           success: false,
-          error: data?.error || 'Failed to send WhatsApp invoice notification'
+          error: 'No response from WhatsApp service'
         };
       }
 
-      console.log('WhatsApp invoice notification sent successfully');
+      if (!data.success) {
+        console.error('❌ WhatsApp service reported failure:', data);
+        return {
+          success: false,
+          error: data.error || 'Failed to send WhatsApp invoice notification',
+          details: data
+        };
+      }
+
+      console.log('✅ WhatsApp invoice notification sent successfully:', data);
       return {
         success: true,
-        message: 'WhatsApp invoice notification sent successfully'
+        message: data.message || 'WhatsApp invoice notification sent successfully',
+        details: data
       };
 
     } catch (error) {
-      console.error('Error sending WhatsApp invoice notification:', error);
+      console.error('❌ Critical error in sendInvoiceMessage:', {
+        error: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        details: { errorType: 'exception', originalError: error }
       };
     }
   }
@@ -89,14 +123,17 @@ export class ZokoService {
       // Validate phone number format (E.164)
       const phoneRegex = /^\+[1-9]\d{1,14}$/;
       if (!phoneRegex.test(clientPhone)) {
+        console.error('Invalid phone number format:', clientPhone);
         throw new Error('Invalid phone number format. Please use E.164 format (e.g., +27821234567)');
       }
 
-      console.log('Sending payment confirmation via Edge Function:', {
+      console.log('=== Starting WhatsApp Payment Confirmation ===');
+      console.log('Payment confirmation parameters:', {
         phone: clientPhone,
         clientName,
         invoiceNumber,
-        amount
+        amount,
+        timestamp: new Date().toISOString()
       });
 
       // Call the Edge Function for payment confirmation using template
@@ -110,35 +147,57 @@ export class ZokoService {
         }
       });
 
-      console.log('Payment confirmation response:', { data, error });
+      console.log('Payment confirmation Edge Function response:', { 
+        data, 
+        error,
+        hasData: !!data,
+        hasError: !!error
+      });
 
       if (error) {
-        console.error('Edge Function error:', error);
+        console.error('❌ Payment confirmation Edge Function error:', error);
         return {
           success: false,
-          error: error.message || 'Failed to send payment confirmation'
+          error: error.message || 'Failed to send payment confirmation',
+          details: error
         };
       }
 
-      if (!data?.success) {
-        console.error('Payment confirmation send failed:', data?.error);
+      if (!data) {
+        console.error('❌ Payment confirmation returned no data');
         return {
           success: false,
-          error: data?.error || 'Failed to send payment confirmation'
+          error: 'No response from WhatsApp service'
         };
       }
 
-      console.log('Payment confirmation sent successfully');
+      if (!data.success) {
+        console.error('❌ Payment confirmation service failure:', data);
+        return {
+          success: false,
+          error: data.error || 'Failed to send payment confirmation',
+          details: data
+        };
+      }
+
+      console.log('✅ Payment confirmation sent successfully:', data);
       return {
         success: true,
-        message: 'Payment confirmation sent successfully'
+        message: data.message || 'Payment confirmation sent successfully',
+        details: data
       };
 
     } catch (error) {
-      console.error('Error sending payment confirmation:', error);
+      console.error('❌ Critical error in sendPaymentConfirmation:', {
+        error: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        details: { errorType: 'exception', originalError: error }
       };
     }
   }

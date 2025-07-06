@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -215,7 +214,21 @@ const InvoiceBuilder = () => {
           toast.error('Invalid WhatsApp number format. Please use E.164 format (e.g., +27821234567)');
           return;
         }
+        
+        console.log('WhatsApp number validation:', {
+          original: whatsappNumber,
+          formatted: validatedWhatsAppNumber,
+          isValid: ZokoService.validatePhoneNumber(validatedWhatsAppNumber)
+        });
       }
+
+      console.log('Creating invoice with details:', {
+        invoiceNumber,
+        clientName,
+        totalAmount,
+        sendWhatsApp,
+        validatedWhatsAppNumber
+      });
 
       // Create invoice
       const { data: invoice, error: invoiceError } = await supabase
@@ -243,7 +256,12 @@ const InvoiceBuilder = () => {
         .select()
         .single();
 
-      if (invoiceError) throw invoiceError;
+      if (invoiceError) {
+        console.error('Invoice creation error:', invoiceError);
+        throw invoiceError;
+      }
+
+      console.log('Invoice created successfully:', invoice);
 
       // Create invoice items
       const invoiceItems = items.map(item => ({
@@ -259,30 +277,59 @@ const InvoiceBuilder = () => {
         .from('invoice_items')
         .insert(invoiceItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error('Invoice items creation error:', itemsError);
+        throw itemsError;
+      }
+
+      console.log('Invoice items created successfully');
 
       // Send WhatsApp message if requested
       if (sendWhatsApp && validatedWhatsAppNumber) {
-        const messageResult = await ZokoService.sendInvoiceMessage(
-          validatedWhatsAppNumber,
-          clientName,
-          `R${totalAmount.toFixed(2)}`,
-          invoice!.id
-        );
+        console.log('Attempting to send WhatsApp message...');
+        
+        // Show immediate feedback
+        toast.success(`Invoice ${invoiceNumber} created! Sending WhatsApp message...`);
+        
+        try {
+          const messageResult = await ZokoService.sendInvoiceMessage(
+            validatedWhatsAppNumber,
+            clientName,
+            `R${totalAmount.toFixed(2)}`,
+            invoice!.id
+          );
 
-        if (messageResult.success) {
-          toast.success(`Invoice ${invoiceNumber} created and sent via WhatsApp!`);
-        } else {
-          toast.warning(`Invoice ${invoiceNumber} created, but WhatsApp message failed: ${messageResult.error}`);
+          console.log('WhatsApp send result:', messageResult);
+
+          if (messageResult.success) {
+            toast.success(`Invoice ${invoiceNumber} created and WhatsApp message sent successfully! 📱✅`);
+          } else {
+            console.error('WhatsApp send failed:', messageResult);
+            toast.error(`Invoice ${invoiceNumber} created, but WhatsApp failed: ${messageResult.error || 'Unknown error'}`);
+            
+            // Show detailed error if available
+            if (messageResult.details) {
+              console.error('WhatsApp error details:', messageResult.details);
+            }
+          }
+        } catch (whatsappError) {
+          console.error('WhatsApp send exception:', whatsappError);
+          toast.error(`Invoice ${invoiceNumber} created, but WhatsApp send failed: ${whatsappError.message}`);
         }
       } else {
-        toast.success(`Invoice ${invoiceNumber} created successfully!`);
+        toast.success(`Invoice ${invoiceNumber} created successfully! 📄✅`);
       }
 
+      // Navigate to invoice view
       navigate(`/invoice/${invoice!.id}`);
+      
     } catch (error) {
-      console.error('Error creating invoice:', error);
-      toast.error('Failed to create invoice');
+      console.error('Critical error creating invoice:', {
+        error: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      toast.error(`Failed to create invoice: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
