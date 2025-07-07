@@ -24,7 +24,7 @@ export async function sendGupshupMessage(
   formData.append('channel', 'whatsapp');
   formData.append('source', settings.gupshup_source_phone);
   formData.append('destination', messagePayload.recipient);
-  formData.append('src.name', 'Link2pay');
+  formData.append('src.name', 'Link2payofficial');
   formData.append('template', JSON.stringify(template));
   
   console.log('Gupshup template form data:', Object.fromEntries(formData.entries()));
