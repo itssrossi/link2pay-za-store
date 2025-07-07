@@ -190,10 +190,22 @@ const InvoiceBuilder = () => {
       toast.error('Client name is required');
       return;
     }
+    if (!clientPhone.trim()) {
+      toast.error('Please enter the client\'s phone number to send the invoice.');
+      return;
+    }
     if (items.some(item => !item.title.trim())) {
       toast.error('All items must have a title');
       return;
     }
+    
+    // Normalize phone number for all purposes
+    const normalizedPhone = ZokoService.normalizePhoneForGupshup(clientPhone);
+    if (!normalizedPhone) {
+      toast.error('Please enter a valid phone number (062..., 27..., or +27...)');
+      return;
+    }
+    
     if (sendWhatsApp && !whatsappNumber.trim()) {
       toast.error('WhatsApp number is required when WhatsApp messaging is enabled');
       return;
@@ -238,7 +250,7 @@ const InvoiceBuilder = () => {
           invoice_number: invoiceNumber,
           client_name: clientName,
           client_email: clientEmail || null,
-          client_phone: clientPhone || null,
+          client_phone: normalizedPhone,
           subtotal,
           vat_amount: vatAmount,
           total_amount: totalAmount,
@@ -376,13 +388,17 @@ const InvoiceBuilder = () => {
                   </div>
                   
                   <div>
-                    <Label htmlFor="clientPhone">Phone (Optional)</Label>
+                    <Label htmlFor="clientPhone">Client Phone Number *</Label>
                     <Input
                       id="clientPhone"
                       value={clientPhone}
                       onChange={(e) => setClientPhone(e.target.value)}
-                      placeholder="+27821234567"
+                      placeholder="0821234567, 27821234567, or +27821234567"
+                      required
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter in any format: 062..., 27..., or +27...
+                    </p>
                   </div>
                 </div>
               </CardContent>

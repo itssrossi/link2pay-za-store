@@ -26,16 +26,16 @@ const QuickInvoiceWhatsApp = () => {
     if (!productId.trim()) throw new Error('Product ID is required');
     if (!phone.trim()) throw new Error('Phone number is required');
 
-    const formattedPhone = ZokoService.formatPhoneNumber(phone);
-    if (!ZokoService.validatePhoneNumber(formattedPhone)) {
-      throw new Error('Invalid phone number format. Use E.164 format (e.g., +27821234567)');
+    const normalizedPhone = ZokoService.normalizePhoneForGupshup(phone);
+    if (!normalizedPhone) {
+      throw new Error('Invalid phone number format. Use any format: 062..., 27..., or +27...');
     }
 
     return {
       clientName: clientName.trim(),
       amount: Number(amount),
       productId: productId.trim(),
-      phone: formattedPhone
+      phone: normalizedPhone
     };
   };
 

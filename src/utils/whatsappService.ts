@@ -71,6 +71,28 @@ export const validatePhoneNumber = (phone: string): boolean => {
   return e164Regex.test(phone);
 };
 
+export const normalizePhoneForGupshup = (phone: string): string | null => {
+  if (!phone.trim()) return null;
+  
+  // Remove all spaces, brackets, dashes, and other non-digit characters except +
+  let cleaned = phone.replace(/[\s\-\(\)]/g, '').replace(/[^\d+]/g, '');
+  
+  // Handle different input formats
+  if (cleaned.startsWith('+27')) {
+    // Remove the + for Gupshup format
+    return cleaned.substring(1);
+  } else if (cleaned.startsWith('27')) {
+    // Already in correct format
+    return cleaned;
+  } else if (cleaned.startsWith('0')) {
+    // Replace leading 0 with 27
+    return '27' + cleaned.substring(1);
+  }
+  
+  // Invalid format
+  return null;
+};
+
 export const parseQuickInvoiceCommand = (input: string) => {
   // Parse format: l2p:ClientName:Amount:ProductID:Phone
   const match = input.match(/^l2p:(.+?):(\d+(?:\.\d{2})?):([^:]+):(\+\d{1,15})$/i);
@@ -88,14 +110,15 @@ export const parseQuickInvoiceCommand = (input: string) => {
     return { error: 'Amount must be a valid positive number' };
   }
 
-  if (!validatePhoneNumber(phoneNumber)) {
-    return { error: 'Phone number must be in E.164 format (e.g., +27821234567)' };
+  const normalizedPhone = normalizePhoneForGupshup(phoneNumber);
+  if (!normalizedPhone) {
+    return { error: 'Phone number must be valid (e.g., 0821234567, 27821234567, or +27821234567)' };
   }
   
   return {
     clientName: clientName.trim(),
     amount: parsedAmount,
     productId: productId.trim(),
-    phoneNumber: phoneNumber.trim()
+    phoneNumber: normalizedPhone
   };
 };
