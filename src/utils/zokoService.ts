@@ -120,10 +120,13 @@ export class ZokoService {
     amount?: string
   ): Promise<ZokoApiResponse> {
     try {
+      // Format phone number to ensure E.164 format
+      const formattedPhone = this.formatPhoneNumber(clientPhone);
+      
       // Validate phone number format (E.164)
       const phoneRegex = /^\+[1-9]\d{1,14}$/;
-      if (!phoneRegex.test(clientPhone)) {
-        console.error('Invalid phone number format:', clientPhone);
+      if (!phoneRegex.test(formattedPhone)) {
+        console.error('Invalid phone number format:', formattedPhone);
         throw new Error('Invalid phone number format. Please use E.164 format (e.g., +27821234567)');
       }
 
@@ -139,7 +142,7 @@ export class ZokoService {
       // Call the Edge Function for payment confirmation using template
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: {
-          phone: clientPhone,
+          phone: formattedPhone,
           clientName: clientName,
           amount: amount || 'PAID',
           invoiceId: invoiceNumber,
