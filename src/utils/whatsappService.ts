@@ -71,22 +71,22 @@ export const validatePhoneNumber = (phone: string): boolean => {
   return e164Regex.test(phone);
 };
 
-export const normalizePhoneForGupshup = (phone: string): string | null => {
+export const normalizePhoneForTwilio = (phone: string): string | null => {
   if (!phone.trim()) return null;
   
   // Remove all spaces, brackets, dashes, and other non-digit characters except +
   let cleaned = phone.replace(/[\s\-\(\)]/g, '').replace(/[^\d+]/g, '');
   
-  // Handle different input formats
+  // Handle different input formats and normalize to +27... format for Twilio
   if (cleaned.startsWith('+27')) {
-    // Remove the + for Gupshup format
-    return cleaned.substring(1);
-  } else if (cleaned.startsWith('27')) {
     // Already in correct format
     return cleaned;
+  } else if (cleaned.startsWith('27')) {
+    // Add + prefix for Twilio
+    return '+' + cleaned;
   } else if (cleaned.startsWith('0')) {
-    // Replace leading 0 with 27
-    return '27' + cleaned.substring(1);
+    // Replace leading 0 with +27
+    return '+27' + cleaned.substring(1);
   }
   
   // Invalid format
@@ -110,10 +110,10 @@ export const parseQuickInvoiceCommand = (input: string) => {
     return { error: 'Amount must be a valid positive number' };
   }
 
-  const normalizedPhone = normalizePhoneForGupshup(phoneNumber);
-  if (!normalizedPhone) {
-    return { error: 'Phone number must be valid (e.g., 0821234567, 27821234567, or +27821234567)' };
-  }
+    const normalizedPhone = normalizePhoneForTwilio(phoneNumber);
+    if (!normalizedPhone) {
+      return { error: 'Phone number must be valid (e.g., 0821234567, 27821234567, or +27821234567)' };
+    }
   
   return {
     clientName: clientName.trim(),

@@ -229,22 +229,22 @@ export class ZokoService {
     return cleaned;
   }
 
-  static normalizePhoneForGupshup(phone: string): string | null {
+  static normalizePhoneForTwilio(phone: string): string | null {
     if (!phone.trim()) return null;
     
     // Remove all spaces, brackets, dashes, and other non-digit characters except +
     let cleaned = phone.replace(/[\s\-\(\)]/g, '').replace(/[^\d+]/g, '');
     
-    // Handle different input formats
+    // Handle different input formats and normalize to +27... format for Twilio
     if (cleaned.startsWith('+27')) {
-      // Remove the + for Gupshup format
-      return cleaned.substring(1);
-    } else if (cleaned.startsWith('27')) {
-      // Already in correct format
+      // Already in correct format, just ensure it's valid
       return cleaned;
+    } else if (cleaned.startsWith('27')) {
+      // Add + prefix for Twilio
+      return '+' + cleaned;
     } else if (cleaned.startsWith('0')) {
-      // Replace leading 0 with 27
-      return '27' + cleaned.substring(1);
+      // Replace leading 0 with +27
+      return '+27' + cleaned.substring(1);
     }
     
     // Invalid format

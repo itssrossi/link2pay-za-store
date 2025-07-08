@@ -200,7 +200,7 @@ const InvoiceBuilder = () => {
     }
     
     // Normalize phone number for all purposes
-    const normalizedPhone = ZokoService.normalizePhoneForGupshup(clientPhone);
+    const normalizedPhone = ZokoService.normalizePhoneForTwilio(clientPhone);
     if (!normalizedPhone) {
       toast.error('Please enter a valid phone number (062..., 27..., or +27...)');
       return;

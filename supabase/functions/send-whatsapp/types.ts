@@ -17,7 +17,8 @@ export interface MessagePayload {
   message?: string;
 }
 
-export interface GupshupSettings {
-  gupshup_api_key: string;
-  gupshup_source_phone: string;
+export interface TwilioSettings {
+  twilio_account_sid: string;
+  twilio_auth_token: string;
+  twilio_whatsapp_number: string;
 }

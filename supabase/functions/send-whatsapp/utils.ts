@@ -5,14 +5,12 @@ export const corsHeaders = {
 };
 
 export function formatPhoneNumber(phone: string): string {
-  // Normalize to Gupshup format (E.164 without +)
-  if (phone.startsWith('+')) {
-    return phone.substring(1);
-  }
-  return phone;
+  // Normalize to Twilio WhatsApp format (whatsapp:+27...)
+  const normalized = normalizePhoneForTwilio(phone);
+  return normalized ? `whatsapp:+${normalized}` : phone;
 }
 
-export function normalizePhoneForGupshup(phone: string): string | null {
+export function normalizePhoneForTwilio(phone: string): string | null {
   if (!phone.trim()) return null;
   
   // Remove all spaces, brackets, dashes, and other non-digit characters except +
@@ -20,7 +18,7 @@ export function normalizePhoneForGupshup(phone: string): string | null {
   
   // Handle different input formats
   if (cleaned.startsWith('+27')) {
-    // Remove the + for Gupshup format
+    // Remove the + for Twilio format
     return cleaned.substring(1);
   } else if (cleaned.startsWith('27')) {
     // Already in correct format

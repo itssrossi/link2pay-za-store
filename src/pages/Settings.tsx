@@ -44,10 +44,9 @@ interface Profile {
 }
 
 interface PlatformSettings {
-  whatsapp_api_token: string;
-  whatsapp_phone_id: string;
-  gupshup_api_key: string;
-  gupshup_source_phone: string;
+  twilio_account_sid: string;
+  twilio_auth_token: string;
+  twilio_whatsapp_number: string;
 }
 
 const Settings = () => {
@@ -87,10 +86,9 @@ const Settings = () => {
   });
 
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings>({
-    whatsapp_api_token: '',
-    whatsapp_phone_id: '',
-    gupshup_api_key: '',
-    gupshup_source_phone: ''
+    twilio_account_sid: '',
+    twilio_auth_token: '',
+    twilio_whatsapp_number: ''
   });
 
   const [payfastCredentials, setPayfastCredentials] = useState<Partial<PayFastCredentials>>({
@@ -167,7 +165,7 @@ const Settings = () => {
     try {
       const { data, error } = await supabase
         .from('platform_settings')
-        .select('whatsapp_api_token, whatsapp_phone_id, gupshup_api_key, gupshup_source_phone')
+        .select('twilio_account_sid, twilio_auth_token, twilio_whatsapp_number')
         .single();
 
       if (error) {
@@ -177,10 +175,9 @@ const Settings = () => {
 
       if (data) {
         setPlatformSettings({
-          whatsapp_api_token: data.whatsapp_api_token || '',
-          whatsapp_phone_id: data.whatsapp_phone_id || '',
-          gupshup_api_key: data.gupshup_api_key || '',
-          gupshup_source_phone: data.gupshup_source_phone || ''
+          twilio_account_sid: data.twilio_account_sid || '',
+          twilio_auth_token: data.twilio_auth_token || '',
+          twilio_whatsapp_number: data.twilio_whatsapp_number || ''
         });
       }
     } catch (error) {
@@ -255,10 +252,9 @@ const Settings = () => {
         const { error } = await supabase
           .from('platform_settings')
           .update({
-            whatsapp_api_token: platformSettings.whatsapp_api_token,
-            whatsapp_phone_id: platformSettings.whatsapp_phone_id,
-            gupshup_api_key: platformSettings.gupshup_api_key,
-            gupshup_source_phone: platformSettings.gupshup_source_phone,
+            twilio_account_sid: platformSettings.twilio_account_sid,
+            twilio_auth_token: platformSettings.twilio_auth_token,
+            twilio_whatsapp_number: platformSettings.twilio_whatsapp_number,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingSettings.id);
