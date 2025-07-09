@@ -17,8 +17,15 @@ export async function sendTwilioMessage(
   const formData = new URLSearchParams();
   formData.append('To', messagePayload.recipient);
   formData.append('From', settings.twilio_whatsapp_number);
-  formData.append('MessagingServiceSid', messagePayload.templateId || '');
-  formData.append('Body', messagePayload.message || '');
+  
+  if (messagePayload.contentSid && messagePayload.contentVariables) {
+    // Use ContentSid and ContentVariables for templated messages
+    formData.append('ContentSid', messagePayload.contentSid);
+    formData.append('ContentVariables', JSON.stringify(messagePayload.contentVariables));
+  } else if (messagePayload.message) {
+    // Fallback to plain text message
+    formData.append('Body', messagePayload.message);
+  }
   
   console.log('Twilio form data:', Object.fromEntries(formData.entries()));
   

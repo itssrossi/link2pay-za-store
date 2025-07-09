@@ -6,18 +6,15 @@ export function createPaymentConfirmationPayload(
   clientName: string,
   invoiceId: string
 ): MessagePayload {
-  const message = `Hello ${clientName},  
-Payment received! ✅
-
-Your invoice #${invoiceId} has been marked as PAID.
-Thank you for your business with us`;
-  
   return {
     channel: "whatsapp",
     recipient: formattedPhone,
     type: "template",
-    templateId: "HXff53d0f9bd0c972c5921bf18fe6d7a79",
-    message: message
+    contentSid: "HXff53d0f9bd0c972c5921bf18fe6d7a79",
+    contentVariables: {
+      "1": clientName,
+      "2": invoiceId
+    }
   };
 }
 
@@ -27,15 +24,16 @@ export function createInvoiceNotificationPayload(
   finalInvoiceUrl: string,
   amount: string
 ): MessagePayload {
-  const message = `Hi ${clientName}, here's your invoice for ${amount} : ${finalInvoiceUrl}.
-Please reach out if you have any questions.`;
-  
   return {
     channel: "whatsapp",
     recipient: formattedPhone,
     type: "template",
-    templateId: "HX52f517a3d75eadafd259aab4c29bc919",
-    message: message
+    contentSid: "HX52f517a3d75eadafd259aab4c29bc919",
+    contentVariables: {
+      "1": clientName,
+      "2": amount,
+      "3": finalInvoiceUrl
+    }
   };
 }
 

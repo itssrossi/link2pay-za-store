@@ -12,8 +12,8 @@ export interface MessagePayload {
   channel: string;
   recipient: string;
   type: string;
-  templateId?: string;
-  templateArgs?: string[];
+  contentSid?: string;
+  contentVariables?: Record<string, string>;
   message?: string;
 }
 
