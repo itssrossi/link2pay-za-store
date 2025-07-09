@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import type { WhatsAppRequest } from './types.ts';
-import { corsHeaders, formatPhoneNumber, generateInvoiceUrl } from './utils.ts';
+import { corsHeaders, generateInvoiceUrl } from './utils.ts';
 import {
   createPaymentConfirmationPayload,
   createInvoiceNotificationPayload,
@@ -83,14 +83,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Format phone number for Twilio
-    const formattedPhone = formatPhoneNumber(phone);
-    console.log('Phone number formatting:', { 
-      original: phone, 
-      formatted: formattedPhone,
-      isValidTwilioFormat: formattedPhone.startsWith('whatsapp:+')
-    });
-    
     let messagePayload;
     let templateAttempted = false;
 
@@ -98,12 +90,12 @@ const handler = async (req: Request): Promise<Response> => {
     if (messageType === 'payment_confirmation') {
       console.log('=== Preparing Payment Confirmation ===');
       console.log('Payment confirmation details:', {
-        phone: formattedPhone,
+        phone,
         clientName,
         invoiceId
       });
 
-      messagePayload = createPaymentConfirmationPayload(formattedPhone, clientName, invoiceId);
+      messagePayload = createPaymentConfirmationPayload(phone, clientName, invoiceId);
       templateAttempted = true;
       console.log('Payment confirmation template payload:', JSON.stringify(messagePayload, null, 2));
     } else {
@@ -111,14 +103,14 @@ const handler = async (req: Request): Promise<Response> => {
       
       console.log('=== Preparing Invoice Notification ===');
       console.log('Invoice notification details:', {
-        phone: formattedPhone,
+        phone,
         clientName,
         amount,
         invoiceId,
         invoiceUrl: finalInvoiceUrl
       });
 
-      messagePayload = createInvoiceNotificationPayload(formattedPhone, clientName, finalInvoiceUrl, amount);
+      messagePayload = createInvoiceNotificationPayload(phone, clientName, finalInvoiceUrl, amount);
       templateAttempted = true;
       console.log('Invoice notification template payload:', JSON.stringify(messagePayload, null, 2));
     }

@@ -1,11 +1,14 @@
 
 import type { MessagePayload } from './types.ts';
+import { formatTwilioWhatsAppNumber } from './utils.ts';
 
 export function createPaymentConfirmationPayload(
-  formattedPhone: string,
+  phone: string,
   clientName: string,
   invoiceId: string
 ): MessagePayload {
+  const formattedPhone = formatTwilioWhatsAppNumber(phone);
+  
   return {
     channel: "whatsapp",
     recipient: formattedPhone,
@@ -19,11 +22,13 @@ export function createPaymentConfirmationPayload(
 }
 
 export function createInvoiceNotificationPayload(
-  formattedPhone: string,
+  phone: string,
   clientName: string,
   finalInvoiceUrl: string,
   amount: string
 ): MessagePayload {
+  const formattedPhone = formatTwilioWhatsAppNumber(phone);
+  
   return {
     channel: "whatsapp",
     recipient: formattedPhone,
@@ -38,13 +43,15 @@ export function createInvoiceNotificationPayload(
 }
 
 export function createFallbackTextPayload(
-  formattedPhone: string,
+  phone: string,
   clientName: string,
   messageType: string,
   invoiceId: string,
   amount: string,
   finalInvoiceUrl?: string
 ): MessagePayload {
+  const formattedPhone = formatTwilioWhatsAppNumber(phone);
+  
   let fallbackMessage: string;
   
   if (messageType === 'payment_confirmation') {

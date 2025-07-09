@@ -1,5 +1,5 @@
 import type { MessagePayload, TwilioSettings } from './types.ts';
-import { corsHeaders } from './utils.ts';
+import { corsHeaders, formatTwilioWhatsAppNumber } from './utils.ts';
 
 export async function sendTwilioMessage(
   messagePayload: MessagePayload,
@@ -13,10 +13,26 @@ export async function sendTwilioMessage(
     whatsappNumber: settings.twilio_whatsapp_number 
   });
   
+  // Ensure proper WhatsApp formatting for both From and To numbers
+  const formattedFrom = settings.twilio_whatsapp_number.startsWith('whatsapp:') 
+    ? settings.twilio_whatsapp_number 
+    : formatTwilioWhatsAppNumber(settings.twilio_whatsapp_number);
+  
+  const formattedTo = messagePayload.recipient.startsWith('whatsapp:') 
+    ? messagePayload.recipient 
+    : formatTwilioWhatsAppNumber(messagePayload.recipient);
+  
+  console.log('Formatted phone numbers:', {
+    originalFrom: settings.twilio_whatsapp_number,
+    formattedFrom: formattedFrom,
+    originalTo: messagePayload.recipient,
+    formattedTo: formattedTo
+  });
+  
   // Prepare form data for Twilio API
   const formData = new URLSearchParams();
-  formData.append('To', messagePayload.recipient);
-  formData.append('From', settings.twilio_whatsapp_number);
+  formData.append('To', formattedTo);
+  formData.append('From', formattedFrom);
   
   if (messagePayload.contentSid && messagePayload.contentVariables) {
     // Use ContentSid and ContentVariables for templated messages
