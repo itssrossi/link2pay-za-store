@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,33 +44,71 @@ const Products = () => {
   }, [user]);
 
   const fetchProducts = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, cannot fetch products');
+      setLoading(false);
+      return;
+    }
 
     try {
+      console.log('Fetching products for user:', user.id);
+      
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching products:', error);
+        
+        if (error.code === '42501') {
+          toast.error('You do not have permission to view products. Please contact support.');
+        } else if (error.message.includes('row-level security')) {
+          toast.error('Permission denied. Please log out and log back in.');
+        } else {
+          toast.error(`Failed to load products: ${error.message}`);
+        }
+        return;
+      }
+
+      console.log('Products fetched successfully:', data?.length || 0, 'products');
       setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      toast.error('Failed to load products');
+    } catch (error: any) {
+      console.error('Unexpected error fetching products:', error);
+      toast.error('An unexpected error occurred while loading products');
     } finally {
       setLoading(false);
     }
   };
 
   const toggleProductStatus = async (productId: string, currentStatus: boolean) => {
+    if (!user) {
+      toast.error('You must be logged in to update products');
+      return;
+    }
+
     try {
+      console.log('Toggling product status:', productId, 'from', currentStatus, 'to', !currentStatus);
+      
       const { error } = await supabase
         .from('products')
         .update({ is_active: !currentStatus })
-        .eq('id', productId);
+        .eq('id', productId)
+        .eq('user_id', user.id); // Ensure user can only update their own products
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating product status:', error);
+        
+        if (error.code === '42501') {
+          toast.error('You do not have permission to update this product.');
+        } else if (error.message.includes('row-level security')) {
+          toast.error('You can only update your own products.');
+        } else {
+          toast.error(`Failed to update product: ${error.message}`);
+        }
+        return;
+      }
       
       setProducts(products.map(product => 
         product.id === productId 
@@ -80,28 +117,49 @@ const Products = () => {
       ));
       
       toast.success(`Product ${!currentStatus ? 'activated' : 'deactivated'}`);
-    } catch (error) {
-      console.error('Error updating product status:', error);
-      toast.error('Failed to update product status');
+    } catch (error: any) {
+      console.error('Unexpected error updating product status:', error);
+      toast.error('An unexpected error occurred while updating the product');
     }
   };
 
   const deleteProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!user) {
+      toast.error('You must be logged in to delete products');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+      return;
+    }
 
     try {
+      console.log('Deleting product:', productId);
+      
       const { error } = await supabase
         .from('products')
         .delete()
-        .eq('id', productId);
+        .eq('id', productId)
+        .eq('user_id', user.id); // Ensure user can only delete their own products
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting product:', error);
+        
+        if (error.code === '42501') {
+          toast.error('You do not have permission to delete this product.');
+        } else if (error.message.includes('row-level security')) {
+          toast.error('You can only delete your own products.');
+        } else {
+          toast.error(`Failed to delete product: ${error.message}`);
+        }
+        return;
+      }
       
       setProducts(products.filter(product => product.id !== productId));
       toast.success('Product deleted successfully');
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      toast.error('Failed to delete product');
+    } catch (error: any) {
+      console.error('Unexpected error deleting product:', error);
+      toast.error('An unexpected error occurred while deleting the product');
     }
   };
 

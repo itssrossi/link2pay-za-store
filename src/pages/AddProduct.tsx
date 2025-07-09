@@ -52,14 +52,21 @@ const AddProduct = () => {
   };
 
   const uploadImage = async (file: File): Promise<string> => {
+    if (!user) {
+      throw new Error('You must be logged in to upload images');
+    }
+
     const fileExt = file.name.split('.').pop();
-    const fileName = `${user!.id}/${Date.now()}.${fileExt}`;
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
     
     const { error: uploadError } = await supabase.storage
       .from('uploads')
       .upload(fileName, file);
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Image upload error:', uploadError);
+      throw new Error(`Failed to upload image: ${uploadError.message}`);
+    }
 
     const { data: { publicUrl } } = supabase.storage
       .from('uploads')
@@ -71,10 +78,13 @@ const AddProduct = () => {
   const generateProductId = async (): Promise<string> => {
     try {
       const { data, error } = await supabase.rpc('generate_product_id');
-      if (error) throw error;
+      if (error) {
+        console.error('Error generating product ID:', error);
+        throw new Error(`Failed to generate product ID: ${error.message}`);
+      }
       return data;
     } catch (error) {
-      console.error('Error generating product ID:', error);
+      console.error('Error calling generate_product_id function:', error);
       // Fallback to timestamp-based ID
       return `prod-${Date.now()}`;
     }
@@ -82,7 +92,12 @@ const AddProduct = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    
+    if (!user) {
+      toast.error('You must be logged in to create products');
+      navigate('/auth');
+      return;
+    }
 
     // Validate required fields
     if (!formData.title.trim()) {
@@ -105,34 +120,67 @@ const AddProduct = () => {
     setLoading(true);
 
     try {
+      console.log('Starting product creation for user:', user.id);
+      
       // Generate unique product ID
       const productId = await generateProductId();
+      console.log('Generated product ID:', productId);
       
       // Upload image
       const imageUrl = await uploadImage(imageFile);
+      console.log('Image uploaded successfully:', imageUrl);
+
+      // Create product data
+      const productData = {
+        user_id: user.id,
+        product_id: productId,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        price: parseFloat(formData.price),
+        category: formData.category.trim() || null,
+        image_url: imageUrl,
+        inventory_enabled: formData.inventory_enabled,
+        stock_quantity: formData.inventory_enabled ? formData.stock_quantity : 0,
+        is_active: formData.is_active
+      };
+
+      console.log('Inserting product data:', productData);
 
       const { error } = await supabase
         .from('products')
-        .insert({
-          user_id: user.id,
-          product_id: productId,
-          title: formData.title,
-          description: formData.description,
-          price: parseFloat(formData.price),
-          category: formData.category,
-          image_url: imageUrl,
-          inventory_enabled: formData.inventory_enabled,
-          stock_quantity: formData.inventory_enabled ? formData.stock_quantity : 0,
-          is_active: formData.is_active
-        });
+        .insert(productData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        
+        // Provide specific error messages based on the error type
+        if (error.code === '42501') {
+          throw new Error('You do not have permission to create products. Please contact support.');
+        } else if (error.code === '23505') {
+          throw new Error('A product with this ID already exists. Please try again.');
+        } else if (error.message.includes('user_id must match authenticated user')) {
+          throw new Error('Authentication error. Please log out and log back in.');
+        } else if (error.message.includes('row-level security')) {
+          throw new Error('Permission denied. You can only create products for your own store.');
+        } else {
+          throw new Error(`Failed to create product: ${error.message}`);
+        }
+      }
 
+      console.log('Product created successfully');
       toast.success(`Product added successfully! Product ID: ${productId}`);
       navigate('/products');
-    } catch (error) {
-      console.error('Error adding product:', error);
-      toast.error('Failed to add product. Please try again.');
+    } catch (error: any) {
+      console.error('Error creating product:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error.message || 'An unexpected error occurred while creating the product';
+      toast.error(errorMessage);
+      
+      // If it's an authentication error, redirect to login
+      if (errorMessage.includes('logged in') || errorMessage.includes('Authentication')) {
+        setTimeout(() => navigate('/auth'), 2000);
+      }
     } finally {
       setLoading(false);
     }
@@ -321,6 +369,7 @@ const AddProduct = () => {
                   variant="outline"
                   onClick={() => navigate('/products')}
                   className="flex-1"
+                  disabled={loading}
                 >
                   Cancel
                 </Button>
