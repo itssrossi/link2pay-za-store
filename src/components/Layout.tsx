@@ -29,7 +29,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const navigationItems = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Products', href: '/products', icon: Package },
-    { name: 'Invoice Builder', href: '/invoice-builder', icon: FileText },
+    { name: 'Invoice', href: '/invoice-builder', icon: FileText },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -108,14 +108,14 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`flex flex-col items-center space-y-1 py-2 px-1 rounded-md ${
+                className={`flex flex-col items-center justify-center space-y-1 py-2 px-1 rounded-md ${
                   isActive
                     ? 'bg-[#4C9F70] text-white'
                     : 'text-gray-600'
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="text-xs font-medium">{item.name}</span>
+                <span className="text-xs font-medium text-center">{item.name}</span>
               </Link>
             );
           })}
