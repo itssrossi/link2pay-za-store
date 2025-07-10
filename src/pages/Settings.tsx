@@ -299,7 +299,7 @@ const Settings = () => {
   const tabOptions = [
     { value: 'profile', label: isMobile ? 'Profile' : 'Business Profile' },
     { value: 'customize', label: isMobile ? 'Store' : 'Customize Store' },
-    { value: 'sections', label: isMobile ? 'Sections' : 'Store Sections' },
+    { value: 'sections', label: isMobile ? 'Builder' : 'Store Builder' },
     { value: 'design', label: 'Design' },
     { value: 'payments', label: 'Payments' },
     { value: 'payfast', label: 'PayFast' },
@@ -309,24 +309,24 @@ const Settings = () => {
   if (isMobile) {
     return (
       <Layout>
-        <div className="max-w-full mx-auto space-y-4 px-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <div className="max-w-full mx-auto space-y-3 px-2">
+          <div className="px-2">
+            <h1 className="text-xl font-bold text-gray-900">Settings</h1>
             <p className="text-gray-600 mt-1 text-sm">
               Manage your store settings and business information.
             </p>
           </div>
 
-          {/* Mobile Tab Selection */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-2">
+          {/* Mobile Tab Selection - Improved spacing and responsiveness */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 px-2">
               {tabOptions.map((tab) => (
                 <button
                   key={tab.value}
                   onClick={() => setActiveTab(tab.value)}
-                  className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  className={`px-2 py-2.5 text-xs font-medium rounded-lg transition-colors min-h-[44px] flex items-center justify-center ${
                     activeTab === tab.value
-                      ? 'bg-[#4C9F70] text-white'
+                      ? 'bg-[#4C9F70] text-white shadow-sm'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -336,8 +336,8 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* Mobile Tab Content */}
-          <div className="space-y-4">
+          {/* Mobile Tab Content - Improved padding and spacing */}
+          <div className="space-y-4 px-2 pb-4">
             {activeTab === 'profile' && (
               <BusinessProfileTab
                 profile={profile}
@@ -357,12 +357,20 @@ const Settings = () => {
             )}
 
             {activeTab === 'sections' && (
-              <SectionManager
-                sections={sections}
-                setSections={setSections}
-                loading={sectionsLoading}
-                onUpdate={fetchSections}
-              />
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <h3 className="font-medium text-blue-900 text-sm mb-1">Store Builder</h3>
+                  <p className="text-blue-700 text-xs">
+                    Create and manage sections for your store like featured products, banners, and testimonials.
+                  </p>
+                </div>
+                <SectionManager
+                  sections={sections}
+                  setSections={setSections}
+                  loading={sectionsLoading}
+                  onUpdate={fetchSections}
+                />
+              </div>
             )}
 
             {activeTab === 'design' && (
@@ -425,7 +433,7 @@ const Settings = () => {
               Customize Store
             </TabsTrigger>
             <TabsTrigger value="sections" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-              Store Sections
+              Store Builder
             </TabsTrigger>
             <TabsTrigger value="design" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
               Store Design
@@ -460,12 +468,20 @@ const Settings = () => {
           </TabsContent>
 
           <TabsContent value="sections" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-            <SectionManager
-              sections={sections}
-              setSections={setSections}
-              loading={sectionsLoading}
-              onUpdate={fetchSections}
-            />
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-medium text-blue-900 mb-2">Store Builder</h3>
+                <p className="text-blue-700 text-sm">
+                  Create and manage different sections for your store including featured products, banners, testimonials, and more. Customize the layout and content to match your brand.
+                </p>
+              </div>
+              <SectionManager
+                sections={sections}
+                setSections={setSections}
+                loading={sectionsLoading}
+                onUpdate={fetchSections}
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="design" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
