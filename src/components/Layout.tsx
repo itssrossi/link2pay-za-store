@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +10,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
-import { Home, Package, FileText, Settings, LogOut, BarChart3 } from 'lucide-react';
+import { Home, Package, FileText, Settings, LogOut, BarChart3, Store, ShoppingCart } from 'lucide-react';
 import MobileStickyGrowthCTA from '@/components/MobileStickyGrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 
@@ -26,10 +25,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     navigate('/');
   };
 
-  const navItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
+  const navigationItems = [
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Products', href: '/products', icon: Package },
-    { name: 'Invoices', href: '/invoice-builder', icon: FileText },
+    { name: 'Invoice Builder', href: '/invoice-builder', icon: FileText },
+    { name: 'Store Builder', href: '/store-builder', icon: Store },
+    { name: 'Orders', href: '/orders', icon: ShoppingCart },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -48,7 +49,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               </Link>
               
               <div className="hidden md:flex space-x-4 lg:space-x-6">
-                {navItems.map((item) => {
+                {navigationItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.href;
                   return (
@@ -101,7 +102,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       {/* Mobile Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-pb">
         <div className="grid grid-cols-4 gap-1 p-2">
-          {navItems.map((item) => {
+          {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
             return (

@@ -10,6 +10,7 @@ import PaymentSettingsTab from '@/components/settings/PaymentSettingsTab';
 import PayFastCredentialsTab from '@/components/settings/PayFastCredentialsTab';
 import WhatsAppAutomationTab from '@/components/settings/WhatsAppAutomationTab';
 import StorefrontCustomizationTab from '@/components/settings/StorefrontCustomizationTab';
+import SectionManager from '@/components/settings/SectionManager';
 import { PayFastCredentials } from '@/utils/payfastService';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -54,7 +55,10 @@ const Settings = () => {
   const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [whatsappLoading, setWhatsappLoading] = useState(false);
+  const [sectionsLoading, setSectionsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [sections, setSections] = useState<any[]>([]);
+  
   const [profile, setProfile] = useState<Profile>({
     business_name: '',
     whatsapp_number: '',
@@ -104,6 +108,7 @@ const Settings = () => {
     if (user) {
       fetchSettings();
       fetchPlatformSettings();
+      fetchSections();
     }
   }, [user]);
 
@@ -182,6 +187,27 @@ const Settings = () => {
       }
     } catch (error) {
       console.error('Error fetching platform settings:', error);
+    }
+  };
+
+  const fetchSections = async () => {
+    if (!user) return;
+    setSectionsLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('store_sections')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('section_order');
+
+      if (error) throw error;
+      setSections(data || []);
+    } catch (error) {
+      console.error('Error fetching sections:', error);
+      toast.error('Failed to load store sections');
+    } finally {
+      setSectionsLoading(false);
     }
   };
 
@@ -273,6 +299,7 @@ const Settings = () => {
   const tabOptions = [
     { value: 'profile', label: isMobile ? 'Profile' : 'Business Profile' },
     { value: 'customize', label: isMobile ? 'Store' : 'Customize Store' },
+    { value: 'sections', label: isMobile ? 'Sections' : 'Store Sections' },
     { value: 'design', label: 'Design' },
     { value: 'payments', label: 'Payments' },
     { value: 'payfast', label: 'PayFast' },
@@ -329,6 +356,15 @@ const Settings = () => {
               />
             )}
 
+            {activeTab === 'sections' && (
+              <SectionManager
+                sections={sections}
+                setSections={setSections}
+                loading={sectionsLoading}
+                onUpdate={fetchSections}
+              />
+            )}
+
             {activeTab === 'design' && (
               <StoreDesignTab
                 profile={profile}
@@ -381,12 +417,15 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-6 h-auto">
+          <TabsList className="grid w-full grid-cols-7 h-auto">
             <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
               Business Profile
             </TabsTrigger>
             <TabsTrigger value="customize" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
               Customize Store
+            </TabsTrigger>
+            <TabsTrigger value="sections" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+              Store Sections
             </TabsTrigger>
             <TabsTrigger value="design" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
               Store Design
@@ -417,6 +456,15 @@ const Settings = () => {
               setProfile={setProfile}
               onSave={saveProfile}
               loading={loading}
+            />
+          </TabsContent>
+
+          <TabsContent value="sections" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+            <SectionManager
+              sections={sections}
+              setSections={setSections}
+              loading={sectionsLoading}
+              onUpdate={fetchSections}
             />
           </TabsContent>
 

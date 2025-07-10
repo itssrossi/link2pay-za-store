@@ -15,6 +15,7 @@ import AddProduct from "./pages/AddProduct";
 import InvoiceBuilder from "./pages/InvoiceBuilder";
 import InvoicePreview from "./pages/InvoicePreview";
 import Settings from "./pages/Settings";
+import StoreBuilder from "./pages/StoreBuilder";
 import Orders from "./pages/Orders";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
@@ -54,6 +55,11 @@ const App = () => (
               <Route path="/invoice-builder" element={
                 <ProtectedRoute>
                   <InvoiceBuilder />
+                </ProtectedRoute>
+              } />
+              <Route path="/store-builder" element={
+                <ProtectedRoute>
+                  <StoreBuilder />
                 </ProtectedRoute>
               } />
               <Route path="/settings" element={
