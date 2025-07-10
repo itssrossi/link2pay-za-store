@@ -57,6 +57,7 @@ const Settings = () => {
   const [whatsappLoading, setWhatsappLoading] = useState(false);
   const [sectionsLoading, setSectionsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [activeStoreTab, setActiveStoreTab] = useState('customize');
   const [sections, setSections] = useState<any[]>([]);
   
   const [profile, setProfile] = useState<Profile>({
@@ -298,12 +299,16 @@ const Settings = () => {
 
   const tabOptions = [
     { value: 'profile', label: isMobile ? 'Profile' : 'Business Profile' },
-    { value: 'customize', label: isMobile ? 'Store' : 'Customize Store' },
-    { value: 'sections', label: isMobile ? 'Builder' : 'Store Builder' },
-    { value: 'design', label: 'Design' },
+    { value: 'store', label: 'Store' },
     { value: 'payments', label: 'Payments' },
     { value: 'payfast', label: 'PayFast' },
     { value: 'whatsapp', label: 'WhatsApp' }
+  ];
+
+  const storeTabOptions = [
+    { value: 'customize', label: isMobile ? 'Customize' : 'Store Front' },
+    { value: 'builder', label: isMobile ? 'Builder' : 'Store Builder' },
+    { value: 'design', label: 'Design' }
   ];
 
   if (isMobile) {
@@ -317,7 +322,7 @@ const Settings = () => {
             </p>
           </div>
 
-          {/* Mobile Tab Selection - Improved spacing and responsiveness */}
+          {/* Mobile Tab Selection */}
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 px-2">
               {tabOptions.map((tab) => (
@@ -336,7 +341,7 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* Mobile Tab Content - Improved padding and spacing */}
+          {/* Mobile Tab Content */}
           <div className="space-y-4 px-2 pb-4">
             {activeTab === 'profile' && (
               <BusinessProfileTab
@@ -347,39 +352,61 @@ const Settings = () => {
               />
             )}
 
-            {activeTab === 'customize' && (
-              <StorefrontCustomizationTab
-                profile={profile}
-                setProfile={setProfile}
-                onSave={saveProfile}
-                loading={loading}
-              />
-            )}
-
-            {activeTab === 'sections' && (
+            {activeTab === 'store' && (
               <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <h3 className="font-medium text-blue-900 text-sm mb-1">Store Builder</h3>
-                  <p className="text-blue-700 text-xs">
-                    Create and manage sections for your store like featured products, banners, and testimonials.
-                  </p>
+                {/* Store Sub-tabs for Mobile */}
+                <div className="grid grid-cols-3 gap-2">
+                  {storeTabOptions.map((tab) => (
+                    <button
+                      key={tab.value}
+                      onClick={() => setActiveStoreTab(tab.value)}
+                      className={`px-2 py-2 text-xs font-medium rounded-lg transition-colors min-h-[40px] flex items-center justify-center ${
+                        activeStoreTab === tab.value
+                          ? 'bg-[#4C9F70] text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
-                <SectionManager
-                  sections={sections}
-                  setSections={setSections}
-                  loading={sectionsLoading}
-                  onUpdate={fetchSections}
-                />
-              </div>
-            )}
 
-            {activeTab === 'design' && (
-              <StoreDesignTab
-                profile={profile}
-                setProfile={setProfile}
-                onSave={saveProfile}
-                loading={loading}
-              />
+                {/* Store Sub-tab Content */}
+                {activeStoreTab === 'customize' && (
+                  <StorefrontCustomizationTab
+                    profile={profile}
+                    setProfile={setProfile}
+                    onSave={saveProfile}
+                    loading={loading}
+                  />
+                )}
+
+                {activeStoreTab === 'builder' && (
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <h3 className="font-medium text-blue-900 text-sm mb-1">Store Builder</h3>
+                      <p className="text-blue-700 text-xs">
+                        Create and manage sections for your store like featured products, banners, and testimonials.
+                      </p>
+                    </div>
+                    <SectionManager
+                      sections={sections}
+                      setSections={setSections}
+                      loading={sectionsLoading}
+                      onUpdate={fetchSections}
+                    />
+                  </div>
+                )}
+
+                {activeStoreTab === 'design' && (
+                  <StoreDesignTab
+                    profile={profile}
+                    setProfile={setProfile}
+                    onSave={saveProfile}
+                    loading={loading}
+                  />
+                )}
+              </div>
             )}
 
             {activeTab === 'payments' && (
@@ -425,18 +452,12 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-7 h-auto">
+          <TabsList className="grid w-full grid-cols-5 h-auto">
             <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
               Business Profile
             </TabsTrigger>
-            <TabsTrigger value="customize" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-              Customize Store
-            </TabsTrigger>
-            <TabsTrigger value="sections" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-              Store Builder
-            </TabsTrigger>
-            <TabsTrigger value="design" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-              Store Design
+            <TabsTrigger value="store" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
+              Store
             </TabsTrigger>
             <TabsTrigger value="payments" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
               Payment Settings
@@ -458,39 +479,55 @@ const Settings = () => {
             />
           </TabsContent>
 
-          <TabsContent value="customize" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-            <StorefrontCustomizationTab
-              profile={profile}
-              setProfile={setProfile}
-              onSave={saveProfile}
-              loading={loading}
-            />
-          </TabsContent>
+          <TabsContent value="store" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+            <Tabs defaultValue="customize" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="customize" className="text-xs sm:text-sm">
+                  Store Front
+                </TabsTrigger>
+                <TabsTrigger value="builder" className="text-xs sm:text-sm">
+                  Store Builder
+                </TabsTrigger>
+                <TabsTrigger value="design" className="text-xs sm:text-sm">
+                  Design
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="sections" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-            <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-medium text-blue-900 mb-2">Store Builder</h3>
-                <p className="text-blue-700 text-sm">
-                  Create and manage different sections for your store including featured products, banners, testimonials, and more. Customize the layout and content to match your brand.
-                </p>
-              </div>
-              <SectionManager
-                sections={sections}
-                setSections={setSections}
-                loading={sectionsLoading}
-                onUpdate={fetchSections}
-              />
-            </div>
-          </TabsContent>
+              <TabsContent value="customize" className="space-y-4">
+                <StorefrontCustomizationTab
+                  profile={profile}
+                  setProfile={setProfile}
+                  onSave={saveProfile}
+                  loading={loading}
+                />
+              </TabsContent>
 
-          <TabsContent value="design" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-            <StoreDesignTab
-              profile={profile}
-              setProfile={setProfile}
-              onSave={saveProfile}
-              loading={loading}
-            />
+              <TabsContent value="builder" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="font-medium text-blue-900 mb-2">Store Builder</h3>
+                    <p className="text-blue-700 text-sm">
+                      Create and manage different sections for your store including featured products, banners, testimonials, and more. Customize the layout and content to match your brand.
+                    </p>
+                  </div>
+                  <SectionManager
+                    sections={sections}
+                    setSections={setSections}
+                    loading={sectionsLoading}
+                    onUpdate={fetchSections}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="design" className="space-y-4">
+                <StoreDesignTab
+                  profile={profile}
+                  setProfile={setProfile}
+                  onSave={saveProfile}
+                  loading={loading}
+                />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="payments" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
