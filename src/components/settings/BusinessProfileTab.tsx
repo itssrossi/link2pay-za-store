@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
 import ImageUpload from '@/components/ui/image-upload';
+import DeleteAccountDialog from './DeleteAccountDialog';
 
 interface Profile {
   business_name: string;
@@ -133,6 +133,20 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
             <p className="text-sm text-gray-500 mt-1">
               This address will appear on invoices when customers select "Local Pickup" or delivery options.
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="text-destructive">Danger Zone</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-destructive/10 p-4 rounded-lg">
+            <p className="text-sm text-destructive mb-4">
+              Once you delete your account, there is no going back. Please be certain.
+            </p>
+            <DeleteAccountDialog />
           </div>
         </CardContent>
       </Card>
