@@ -31,17 +31,17 @@ const Settings = () => {
     setLoading(false);
   };
 
-  const handleSaveProfile = async (newProfileData: any) => {
+  const handleSaveProfile = async () => {
+    if (!profile) return;
+    
     setLoading(true);
     const { error } = await supabase
       .from('profiles')
-      .update(newProfileData)
+      .update(profile)
       .eq('id', profile.id);
 
     if (error) {
       console.error('Error updating profile:', error);
-    } else {
-      setProfile(newProfileData);
     }
     setLoading(false);
   };
@@ -62,7 +62,7 @@ const Settings = () => {
             <BusinessProfileTab
               profile={profile}
               setProfile={setProfile}
-              onSave={() => handleSaveProfile(profile)}
+              onSave={handleSaveProfile}
               loading={loading}
             />
           </TabsContent>
@@ -74,8 +74,8 @@ const Settings = () => {
           <TabsContent value="payment">
             <PaymentSettingsTab
               profile={profile}
-              onProfileChange={setProfile}
-              onSave={() => handleSaveProfile(profile)}
+              setProfile={setProfile}
+              onSave={handleSaveProfile}
               loading={loading}
             />
           </TabsContent>
