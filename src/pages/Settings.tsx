@@ -9,42 +9,86 @@ import PaymentSettingsTab from '@/components/settings/PaymentSettingsTab';
 import SubscriptionTab from '@/components/settings/SubscriptionTab';
 
 const Settings = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('business');
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [user]);
 
   const fetchProfile = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .single();
-
-    if (error) {
-      console.error('Error fetching profile:', error);
-    } else {
-      setProfile(data);
+    if (!user) {
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+      } else {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Error in fetchProfile:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveProfile = async () => {
-    if (!profile) return;
+    if (!profile || !user) return;
     
     setLoading(true);
-    const { error } = await supabase
-      .from('profiles')
-      .update(profile)
-      .eq('id', profile.id);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(profile)
+        .eq('id', user.id);
 
-    if (error) {
-      console.error('Error updating profile:', error);
+      if (error) {
+        console.error('Error updating profile:', error);
+      }
+    } catch (error) {
+      console.error('Error in handleSaveProfile:', error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
+
+  // Don't render the tabs if profile is still loading or null
+  if (loading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+          <div className="flex items-center justify-center p-8">
+            <div className="text-gray-500">Loading...</div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+          <div className="flex items-center justify-center p-8">
+            <div className="text-gray-500">Unable to load profile. Please try refreshing the page.</div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

@@ -46,6 +46,15 @@ interface PaymentSettingsTabProps {
 }
 
 const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSettingsTabProps) => {
+  // Safety check - if profile is null or undefined, don't render
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-gray-500">Loading payment settings...</div>
+      </div>
+    );
+  }
+
   const handleChange = (field: string, value: string | boolean) => {
     setProfile({ ...profile, [field]: value });
   };
@@ -65,7 +74,7 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
             <Input
               id="snapscan_link"
               type="url"
-              value={profile.snapscan_link}
+              value={profile.snapscan_link || ''}
               onChange={(e) => handleChange('snapscan_link', e.target.value)}
               placeholder="https://pos.snapscan.io/merchant/..."
             />
@@ -76,7 +85,7 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
             <Input
               id="payfast_link"
               type="url"
-              value={profile.payfast_link}
+              value={profile.payfast_link || ''}
               onChange={(e) => handleChange('payfast_link', e.target.value)}
               placeholder="https://www.payfast.co.za/eng/process/..."
             />
@@ -95,7 +104,7 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
               </div>
               <Switch
                 id="show_capitec"
-                checked={profile.show_capitec}
+                checked={profile.show_capitec || false}
                 onCheckedChange={(checked) => handleChange('show_capitec', checked)}
               />
             </div>
@@ -106,7 +115,7 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
                 <Input
                   id="capitec_paylink"
                   type="url"
-                  value={profile.capitec_paylink}
+                  value={profile.capitec_paylink || ''}
                   onChange={(e) => handleChange('capitec_paylink', e.target.value)}
                   placeholder="https://paylink.capitecbank.co.za/..."
                 />
@@ -128,7 +137,7 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
             <Label htmlFor="eft_details">EFT Banking Details</Label>
             <Textarea
               id="eft_details"
-              value={profile.eft_details}
+              value={profile.eft_details || ''}
               onChange={(e) => handleChange('eft_details', e.target.value)}
               placeholder="Bank: Standard Bank&#10;Account Name: Your Business Name&#10;Account Number: 123456789&#10;Branch Code: 051001"
               rows={5}
