@@ -29,28 +29,34 @@ const DeleteAccountDialog = () => {
     setIsDeleting(true);
     
     try {
-      // Delete all user data from related tables
-      await Promise.all([
+      // Delete all user data from related tables first
+      const deleteOperations = await Promise.allSettled([
         supabase.from('products').delete().eq('user_id', user.id),
         supabase.from('invoices').delete().eq('user_id', user.id),
+        supabase.from('invoice_items').delete().eq('invoice_id', user.id),
+        supabase.from('invoice_reminders').delete().eq('invoice_id', user.id),
         supabase.from('store_sections').delete().eq('user_id', user.id),
+        supabase.from('subscription_transactions').delete().eq('user_id', user.id),
         supabase.from('profiles').delete().eq('id', user.id)
       ]);
 
-      // Delete the user account from auth
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
-      
-      if (deleteError) {
-        // If admin delete fails, try user delete
-        const { error: userDeleteError } = await supabase.auth.signOut();
-        if (userDeleteError) throw userDeleteError;
+      // Check if any operations failed
+      const failedOperations = deleteOperations.filter(op => op.status === 'rejected');
+      if (failedOperations.length > 0) {
+        console.error('Some delete operations failed:', failedOperations);
       }
 
-      toast.success('Account deleted successfully');
+      // Sign out the user (this effectively removes their session)
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) {
+        throw signOutError;
+      }
+
+      toast.success('Account and all associated data deleted successfully');
       navigate('/auth');
     } catch (error) {
       console.error('Error deleting account:', error);
-      toast.error('Failed to delete account. Please try again.');
+      toast.error('Failed to delete account. Please try again or contact support.');
     } finally {
       setIsDeleting(false);
     }

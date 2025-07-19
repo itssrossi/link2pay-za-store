@@ -52,10 +52,10 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Business Information</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Business Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -65,6 +65,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
               value={profile?.business_name || ''}
               onChange={(e) => handleChange('business_name', e.target.value)}
               placeholder="Enter your business name"
+              className="mt-1"
             />
           </div>
 
@@ -85,6 +86,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
               value={profile?.whatsapp_number || ''}
               onChange={(e) => handleChange('whatsapp_number', e.target.value)}
               placeholder="+27821234567"
+              className="mt-1"
             />
           </div>
 
@@ -96,6 +98,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
               onChange={(e) => handleChange('store_bio', e.target.value)}
               placeholder="Tell customers about your business..."
               rows={3}
+              className="mt-1"
             />
           </div>
 
@@ -106,9 +109,10 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
               value={profile?.store_handle || ''}
               onChange={(e) => handleChange('store_handle', e.target.value)}
               placeholder="your-store-name"
+              className="mt-1"
             />
             <p className="text-sm text-gray-500 mt-1">
-              This will be your store URL: link2pay.co.za/store/{profile?.store_handle}
+              Your store URL: link2pay.co.za/store/{profile?.store_handle || 'your-store-name'}
             </p>
           </div>
         </CardContent>
@@ -116,7 +120,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <MapPin className="w-5 h-5" />
             Store Location
           </CardTitle>
@@ -130,6 +134,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
               onChange={(e) => handleChange('store_address', e.target.value)}
               placeholder="Enter your store address for local pickup/delivery..."
               rows={3}
+              className="mt-1"
             />
             <p className="text-sm text-gray-500 mt-1">
               This address will appear on invoices when customers select "Local Pickup" or delivery options.
@@ -140,7 +145,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
 
       <Card className="border-destructive">
         <CardHeader>
-          <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          <CardTitle className="text-destructive text-lg sm:text-xl">Danger Zone</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-destructive/10 p-4 rounded-lg">
@@ -152,13 +157,15 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
         </CardContent>
       </Card>
 
-      <Button 
-        onClick={onSave} 
-        disabled={loading}
-        className="w-full sm:w-auto"
-      >
-        {loading ? 'Saving...' : 'Save Changes'}
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Button 
+          onClick={onSave} 
+          disabled={loading}
+          className="w-full sm:w-auto"
+        >
+          {loading ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </div>
     </div>
   );
 };
