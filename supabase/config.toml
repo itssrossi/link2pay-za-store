@@ -8,78 +8,16 @@ schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
-[functions.send-whatsapp]
-verify_jwt = false
-
-[db]
-enabled = true
-port = 54322
-shadow_port = 54320
-major_version = 15
-
-[db.pooler]
-enabled = false
-port = 54329
-pool_mode = "transaction"
-default_pool_size = 20
-max_client_conn = 100
-
-[realtime]
-enabled = true
-port = 54323
-tenant_id = "realtime-dev"
-authorization_required = true
-max_header_length = 4096
-
-[studio]
-enabled = true
-port = 54324
-api_url = "http://127.0.0.1:54321"
-openai_api_key = "env(OPENAI_API_KEY)"
-
-[inbucket]
-enabled = true
-port = 54325
-smtp_port = 54326
-pop3_port = 54327
-
-[storage]
-enabled = true
-port = 54328
-file_size_limit = "50MiB"
-s3_host = "127.0.0.1"
-s3_port = 54329
-s3_access_key_id = "625729a08b95bf1b7ff351a663f3a23c"
-s3_secret_access_key = "850181e4652dd023b7a98c58ae0d2d34bd487ee0cc3254aed6eda37307425907"
-s3_region = "local"
-
 [auth]
 enabled = true
-port = 54327
-site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["https://127.0.0.1:3000"]
-jwt_expiry = 3600
-refresh_token_rotation_enabled = true
-secure_password_change_enabled = true
-enable_anonymous_users = false
-minimum_password_length = 6
+port = 54324
+site_url = "http://localhost:3000"
 
-[auth.email]
-enable_signup = true
-double_confirm_changes = true
-enable_confirmations = false
-max_frequency = "1m"
-secure_password_change_enabled = false
-enable_reauthentication = false
+[functions.payfast-subscribe]
+verify_jwt = true
 
-[edge_runtime]
-enabled = true
-port = 54326
+[functions.payfast-notify]
+verify_jwt = false
 
-[analytics]
-enabled = false
-port = 54327
-
-[seed]
-enabled = false
-sql_paths = ["./seed.sql"]
+[functions.cancel-subscription]
+verify_jwt = true

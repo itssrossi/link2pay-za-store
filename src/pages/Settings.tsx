@@ -1,559 +1,114 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import BusinessProfileTab from '@/components/settings/BusinessProfileTab';
-import StoreDesignTab from '@/components/settings/StoreDesignTab';
 import PaymentSettingsTab from '@/components/settings/PaymentSettingsTab';
-import PayFastCredentialsTab from '@/components/settings/PayFastCredentialsTab';
-import WhatsAppAutomationTab from '@/components/settings/WhatsAppAutomationTab';
-import StorefrontCustomizationTab from '@/components/settings/StorefrontCustomizationTab';
-import SectionManager from '@/components/settings/SectionManager';
-import { PayFastCredentials } from '@/utils/payfastService';
-import { useIsMobile } from '@/hooks/use-mobile';
-
-interface Profile {
-  business_name: string;
-  whatsapp_number: string;
-  store_bio: string;
-  logo_url: string;
-  store_handle: string;
-  snapscan_link: string;
-  payfast_link: string;
-  eft_details: string;
-  store_layout: string;
-  store_font: string;
-  primary_color: string;
-  accent_color: string;
-  header_banner_url: string;
-  hero_image_url: string;
-  hero_headline: string;
-  hero_subheading: string;
-  hero_cta_text: string;
-  hero_cta_link: string;
-  background_color: string;
-  theme_preset: string;
-  store_visibility: boolean;
-  default_currency: string;
-  store_location: string;
-  delivery_note: string;
-  store_address: string;
-  capitec_paylink: string;
-  show_capitec: boolean;
-}
-
-interface PlatformSettings {
-  twilio_account_sid: string;
-  twilio_auth_token: string;
-  twilio_whatsapp_number: string;
-}
+import WhatsAppSettingsTab from '@/components/settings/WhatsAppSettingsTab';
+import DesignSettingsTab from '@/components/settings/DesignSettingsTab';
+import StorefrontSettingsTab from '@/components/settings/StorefrontSettingsTab';
+import SubscriptionTab from '@/components/settings/SubscriptionTab';
 
 const Settings = () => {
-  const { user } = useAuth();
-  const isMobile = useIsMobile();
-  const [loading, setLoading] = useState(false);
-  const [whatsappLoading, setWhatsappLoading] = useState(false);
-  const [sectionsLoading, setSectionsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile');
-  const [activeStoreTab, setActiveStoreTab] = useState('customize');
-  const [sections, setSections] = useState<any[]>([]);
-  
-  const [profile, setProfile] = useState<Profile>({
-    business_name: '',
-    whatsapp_number: '',
-    store_bio: '',
-    logo_url: '',
-    store_handle: '',
-    snapscan_link: '',
-    payfast_link: '',
-    eft_details: '',
-    store_layout: 'grid',
-    store_font: 'inter',
-    primary_color: '#4C9F70',
-    accent_color: '#3d8159',
-    header_banner_url: '',
-    hero_image_url: '',
-    hero_headline: '',
-    hero_subheading: '',
-    hero_cta_text: '',
-    hero_cta_link: '',
-    background_color: '#ffffff',
-    theme_preset: 'clean',
-    store_visibility: true,
-    default_currency: 'ZAR',
-    store_location: '',
-    delivery_note: '',
-    store_address: '',
-    capitec_paylink: '',
-    show_capitec: false
-  });
-
-  const [platformSettings, setPlatformSettings] = useState<PlatformSettings>({
-    twilio_account_sid: '',
-    twilio_auth_token: '',
-    twilio_whatsapp_number: ''
-  });
-
-  const [payfastCredentials, setPayfastCredentials] = useState<Partial<PayFastCredentials>>({
-    merchant_id: '',
-    merchant_key: '',
-    passphrase: '',
-    mode: 'sandbox'
-  });
-
-  const [payfastLoading, setPayfastLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('business');
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchSettings();
-      fetchPlatformSettings();
-      fetchSections();
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error fetching profile:', error);
+    } else {
+      setProfile(data);
     }
-  }, [user]);
-
-  const fetchSettings = async () => {
-    if (!user) return;
-
-    try {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileData) {
-        setProfile({
-          business_name: profileData.business_name || '',
-          whatsapp_number: profileData.whatsapp_number || '',
-          store_bio: profileData.store_bio || '',
-          logo_url: profileData.logo_url || '',
-          store_handle: profileData.store_handle || '',
-          snapscan_link: profileData.snapscan_link || '',
-          payfast_link: profileData.payfast_link || '',
-          eft_details: profileData.eft_details || '',
-          store_layout: profileData.store_layout || 'grid',
-          store_font: profileData.store_font || 'inter',
-          primary_color: profileData.primary_color || '#4C9F70',
-          accent_color: profileData.accent_color || '#3d8159',
-          header_banner_url: profileData.header_banner_url || '',
-          hero_image_url: profileData.hero_image_url || '',
-          hero_headline: profileData.hero_headline || '',
-          hero_subheading: profileData.hero_subheading || '',
-          hero_cta_text: profileData.hero_cta_text || '',
-          hero_cta_link: profileData.hero_cta_link || '',
-          background_color: profileData.background_color || '#ffffff',
-          theme_preset: profileData.theme_preset || 'clean',
-          store_visibility: profileData.store_visibility !== false,
-          default_currency: profileData.default_currency || 'ZAR',
-          store_location: profileData.store_location || '',
-          delivery_note: profileData.delivery_note || '',
-          store_address: profileData.store_address || '',
-          capitec_paylink: profileData.capitec_paylink || '',
-          show_capitec: profileData.show_capitec || false
-        });
-
-        // Load PayFast credentials
-        setPayfastCredentials({
-          merchant_id: profileData.payfast_merchant_id || '',
-          merchant_key: profileData.payfast_merchant_key || '',
-          passphrase: profileData.payfast_passphrase || '',
-          mode: (profileData.payfast_mode as 'sandbox' | 'live') || 'sandbox'
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-    }
+    setLoading(false);
   };
 
-  const fetchPlatformSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('platform_settings')
-        .select('twilio_account_sid, twilio_auth_token, twilio_whatsapp_number')
-        .single();
-
-      if (error) {
-        console.error('Error fetching platform settings:', error);
-        return;
-      }
-
-      if (data) {
-        setPlatformSettings({
-          twilio_account_sid: data.twilio_account_sid || '',
-          twilio_auth_token: data.twilio_auth_token || '',
-          twilio_whatsapp_number: data.twilio_whatsapp_number || ''
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching platform settings:', error);
-    }
-  };
-
-  const fetchSections = async () => {
-    if (!user) return;
-    setSectionsLoading(true);
-
-    try {
-      const { data, error } = await supabase
-        .from('store_sections')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('section_order');
-
-      if (error) throw error;
-      setSections(data || []);
-    } catch (error) {
-      console.error('Error fetching sections:', error);
-      toast.error('Failed to load store sections');
-    } finally {
-      setSectionsLoading(false);
-    }
-  };
-
-  const saveProfile = async () => {
-    if (!user) return;
+  const handleSaveProfile = async (newProfileData: any) => {
     setLoading(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update(newProfileData)
+      .eq('id', profile.id);
 
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          ...profile,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-      toast.success('Settings updated successfully!');
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      if (error.message?.includes('unique constraint')) {
-        toast.error('Store handle is already taken. Please choose a different one.');
-      } else {
-        toast.error('Failed to update settings');
-      }
-    } finally {
-      setLoading(false);
+    if (error) {
+      console.error('Error updating profile:', error);
+    } else {
+      setProfile(newProfileData);
     }
+    setLoading(false);
   };
-
-  const savePayfastCredentials = async () => {
-    if (!user) return;
-    setPayfastLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          payfast_merchant_id: payfastCredentials.merchant_id,
-          payfast_merchant_key: payfastCredentials.merchant_key,
-          payfast_passphrase: payfastCredentials.passphrase,
-          payfast_mode: payfastCredentials.mode,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-      toast.success('PayFast credentials saved successfully!');
-    } catch (error) {
-      console.error('Error saving PayFast credentials:', error);
-      toast.error('Failed to save PayFast credentials');
-    } finally {
-      setPayfastLoading(false);
-    }
-  };
-
-  const savePlatformSettings = async () => {
-    setWhatsappLoading(true);
-
-    try {
-      // First get the existing platform settings ID
-      const { data: existingSettings } = await supabase
-        .from('platform_settings')
-        .select('id')
-        .single();
-
-      if (existingSettings?.id) {
-        const { error } = await supabase
-          .from('platform_settings')
-          .update({
-            twilio_account_sid: platformSettings.twilio_account_sid,
-            twilio_auth_token: platformSettings.twilio_auth_token,
-            twilio_whatsapp_number: platformSettings.twilio_whatsapp_number,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingSettings.id);
-
-        if (error) throw error;
-        toast.success('WhatsApp settings updated successfully!');
-      }
-    } catch (error) {
-      console.error('Error saving WhatsApp settings:', error);
-      toast.error('Failed to update WhatsApp settings');
-    } finally {
-      setWhatsappLoading(false);
-    }
-  };
-
-  const tabOptions = [
-    { value: 'profile', label: isMobile ? 'Profile' : 'Business Profile' },
-    { value: 'store', label: 'Store' },
-    { value: 'payments', label: 'Payments' },
-    { value: 'payfast', label: 'PayFast' },
-    { value: 'whatsapp', label: 'WhatsApp' }
-  ];
-
-  const storeTabOptions = [
-    { value: 'customize', label: isMobile ? 'Customize' : 'Store Front' },
-    { value: 'builder', label: isMobile ? 'Builder' : 'Store Builder' },
-    { value: 'design', label: 'Design' }
-  ];
-
-  if (isMobile) {
-    return (
-      <Layout>
-        <div className="max-w-full mx-auto space-y-3 px-2">
-          <div className="px-2">
-            <h1 className="text-xl font-bold text-gray-900">Settings</h1>
-            <p className="text-gray-600 mt-1 text-sm">
-              Manage your store settings and business information.
-            </p>
-          </div>
-
-          {/* Mobile Tab Selection */}
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 px-2">
-              {tabOptions.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => setActiveTab(tab.value)}
-                  className={`px-2 py-2.5 text-xs font-medium rounded-lg transition-colors min-h-[44px] flex items-center justify-center ${
-                    activeTab === tab.value
-                      ? 'bg-[#4C9F70] text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Mobile Tab Content */}
-          <div className="space-y-4 px-2 pb-4">
-            {activeTab === 'profile' && (
-              <BusinessProfileTab
-                profile={profile}
-                setProfile={setProfile}
-                onSave={saveProfile}
-                loading={loading}
-              />
-            )}
-
-            {activeTab === 'store' && (
-              <div className="space-y-4">
-                {/* Store Sub-tabs for Mobile */}
-                <div className="grid grid-cols-3 gap-2">
-                  {storeTabOptions.map((tab) => (
-                    <button
-                      key={tab.value}
-                      onClick={() => setActiveStoreTab(tab.value)}
-                      className={`px-2 py-2 text-xs font-medium rounded-lg transition-colors min-h-[40px] flex items-center justify-center ${
-                        activeStoreTab === tab.value
-                          ? 'bg-[#4C9F70] text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Store Sub-tab Content */}
-                {activeStoreTab === 'customize' && (
-                  <StorefrontCustomizationTab
-                    profile={profile}
-                    setProfile={setProfile}
-                    onSave={saveProfile}
-                    loading={loading}
-                  />
-                )}
-
-                {activeStoreTab === 'builder' && (
-                  <div className="space-y-4">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <h3 className="font-medium text-blue-900 text-sm mb-1">Store Builder</h3>
-                      <p className="text-blue-700 text-xs">
-                        Create and manage sections for your store like featured products, banners, and testimonials.
-                      </p>
-                    </div>
-                    <SectionManager
-                      sections={sections}
-                      setSections={setSections}
-                      loading={sectionsLoading}
-                      onUpdate={fetchSections}
-                    />
-                  </div>
-                )}
-
-                {activeStoreTab === 'design' && (
-                  <StoreDesignTab
-                    profile={profile}
-                    setProfile={setProfile}
-                    onSave={saveProfile}
-                    loading={loading}
-                  />
-                )}
-              </div>
-            )}
-
-            {activeTab === 'payments' && (
-              <PaymentSettingsTab
-                profile={profile}
-                setProfile={setProfile}
-                onSave={saveProfile}
-                loading={loading}
-              />
-            )}
-
-            {activeTab === 'payfast' && (
-              <PayFastCredentialsTab
-                credentials={payfastCredentials}
-                setCredentials={setPayfastCredentials}
-                onSave={savePayfastCredentials}
-                loading={payfastLoading}
-              />
-            )}
-
-            {activeTab === 'whatsapp' && (
-              <WhatsAppAutomationTab
-                platformSettings={platformSettings}
-                setPlatformSettings={setPlatformSettings}
-                onSave={savePlatformSettings}
-                loading={whatsappLoading}
-              />
-            )}
-          </div>
-        </div>
-      </Layout>
-    );
-  }
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto space-y-4 px-2 sm:px-4">
-        <div className="px-2 sm:px-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
-            Manage your store settings and business information.
-          </p>
-        </div>
-
-        <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
-            <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-              Business Profile
-            </TabsTrigger>
-            <TabsTrigger value="store" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-              Store
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-              Payment Settings
-            </TabsTrigger>
-            <TabsTrigger value="payfast" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-              PayFast Integration
-            </TabsTrigger>
-            <TabsTrigger value="whatsapp" className="text-xs sm:text-sm px-2 sm:px-3 py-2 sm:py-1.5">
-              WhatsApp Automation
-            </TabsTrigger>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
+            <TabsTrigger value="business">Business</TabsTrigger>
+            <TabsTrigger value="subscription">Subscription</TabsTrigger>
+            <TabsTrigger value="payment">Payment</TabsTrigger>
+            <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+            <TabsTrigger value="design">Design</TabsTrigger>
+            <TabsTrigger value="storefront">Storefront</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+          <TabsContent value="business">
             <BusinessProfileTab
               profile={profile}
-              setProfile={setProfile}
-              onSave={saveProfile}
+              onProfileChange={setProfile}
+              onSave={handleSaveProfile}
               loading={loading}
             />
           </TabsContent>
 
-          <TabsContent value="store" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-            <Tabs defaultValue="customize" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="customize" className="text-xs sm:text-sm">
-                  Store Front
-                </TabsTrigger>
-                <TabsTrigger value="builder" className="text-xs sm:text-sm">
-                  Store Builder
-                </TabsTrigger>
-                <TabsTrigger value="design" className="text-xs sm:text-sm">
-                  Design
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="customize" className="space-y-4">
-                <StorefrontCustomizationTab
-                  profile={profile}
-                  setProfile={setProfile}
-                  onSave={saveProfile}
-                  loading={loading}
-                />
-              </TabsContent>
-
-              <TabsContent value="builder" className="space-y-4">
-                <div className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 className="font-medium text-blue-900 mb-2">Store Builder</h3>
-                    <p className="text-blue-700 text-sm">
-                      Create and manage different sections for your store including featured products, banners, testimonials, and more. Customize the layout and content to match your brand.
-                    </p>
-                  </div>
-                  <SectionManager
-                    sections={sections}
-                    setSections={setSections}
-                    loading={sectionsLoading}
-                    onUpdate={fetchSections}
-                  />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="design" className="space-y-4">
-                <StoreDesignTab
-                  profile={profile}
-                  setProfile={setProfile}
-                  onSave={saveProfile}
-                  loading={loading}
-                />
-              </TabsContent>
-            </Tabs>
+          <TabsContent value="subscription">
+            <SubscriptionTab />
           </TabsContent>
 
-          <TabsContent value="payments" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+          <TabsContent value="payment">
             <PaymentSettingsTab
               profile={profile}
-              setProfile={setProfile}
-              onSave={saveProfile}
+              onProfileChange={setProfile}
+              onSave={handleSaveProfile}
               loading={loading}
             />
           </TabsContent>
 
-          <TabsContent value="payfast" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-            <PayFastCredentialsTab
-              credentials={payfastCredentials}
-              setCredentials={setPayfastCredentials}
-              onSave={savePayfastCredentials}
-              loading={payfastLoading}
+          <TabsContent value="whatsapp">
+            <WhatsAppSettingsTab
+              profile={profile}
+              onProfileChange={setProfile}
+              onSave={handleSaveProfile}
+              loading={loading}
             />
           </TabsContent>
 
-          <TabsContent value="whatsapp" className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-            <WhatsAppAutomationTab
-              platformSettings={platformSettings}
-              setPlatformSettings={setPlatformSettings}
-              onSave={savePlatformSettings}
-              loading={whatsappLoading}
+          <TabsContent value="design">
+            <DesignSettingsTab
+              profile={profile}
+              onProfileChange={setProfile}
+              onSave={handleSaveProfile}
+              loading={loading}
+            />
+          </TabsContent>
+
+          <TabsContent value="storefront">
+            <StorefrontSettingsTab
+              profile={profile}
+              onProfileChange={setProfile}
+              onSave={handleSaveProfile}
+              loading={loading}
             />
           </TabsContent>
         </Tabs>

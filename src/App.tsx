@@ -1,73 +1,81 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Auth from '@/pages/Auth';
+import Dashboard from '@/pages/Dashboard';
+import Products from '@/pages/Products';
+import AddProduct from '@/pages/AddProduct';
+import EditProduct from '@/pages/EditProduct';
+import InvoiceBuilder from '@/pages/InvoiceBuilder';
+import Settings from '@/pages/Settings';
+import Store from '@/pages/Store';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { Toaster } from '@/components/ui/toaster';
+import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import { OnboardingProvider } from "./contexts/OnboardingContext";
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import Auth from "./pages/Auth";
-import Storefront from "./pages/Storefront";
-import Products from "./pages/Products";
-import AddProduct from "./pages/AddProduct";
-import InvoiceBuilder from "./pages/InvoiceBuilder";
-import InvoicePreview from "./pages/InvoicePreview";
-import Settings from "./pages/Settings";
-import ProtectedRoute from "./components/ProtectedRoute";
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <OnboardingProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <SubscriptionProvider>
+          <div className="min-h-screen bg-background">
             <Routes>
-              <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/store/:username" element={<Storefront />} />
-              <Route path="/invoice/:invoiceId" element={<InvoicePreview />} />
-              
-              {/* Protected Routes */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/products" element={
-                <ProtectedRoute>
-                  <Products />
-                </ProtectedRoute>
-              } />
-              <Route path="/products/add" element={
-                <ProtectedRoute>
-                  <AddProduct />
-                </ProtectedRoute>
-              } />
-              <Route path="/invoice-builder" element={
-                <ProtectedRoute>
-                  <InvoiceBuilder />
-                </ProtectedRoute>
-              } />
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="*" element={<NotFound />} />
+              <Route path="/store/:storeHandle" element={<Store />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/products"
+                element={
+                  <ProtectedRoute>
+                    <Products />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/products/add"
+                element={
+                  <ProtectedRoute>
+                    <AddProduct />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/products/edit/:id"
+                element={
+                  <ProtectedRoute>
+                    <EditProduct />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/invoice-builder"
+                element={
+                  <ProtectedRoute>
+                    <InvoiceBuilder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </OnboardingProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+            <Toaster />
+          </div>
+        </SubscriptionProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
 
 export default App;

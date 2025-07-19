@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -190,7 +189,7 @@ const Dashboard = () => {
             <div className="flex gap-2">
               <GrowthCTA onClick={() => setShowGrowthForm(true)} />
               <Button size="sm" className="flex-1 sm:flex-none">
-                <Link to="/add-product" className="flex items-center">
+                <Link to="/products/add" className="flex items-center">
                   <Plus className="w-4 h-4 mr-1 sm:mr-2" />
                   <span className="hidden xs:inline">Add Product</span>
                   <span className="xs:hidden">Add</span>

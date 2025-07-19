@@ -1,170 +1,122 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
-import CryptoJS from 'https://esm.sh/crypto-js@4.2.0';
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface PayFastNotification {
-  m_payment_id: string;
-  pf_payment_id: string;
-  payment_status: string;
-  item_name: string;
-  item_description: string;
-  amount_gross: string;
-  amount_fee: string;
-  amount_net: string;
-  custom_str1?: string;
-  custom_str2?: string;
-  custom_str3?: string;
-  custom_str4?: string;
-  custom_str5?: string;
-  name_first: string;
-  name_last: string;
-  email_address: string;
-  merchant_id: string;
-  signature: string;
-}
-
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
-
-function validatePayFastSignature(data: Record<string, string>, passphrase?: string): boolean {
-  console.log('PayFast Notify: Validating signature for data:', data);
-  
-  // Remove signature from data for validation
-  const { signature, ...dataForValidation } = data;
-  
-  // Filter out empty values and sort alphabetically
-  const filteredData: Record<string, string> = {};
-  Object.keys(dataForValidation).forEach(key => {
-    const value = dataForValidation[key];
-    if (value !== undefined && value !== null && value.toString().trim() !== '') {
-      filteredData[key] = value.toString().trim();
-    }
-  });
-
-  const sortedKeys = Object.keys(filteredData).sort();
-  const queryString = sortedKeys
-    .map(key => `${key}=${filteredData[key]}`)
-    .join('&');
-
-  const finalString = passphrase && passphrase.trim() 
-    ? `${queryString}&passphrase=${passphrase.trim()}`
-    : queryString;
-
-  const expectedSignature = CryptoJS.MD5(finalString).toString();
-  
-  console.log('PayFast Notify: Expected signature:', expectedSignature);
-  console.log('PayFast Notify: Received signature:', signature);
-  
-  return expectedSignature === signature;
-}
-
-serve(async (req: Request) => {
-  console.log('PayFast Notify: Received request', req.method);
-
-  if (req.method === 'OPTIONS') {
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { 
-      status: 405, 
-      headers: corsHeaders 
-    });
-  }
-
   try {
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
     const formData = await req.formData();
-    const data: Record<string, string> = {};
+    const data: any = {};
     
-    // Convert FormData to object
     for (const [key, value] of formData.entries()) {
-      data[key] = value.toString();
+      data[key] = value;
     }
 
-    console.log('PayFast Notify: Received data:', data);
+    console.log("PayFast ITN received:", data);
 
-    // Get merchant credentials from database to validate signature
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('payfast_merchant_id, payfast_merchant_key, payfast_passphrase')
-      .eq('payfast_merchant_id', data.merchant_id)
-      .single();
+    const userId = data.m_payment_id;
+    const paymentStatus = data.payment_status;
+    const token = data.token;
+    const amount = parseFloat(data.amount_gross || "0");
 
-    if (profileError || !profileData) {
-      console.error('PayFast Notify: Error finding merchant profile:', profileError);
-      return new Response('Merchant not found', { 
-        status: 404, 
-        headers: corsHeaders 
-      });
+    if (paymentStatus === "COMPLETE") {
+      if (token) {
+        // This is a tokenization success - store the billing token
+        await supabaseClient
+          .from('profiles')
+          .update({
+            payfast_billing_token: token,
+            has_active_subscription: true
+          })
+          .eq('id', userId);
+
+        // Record transaction
+        await supabaseClient
+          .from('subscription_transactions')
+          .insert({
+            user_id: userId,
+            transaction_type: 'subscription_payment',
+            amount: amount,
+            payfast_payment_id: data.pf_payment_id,
+            status: 'completed',
+            reference: 'PayFast tokenization successful'
+          });
+      } else {
+        // This is a regular subscription payment
+        await supabaseClient
+          .from('profiles')
+          .update({
+            has_active_subscription: true,
+            billing_failures: 0
+          })
+          .eq('id', userId);
+
+        // Record transaction
+        await supabaseClient
+          .from('subscription_transactions')
+          .insert({
+            user_id: userId,
+            transaction_type: 'subscription_payment',
+            amount: amount,
+            payfast_payment_id: data.pf_payment_id,
+            status: 'completed',
+            reference: 'Link2Pay Monthly Subscription'
+          });
+      }
+    } else {
+      // Payment failed - increment failure count
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('billing_failures')
+        .eq('id', userId)
+        .single();
+
+      const failures = (profile?.billing_failures || 0) + 1;
+      
+      await supabaseClient
+        .from('profiles')
+        .update({
+          billing_failures: failures,
+          has_active_subscription: failures < 3 // Disable after 3 failures
+        })
+        .eq('id', userId);
+
+      // Record failed transaction
+      await supabaseClient
+        .from('subscription_transactions')
+        .insert({
+          user_id: userId,
+          transaction_type: 'subscription_payment',
+          amount: amount,
+          payfast_payment_id: data.pf_payment_id,
+          status: 'failed',
+          reference: 'Link2Pay Monthly Subscription - Failed'
+        });
     }
 
-    // Validate signature
-    const isValidSignature = validatePayFastSignature(data, profileData.payfast_passphrase);
-    
-    if (!isValidSignature) {
-      console.error('PayFast Notify: Invalid signature');
-      return new Response('Invalid signature', { 
-        status: 400, 
-        headers: corsHeaders 
-      });
-    }
-
-    // Extract invoice ID from custom fields or item name
-    const invoiceNumber = data.item_name?.replace('Invoice #', '') || data.custom_str1;
-    
-    if (!invoiceNumber) {
-      console.error('PayFast Notify: No invoice number found');
-      return new Response('Invoice number not found', { 
-        status: 400, 
-        headers: corsHeaders 
-      });
-    }
-
-    // Update invoice status based on payment status
-    let invoiceStatus = 'pending';
-    if (data.payment_status === 'COMPLETE') {
-      invoiceStatus = 'paid';
-    } else if (data.payment_status === 'FAILED') {
-      invoiceStatus = 'failed';
-    }
-
-    // Update invoice in database
-    const { error: updateError } = await supabase
-      .from('invoices')
-      .update({ 
-        status: invoiceStatus,
-        updated_at: new Date().toISOString()
-      })
-      .eq('invoice_number', invoiceNumber);
-
-    if (updateError) {
-      console.error('PayFast Notify: Error updating invoice:', updateError);
-      return new Response('Error updating invoice', { 
-        status: 500, 
-        headers: corsHeaders 
-      });
-    }
-
-    console.log(`PayFast Notify: Updated invoice ${invoiceNumber} to status ${invoiceStatus}`);
-
-    return new Response('OK', { 
-      status: 200, 
-      headers: corsHeaders 
+    return new Response("OK", {
+      headers: corsHeaders,
+      status: 200,
     });
 
   } catch (error) {
-    console.error('PayFast Notify: Error processing notification:', error);
-    return new Response('Internal server error', { 
-      status: 500, 
-      headers: corsHeaders 
+    console.error("Error in payfast-notify:", error);
+    return new Response("Error", {
+      headers: corsHeaders,
+      status: 500,
     });
   }
 });

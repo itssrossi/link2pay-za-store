@@ -268,14 +268,19 @@ export type Database = {
         Row: {
           accent_color: string | null
           background_color: string | null
+          billing_failures: number | null
+          billing_start_date: string | null
           business_name: string | null
+          cancelled_at: string | null
           capitec_paylink: string | null
           created_at: string
           customization_version: number | null
           default_currency: string | null
           delivery_method: string | null
           delivery_note: string | null
+          discount_applied: boolean | null
           eft_details: string | null
+          has_active_subscription: boolean | null
           header_banner_url: string | null
           hero_cta_link: string | null
           hero_cta_text: string | null
@@ -286,6 +291,7 @@ export type Database = {
           last_customized_at: string | null
           logo_url: string | null
           onboarding_completed: boolean | null
+          payfast_billing_token: string | null
           payfast_link: string | null
           payfast_merchant_id: string | null
           payfast_merchant_key: string | null
@@ -302,21 +308,28 @@ export type Database = {
           store_layout: string | null
           store_location: string | null
           store_visibility: boolean | null
+          subscription_price: number | null
           theme_preset: string | null
+          trial_ends_at: string | null
           updated_at: string
           whatsapp_number: string | null
         }
         Insert: {
           accent_color?: string | null
           background_color?: string | null
+          billing_failures?: number | null
+          billing_start_date?: string | null
           business_name?: string | null
+          cancelled_at?: string | null
           capitec_paylink?: string | null
           created_at?: string
           customization_version?: number | null
           default_currency?: string | null
           delivery_method?: string | null
           delivery_note?: string | null
+          discount_applied?: boolean | null
           eft_details?: string | null
+          has_active_subscription?: boolean | null
           header_banner_url?: string | null
           hero_cta_link?: string | null
           hero_cta_text?: string | null
@@ -327,6 +340,7 @@ export type Database = {
           last_customized_at?: string | null
           logo_url?: string | null
           onboarding_completed?: boolean | null
+          payfast_billing_token?: string | null
           payfast_link?: string | null
           payfast_merchant_id?: string | null
           payfast_merchant_key?: string | null
@@ -343,21 +357,28 @@ export type Database = {
           store_layout?: string | null
           store_location?: string | null
           store_visibility?: boolean | null
+          subscription_price?: number | null
           theme_preset?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
           whatsapp_number?: string | null
         }
         Update: {
           accent_color?: string | null
           background_color?: string | null
+          billing_failures?: number | null
+          billing_start_date?: string | null
           business_name?: string | null
+          cancelled_at?: string | null
           capitec_paylink?: string | null
           created_at?: string
           customization_version?: number | null
           default_currency?: string | null
           delivery_method?: string | null
           delivery_note?: string | null
+          discount_applied?: boolean | null
           eft_details?: string | null
+          has_active_subscription?: boolean | null
           header_banner_url?: string | null
           hero_cta_link?: string | null
           hero_cta_text?: string | null
@@ -368,6 +389,7 @@ export type Database = {
           last_customized_at?: string | null
           logo_url?: string | null
           onboarding_completed?: boolean | null
+          payfast_billing_token?: string | null
           payfast_link?: string | null
           payfast_merchant_id?: string | null
           payfast_merchant_key?: string | null
@@ -384,9 +406,44 @@ export type Database = {
           store_layout?: string | null
           store_location?: string | null
           store_visibility?: boolean | null
+          subscription_price?: number | null
           theme_preset?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
           whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          current_uses: number | null
+          discount_amount: number
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          current_uses?: number | null
+          discount_amount: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          current_uses?: number | null
+          discount_amount?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
         }
         Relationships: []
       }
@@ -425,6 +482,42 @@ export type Database = {
           section_title?: string | null
           section_type?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscription_transactions: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          id: string
+          payfast_payment_id: string | null
+          reference: string | null
+          status: string
+          transaction_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          payfast_payment_id?: string | null
+          reference?: string | null
+          status?: string
+          transaction_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          payfast_payment_id?: string | null
+          reference?: string | null
+          status?: string
+          transaction_type?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
