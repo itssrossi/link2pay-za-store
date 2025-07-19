@@ -43,7 +43,7 @@ const DeleteAccountDialog = () => {
       // Delete in correct order to avoid foreign key constraints
       const deleteOperations = [];
 
-      // 1. Delete invoice items first (they reference invoices)
+      // 1. Delete invoice items and reminders first (they reference invoices)
       if (invoiceIds.length > 0) {
         deleteOperations.push(
           supabase.from('invoice_items').delete().in('invoice_id', invoiceIds)
@@ -68,7 +68,6 @@ const DeleteAccountDialog = () => {
       const failures = results.filter(result => result.status === 'rejected');
       if (failures.length > 0) {
         console.error('Some delete operations failed:', failures);
-        // Continue anyway as we want to delete the profile and user
       }
 
       console.log('Deleted related data, now deleting profile');
@@ -81,31 +80,21 @@ const DeleteAccountDialog = () => {
 
       if (profileError) {
         console.error('Error deleting profile:', profileError);
-        // Continue anyway to try deleting the auth user
       }
 
-      console.log('Profile deleted, now deleting auth user');
+      console.log('Profile deleted, now signing out and redirecting');
 
-      // 4. Delete the authentication user account
-      // Note: This requires the user to be authenticated, which they are
-      const { error: deleteUserError } = await supabase.auth.admin.deleteUser(user.id);
+      // 4. Sign out the user (this effectively "deletes" their session)
+      await supabase.auth.signOut();
       
-      if (deleteUserError) {
-        console.error('Error deleting auth user:', deleteUserError);
-        // If we can't delete the auth user via admin, try signing out
-        await supabase.auth.signOut();
-        toast.success('Account data deleted. Please contact support if you need the authentication account fully removed.');
-      } else {
-        console.log('Auth user deleted successfully');
-        toast.success('Account and all associated data deleted successfully');
-      }
-
+      toast.success('Account data deleted successfully. You have been signed out.');
+      
       // Navigate to auth page
       navigate('/auth');
       
     } catch (error) {
       console.error('Error during account deletion:', error);
-      toast.error('Failed to delete account completely. Some data may remain. Please try again or contact support.');
+      toast.error('Failed to delete account completely. Please try again or contact support.');
     } finally {
       setIsDeleting(false);
     }
@@ -125,8 +114,6 @@ const DeleteAccountDialog = () => {
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete your account and remove all your data including:
             <br /><br />
-            • Your authentication account and login access
-            <br />
             • Business profile and settings
             <br />
             • All products and inventory
@@ -137,7 +124,7 @@ const DeleteAccountDialog = () => {
             <br />
             • All subscription and transaction records
             <br /><br />
-            You will need to create a completely new account to use this service again.
+            You will be signed out and can create a new account if needed.
             <br /><br />
             Are you absolutely sure you want to delete your account?
           </AlertDialogDescription>
