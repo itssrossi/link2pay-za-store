@@ -1,12 +1,11 @@
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
 import Products from '@/pages/Products';
 import AddProduct from '@/pages/AddProduct';
-import EditProduct from '@/pages/EditProduct';
 import InvoiceBuilder from '@/pages/InvoiceBuilder';
 import Settings from '@/pages/Settings';
-import Store from '@/pages/Store';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
@@ -20,7 +19,6 @@ function App() {
           <div className="min-h-screen bg-background">
             <Routes>
               <Route path="/auth" element={<Auth />} />
-              <Route path="/store/:storeHandle" element={<Store />} />
               <Route
                 path="/dashboard"
                 element={
@@ -42,14 +40,6 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <AddProduct />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/products/edit/:id"
-                element={
-                  <ProtectedRoute>
-                    <EditProduct />
                   </ProtectedRoute>
                 }
               />

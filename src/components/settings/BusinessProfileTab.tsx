@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -61,7 +62,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
             <Label htmlFor="business_name">Business Name</Label>
             <Input
               id="business_name"
-              value={profile.business_name}
+              value={profile?.business_name || ''}
               onChange={(e) => handleChange('business_name', e.target.value)}
               placeholder="Enter your business name"
             />
@@ -69,7 +70,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
 
           <div>
             <ImageUpload
-              value={profile.logo_url}
+              value={profile?.logo_url || ''}
               onChange={(url) => handleChange('logo_url', url)}
               label="Business Logo"
               accept=".jpg,.jpeg,.png"
@@ -81,7 +82,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
             <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
             <Input
               id="whatsapp_number"
-              value={profile.whatsapp_number}
+              value={profile?.whatsapp_number || ''}
               onChange={(e) => handleChange('whatsapp_number', e.target.value)}
               placeholder="+27821234567"
             />
@@ -91,7 +92,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
             <Label htmlFor="store_bio">Store Bio</Label>
             <Textarea
               id="store_bio"
-              value={profile.store_bio}
+              value={profile?.store_bio || ''}
               onChange={(e) => handleChange('store_bio', e.target.value)}
               placeholder="Tell customers about your business..."
               rows={3}
@@ -102,12 +103,12 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
             <Label htmlFor="store_handle">Store Handle</Label>
             <Input
               id="store_handle"
-              value={profile.store_handle}
+              value={profile?.store_handle || ''}
               onChange={(e) => handleChange('store_handle', e.target.value)}
               placeholder="your-store-name"
             />
             <p className="text-sm text-gray-500 mt-1">
-              This will be your store URL: link2pay.co.za/store/{profile.store_handle}
+              This will be your store URL: link2pay.co.za/store/{profile?.store_handle}
             </p>
           </div>
         </CardContent>
@@ -125,7 +126,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
             <Label htmlFor="store_address">Store Address</Label>
             <Textarea
               id="store_address"
-              value={profile.store_address}
+              value={profile?.store_address || ''}
               onChange={(e) => handleChange('store_address', e.target.value)}
               placeholder="Enter your store address for local pickup/delivery..."
               rows={3}

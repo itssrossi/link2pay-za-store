@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,9 +6,6 @@ import Layout from '@/components/Layout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import BusinessProfileTab from '@/components/settings/BusinessProfileTab';
 import PaymentSettingsTab from '@/components/settings/PaymentSettingsTab';
-import WhatsAppSettingsTab from '@/components/settings/WhatsAppSettingsTab';
-import DesignSettingsTab from '@/components/settings/DesignSettingsTab';
-import StorefrontSettingsTab from '@/components/settings/StorefrontSettingsTab';
 import SubscriptionTab from '@/components/settings/SubscriptionTab';
 
 const Settings = () => {
@@ -54,20 +52,17 @@ const Settings = () => {
         <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="business">Business</TabsTrigger>
             <TabsTrigger value="subscription">Subscription</TabsTrigger>
             <TabsTrigger value="payment">Payment</TabsTrigger>
-            <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
-            <TabsTrigger value="design">Design</TabsTrigger>
-            <TabsTrigger value="storefront">Storefront</TabsTrigger>
           </TabsList>
 
           <TabsContent value="business">
             <BusinessProfileTab
               profile={profile}
-              onProfileChange={setProfile}
-              onSave={handleSaveProfile}
+              setProfile={setProfile}
+              onSave={() => handleSaveProfile(profile)}
               loading={loading}
             />
           </TabsContent>
@@ -80,34 +75,7 @@ const Settings = () => {
             <PaymentSettingsTab
               profile={profile}
               onProfileChange={setProfile}
-              onSave={handleSaveProfile}
-              loading={loading}
-            />
-          </TabsContent>
-
-          <TabsContent value="whatsapp">
-            <WhatsAppSettingsTab
-              profile={profile}
-              onProfileChange={setProfile}
-              onSave={handleSaveProfile}
-              loading={loading}
-            />
-          </TabsContent>
-
-          <TabsContent value="design">
-            <DesignSettingsTab
-              profile={profile}
-              onProfileChange={setProfile}
-              onSave={handleSaveProfile}
-              loading={loading}
-            />
-          </TabsContent>
-
-          <TabsContent value="storefront">
-            <StorefrontSettingsTab
-              profile={profile}
-              onProfileChange={setProfile}
-              onSave={handleSaveProfile}
+              onSave={() => handleSaveProfile(profile)}
               loading={loading}
             />
           </TabsContent>
