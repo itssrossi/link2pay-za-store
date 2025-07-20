@@ -31,60 +31,19 @@ const DeleteAccountDialog = () => {
     try {
       console.log('Starting account deletion for user:', user.id);
 
-      // First, get all invoice IDs for this user to delete related data
-      const { data: userInvoices } = await supabase
-        .from('invoices')
-        .select('id')
-        .eq('user_id', user.id);
+      // Delete user from auth.users table first (this cascades to profiles due to foreign key)
+      const { error: deleteUserError } = await supabase.rpc('delete_user_account', { 
+        user_id: user.id 
+      });
 
-      const invoiceIds = userInvoices?.map(inv => inv.id) || [];
-      console.log('Found invoices to delete:', invoiceIds);
-
-      // Delete in correct order to avoid foreign key constraints
-      const deleteOperations = [];
-
-      // 1. Delete invoice items and reminders first (they reference invoices)
-      if (invoiceIds.length > 0) {
-        deleteOperations.push(
-          supabase.from('invoice_items').delete().in('invoice_id', invoiceIds)
-        );
-        deleteOperations.push(
-          supabase.from('invoice_reminders').delete().in('invoice_id', invoiceIds)
-        );
+      if (deleteUserError) {
+        console.error('Error deleting user account:', deleteUserError);
+        throw deleteUserError;
       }
 
-      // 2. Delete other user-related data
-      deleteOperations.push(
-        supabase.from('products').delete().eq('user_id', user.id),
-        supabase.from('invoices').delete().eq('user_id', user.id),
-        supabase.from('store_sections').delete().eq('user_id', user.id),
-        supabase.from('subscription_transactions').delete().eq('user_id', user.id)
-      );
+      console.log('User account and all associated data deleted successfully');
 
-      // Execute all delete operations
-      const results = await Promise.allSettled(deleteOperations);
-      
-      // Check for any failures
-      const failures = results.filter(result => result.status === 'rejected');
-      if (failures.length > 0) {
-        console.error('Some delete operations failed:', failures);
-      }
-
-      console.log('Deleted related data, now deleting profile');
-
-      // 3. Delete the user profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', user.id);
-
-      if (profileError) {
-        console.error('Error deleting profile:', profileError);
-      }
-
-      console.log('Profile deleted, now signing out and redirecting');
-
-      // 4. Sign out the user (this effectively "deletes" their session)
+      // Sign out the current session
       await supabase.auth.signOut();
       
       toast.success('Account data deleted successfully. You have been signed out.');
