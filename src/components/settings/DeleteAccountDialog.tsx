@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,112 +25,37 @@ const DeleteAccountDialog = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmationText, setConfirmationText] = useState('');
 
- const handleDeleteAccount = async () => {
-  if (!user) return;
+  const handleDeleteAccount = async () => {
+    if (!user) return;
 
-  if (confirmationText !== 'DELETE') {
-    toast.error('Please type DELETE to confirm.');
-    return;
-  }
-
-  try {
-    setIsDeleting(true);
-
-    // 🔥 Call your Supabase SQL function
-    const { error } = await supabase.rpc('delete_user_completely', {
-      p_uid: user.id,
-    });
-
-    if (error) {
-      console.error('Delete error:', error);
-      toast.error('Failed to delete account. Try again later.');
+    if (confirmationText !== 'DELETE') {
+      toast.error('Please type DELETE to confirm.');
       return;
     }
 
-    // ✅ Sign out user after deletion
-    await supabase.auth.signOut();
-
-    // ✅ Redirect to goodbye page or home
-    navigate('/goodbye'); // or '/' or any other route
-  } catch (err) {
-    console.error('Unexpected error:', err);
-    toast.error('Unexpected error. Try again.');
-  } finally {
-    setIsDeleting(false);
-  }
-};
-    setIsDeleting(true);
-    
     try {
-      console.log('Starting complete account deletion for user:', user.id);
+      setIsDeleting(true);
+      console.log('Calling delete_user_completely for:', user.id);
 
-      // First, delete all user data from database tables
-      // Get all invoice IDs for this user to delete related data
-      const { data: userInvoices } = await supabase
-        .from('invoices')
-        .select('id')
-        .eq('user_id', user.id);
+      // 🔥 Call Supabase RPC to delete user completely
+      const { error } = await supabase.rpc('delete_user_completely', {
+        p_uid: user.id,
+      });
 
-      const invoiceIds = userInvoices?.map(inv => inv.id) || [];
-      console.log('Found invoices to delete:', invoiceIds);
-
-      // Delete in correct order to avoid foreign key constraints
-      const deleteOperations = [];
-
-      // 1. Delete invoice items and reminders first (they reference invoices)
-      if (invoiceIds.length > 0) {
-        deleteOperations.push(
-          supabase.from('invoice_items').delete().in('invoice_id', invoiceIds),
-          supabase.from('invoice_reminders').delete().in('invoice_id', invoiceIds)
-        );
-      }
-
-      // 2. Delete other user-related data
-      deleteOperations.push(
-        supabase.from('products').delete().eq('user_id', user.id),
-        supabase.from('invoices').delete().eq('user_id', user.id),
-        supabase.from('store_sections').delete().eq('user_id', user.id),
-        supabase.from('subscription_transactions').delete().eq('user_id', user.id),
-        supabase.from('profiles').delete().eq('id', user.id)
-      );
-
-      // Execute all delete operations
-      const results = await Promise.allSettled(deleteOperations);
-      
-      // Check for any failures
-      const failures = results.filter(result => result.status === 'rejected');
-      if (failures.length > 0) {
-        console.error('Some database delete operations failed:', failures);
-        // Continue anyway as we still want to delete the auth user
-      }
-
-      console.log('Database data deleted, now deleting auth user');
-
-      // 3. Delete the authentication user account completely
-      const { error: deleteUserError } = await supabase.auth.admin.deleteUser(user.id);
-      
-      if (deleteUserError) {
-        console.error('Error deleting auth user:', deleteUserError);
-        // If admin delete fails, still sign out the user
-        await supabase.auth.signOut();
-        toast.error('Account data deleted but authentication cleanup failed. Please contact support if you can still log in.');
-        navigate('/auth');
+      if (error) {
+        console.error('Failed to delete user data:', error);
+        toast.error('Account deletion failed. Please try again.');
         return;
       }
 
-      console.log('Auth user deleted successfully');
-
-      // 4. Sign out current session (redundant but safe)
+      // ✅ Sign out user
       await supabase.auth.signOut();
-      
-      toast.success('Account and all data permanently deleted. You must re-verify your email if you sign up again.');
-      
-      // Navigate to auth page
-      navigate('/auth');
-      
-    } catch (error) {
-      console.error('Critical error during account deletion:', error);
-      toast.error('Failed to delete account completely. Please try again or contact support immediately.');
+
+      toast.success('Your account and data have been permanently deleted.');
+      navigate('/auth'); // or '/goodbye' if you have one
+    } catch (err) {
+      console.error('Unexpected deletion error:', err);
+      toast.error('Something went wrong. Please try again later.');
     } finally {
       setIsDeleting(false);
     }
@@ -151,29 +75,18 @@ const DeleteAccountDialog = () => {
           <AlertDialogDescription>
             ⚠️ <strong>PERMANENT DELETION WARNING</strong> ⚠️
             <br /><br />
-            This action <strong>CANNOT BE UNDONE</strong>. This will completely and permanently delete:
+            This action <strong>CANNOT BE UNDONE</strong>. This will permanently delete:
             <br /><br />
-            🗑️ <strong>Your authentication account and login access</strong>
-            <br />
-            🗑️ Business profile and all settings
-            <br />
-            🗑️ All products and inventory data
-            <br />
-            🗑️ All invoices and order history
-            <br />
-            🗑️ Store customizations and sections
-            <br />
-            🗑️ All subscription and transaction records
-            <br /><br />
-            <strong>If you sign up again with the same email:</strong>
-            <br />
-            ✅ You will need to re-verify your email address
-            <br />
-            ✅ You will start completely fresh with no previous data
-            <br />
-            ✅ All previous information will be gone forever
-            <br /><br />
-            Type "DELETE" below to confirm this permanent action.
+            🗑️ Your login access<br />
+            🗑️ Business profile and all settings<br />
+            🗑️ Products and inventory<br />
+            🗑️ Invoices and order history<br />
+            🗑️ Store sections and layout<br />
+            🗑️ Subscription records<br /><br />
+            <strong>If you sign up again:</strong><br />
+            ✅ You must re-verify your email<br />
+            ✅ You will start fresh with no previous data<br /><br />
+            Type "DELETE" below to confirm this action.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="my-4">
@@ -190,13 +103,13 @@ const DeleteAccountDialog = () => {
           />
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDeleteAccount}
             disabled={isDeleting || confirmationText !== 'DELETE'}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isDeleting ? 'Permanently Deleting...' : 'Yes, Delete Everything Forever'}
+            {isDeleting ? 'Deleting...' : 'Yes, Delete Everything Forever'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -204,6 +117,5 @@ const DeleteAccountDialog = () => {
   );
 };
 
-
-
 export default DeleteAccountDialog;
+
