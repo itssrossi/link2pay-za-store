@@ -26,14 +26,40 @@ const DeleteAccountDialog = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmationText, setConfirmationText] = useState('');
 
-  const handleDeleteAccount = async () => {
-    if (!user) return;
-    
-    if (confirmationText !== 'DELETE') {
-      toast.error('Please type "DELETE" to confirm account deletion');
+ const handleDeleteAccount = async () => {
+  if (!user) return;
+
+  if (confirmationText !== 'DELETE') {
+    toast.error('Please type DELETE to confirm.');
+    return;
+  }
+
+  try {
+    setIsDeleting(true);
+
+    // 🔥 Call your Supabase SQL function
+    const { error } = await supabase.rpc('delete_user_completely', {
+      p_uid: user.id,
+    });
+
+    if (error) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete account. Try again later.');
       return;
     }
 
+    // ✅ Sign out user after deletion
+    await supabase.auth.signOut();
+
+    // ✅ Redirect to goodbye page or home
+    navigate('/goodbye'); // or '/' or any other route
+  } catch (err) {
+    console.error('Unexpected error:', err);
+    toast.error('Unexpected error. Try again.');
+  } finally {
+    setIsDeleting(false);
+  }
+};
     setIsDeleting(true);
     
     try {
@@ -177,5 +203,7 @@ const DeleteAccountDialog = () => {
     </AlertDialog>
   );
 };
+
+
 
 export default DeleteAccountDialog;
