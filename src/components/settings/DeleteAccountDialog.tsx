@@ -35,16 +35,23 @@ const DeleteAccountDialog = () => {
 
     try {
       setIsDeleting(true);
-      console.log('Calling delete_user_completely for:', user.id);
+      console.log('Calling Edge Function delete-account for:', user.id);
 
-      // 🔥 Call Supabase RPC to delete user completely
-      const { error } = await supabase.rpc('delete_user_completely', {
-        p_uid: user.id,
+      // 🔥 Call Supabase Edge Function to fully delete user
+      const response = await fetch('https://mpzqlidtvlbijloeusuj.supabase.co/functions/v1/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.access_token}`, // optional for future validation
+        },
+        body: JSON.stringify({ userId: user.id }),
       });
 
-      if (error) {
-        console.error('Failed to delete user data:', error);
-        toast.error('Account deletion failed. Please try again.');
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Deletion failed:', result);
+        toast.error(result.error || 'Account deletion failed.');
         return;
       }
 
@@ -52,7 +59,7 @@ const DeleteAccountDialog = () => {
       await supabase.auth.signOut();
 
       toast.success('Your account and data have been permanently deleted.');
-      navigate('/auth'); // or '/goodbye' if you have one
+      navigate('/auth');
     } catch (err) {
       console.error('Unexpected deletion error:', err);
       toast.error('Something went wrong. Please try again later.');
@@ -116,8 +123,7 @@ const DeleteAccountDialog = () => {
     </AlertDialog>
   );
 };
-await supabase.rpc('delete_user_completely', { p_uid: user.id });
-
 
 export default DeleteAccountDialog;
+
 
