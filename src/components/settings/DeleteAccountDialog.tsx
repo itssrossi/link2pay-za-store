@@ -19,6 +19,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Trash2 } from 'lucide-react';
 
+await supabase.rpc('delete_user_completely', { p_uid: user.id });
+
 const DeleteAccountDialog = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
