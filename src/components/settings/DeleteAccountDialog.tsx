@@ -31,10 +31,11 @@ const DeleteAccountDialog = () => {
     try {
       console.log('Starting account deletion for user:', user.id);
 
-      // Delete user from auth.users table first (this cascades to profiles due to foreign key)
-      const { error: deleteUserError } = await supabase.rpc('delete_user_account', { 
-        user_id: user.id 
-      });
+      // Delete user from database using the new function
+      const { error: deleteUserError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
 
       if (deleteUserError) {
         console.error('Error deleting user account:', deleteUserError);

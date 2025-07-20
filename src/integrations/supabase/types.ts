@@ -527,6 +527,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_user_account: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
       generate_product_id: {
         Args: Record<PropertyKey, never>
         Returns: string
