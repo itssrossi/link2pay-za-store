@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,19 +25,6 @@ const DeleteAccountDialog = () => {
   const navigate = useNavigate();
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmationText, setConfirmationText] = useState('');
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchSession() {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error('Error fetching session:', error);
-        toast.error('Failed to get session token.');
-      }
-      setAccessToken(data?.session?.access_token || null);
-    }
-    fetchSession();
-  }, []);
 
   const handleDeleteAccount = async () => {
     if (!user?.id) {
@@ -49,37 +37,25 @@ const DeleteAccountDialog = () => {
       return;
     }
 
-    if (!accessToken) {
-      toast.error('Unable to authenticate request. Try refreshing the page.');
-      return;
-    }
-
     try {
       setIsDeleting(true);
 
-      const response = await fetch(
-        'https://mpzqlidtvlbijloeusuj.supabase.co/functions/v1/delete-account',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ userId: user.id }),
-        }
-      );
+      // Call the RPC function to delete user and all related data
+      const { error } = await supabase.rpc('delete_user_completely', {
+        p_uid: user.id
+      });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error('Deletion failed:', result);
-        toast.error(result.error || 'Account deletion failed.');
+      if (error) {
+        console.error('Account deletion failed:', error);
+        toast.error('Account deletion failed. Please try again.');
         setIsDeleting(false);
         return;
       }
 
+      // Sign out the user (this should happen automatically after deletion)
       await supabase.auth.signOut();
-      toast.success('Your account and data have been permanently deleted.');
+      
+      toast.success('Your account and all data have been permanently deleted.');
       navigate('/auth');
     } catch (err) {
       console.error('Unexpected deletion error:', err);
@@ -129,6 +105,10 @@ const DeleteAccountDialog = () => {
             ✅ You must re-verify your email
             <br />
             ✅ You will start fresh with no previous data
+            <br />
+            ✅ You will go through onboarding again
+            <br />
+            ✅ You will need to set up payment details for subscription
             <br />
             <br />
             Type "DELETE" below to confirm this action.

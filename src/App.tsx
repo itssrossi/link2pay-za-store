@@ -6,6 +6,7 @@ import Dashboard from '@/pages/Dashboard';
 import Products from '@/pages/Products';
 import AddProduct from '@/pages/AddProduct';
 import InvoiceBuilder from '@/pages/InvoiceBuilder';
+import InvoicePreview from '@/pages/InvoicePreview';
 import Settings from '@/pages/Settings';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -23,6 +24,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/invoice/:invoiceId" element={<InvoicePreview />} />
                 <Route
                   path="/dashboard"
                   element={
