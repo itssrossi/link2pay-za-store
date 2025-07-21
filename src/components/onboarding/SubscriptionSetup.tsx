@@ -83,7 +83,7 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
       form.submit();
       document.body.removeChild(form);
 
-      toast.success('Redirecting to PayFast for secure payment setup...');
+      toast.success('Billing setup complete! Your 7-day trial has started.');
       onComplete();
 
     } catch (error) {
@@ -94,7 +94,7 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
     }
   };
 
-  const trialDaysLeft = Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const trialDaysLeft = 7;
   const finalPrice = promoApplied ? 50 : 95;
 
   return (
@@ -103,16 +103,16 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CreditCard className="w-8 h-8 text-green-600" />
         </div>
-        <CardTitle>Setup Your Subscription</CardTitle>
+        <CardTitle>Start Your 7-Day Free Trial</CardTitle>
         <p className="text-sm text-gray-600">
-          Your free trial ends in {trialDaysLeft} days. Setup billing to continue using Link2Pay.
+          Setup billing to start your free trial. You'll only be charged after {trialDaysLeft} days.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Pricing */}
         <div className="bg-gray-50 p-4 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-medium">Monthly Subscription</span>
+            <span className="font-medium">After Trial (Monthly)</span>
             <div className="text-right">
               {promoApplied && (
                 <div className="text-sm text-gray-500 line-through">R95.00</div>
@@ -120,8 +120,11 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
               <div className="font-bold text-lg">R{finalPrice}.00</div>
             </div>
           </div>
+          <div className="text-sm text-green-600 font-medium">
+            Free for {trialDaysLeft} days - Cancel anytime
+          </div>
           {promoApplied && (
-            <Badge variant="secondary" className="bg-green-100 text-green-800">
+            <Badge variant="secondary" className="bg-green-100 text-green-800 mt-2">
               <Zap className="w-3 h-3 mr-1" />
               BETA50 Applied - R45 Off!
             </Badge>
@@ -185,11 +188,11 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
           disabled={loading}
           className="w-full bg-green-600 hover:bg-green-700"
         >
-          {loading ? 'Setting up...' : `Setup Billing - R${finalPrice}/month`}
+          {loading ? 'Setting up...' : `Start Free Trial`}
         </Button>
 
         <p className="text-xs text-gray-500 text-center">
-          Secure payment processing by PayFast. You can cancel anytime.
+          Secure payment processing by PayFast. Cancel anytime during your trial.
         </p>
       </CardContent>
     </Card>
