@@ -56,6 +56,7 @@ interface DashboardStats {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { needsBillingSetup } = useOnboarding();
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
     totalInvoices: 0,
@@ -70,10 +71,10 @@ const Dashboard = () => {
   const [showInvoicesModal, setShowInvoicesModal] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && !needsBillingSetup) {
       fetchDashboardData();
     }
-  }, [user]);
+  }, [user, needsBillingSetup]);
 
   const fetchDashboardData = async () => {
     if (!user) return;

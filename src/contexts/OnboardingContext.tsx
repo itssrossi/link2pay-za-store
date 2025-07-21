@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 interface OnboardingContextType {
@@ -8,6 +9,8 @@ interface OnboardingContextType {
   setShowOnboarding: (show: boolean) => void;
   completeOnboarding: () => Promise<void>;
   skipOnboarding: () => Promise<void>;
+  needsBillingSetup: boolean;
+  setNeedsBillingSetup: (needs: boolean) => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -23,24 +26,31 @@ export const useOnboarding = () => {
 export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, session } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [needsBillingSetup, setNeedsBillingSetup] = useState(false);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       if (user && session) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('onboarding_completed')
+          .select('onboarding_completed, has_active_subscription, trial_ends_at')
           .eq('id', user.id)
           .single();
 
-        if (profile && !profile.onboarding_completed) {
-          setShowOnboarding(true);
+        if (profile) {
+          // Check if user needs billing setup (first time login without subscription)
+          if (!profile.has_active_subscription && !profile.onboarding_completed) {
+            setNeedsBillingSetup(true);
+          } else if (profile.onboarding_completed && !showOnboarding) {
+            // User has completed billing setup, show onboarding modal
+            setShowOnboarding(true);
+          }
         }
       }
     };
 
     checkOnboardingStatus();
-  }, [user, session]);
+  }, [user, session, showOnboarding]);
 
   const createDefaultSections = async () => {
     if (!user) return;
@@ -77,6 +87,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     await createDefaultSections();
 
     setShowOnboarding(false);
+    setNeedsBillingSetup(false);
   };
 
   const skipOnboarding = async () => {
@@ -88,6 +99,8 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setShowOnboarding,
     completeOnboarding,
     skipOnboarding,
+    needsBillingSetup,
+    setNeedsBillingSetup,
   };
 
   return (

@@ -1,9 +1,12 @@
 
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { useOnboarding } from '@/contexts/OnboardingContext';
+import { Navigate, useLocation } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const { needsBillingSetup } = useOnboarding();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -15,6 +18,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect to billing setup if needed (except if already on billing setup page)
+  if (needsBillingSetup && location.pathname !== '/billing-setup') {
+    return <Navigate to="/billing-setup" replace />;
   }
 
   return <>{children}</>;
