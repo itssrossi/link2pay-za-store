@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Check, Zap, ArrowLeft } from 'lucide-react';
+import { CreditCard, Check, Zap, ArrowLeft, Crown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ const BillingSetup = () => {
   const navigate = useNavigate();
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
+  const [isDevCode, setIsDevCode] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [billingDetails, setBillingDetails] = useState({
     name: '',
@@ -40,10 +41,18 @@ const BillingSetup = () => {
         .eq('is_active', true)
         .single();
 
-      if (data && data.code === 'BETA50') {
-        setPromoApplied(true);
-        setDiscountAmount(data.discount_amount);
-        toast.success('Promo code applied! R45 discount applied.');
+      if (data) {
+        if (data.code === 'BETA50') {
+          setPromoApplied(true);
+          setDiscountAmount(data.discount_amount);
+          setIsDevCode(false);
+          toast.success('Promo code applied! R45 discount applied.');
+        } else if (data.code === 'DEVJOHN') {
+          setPromoApplied(true);
+          setIsDevCode(true);
+          setDiscountAmount(95);
+          toast.success('Developer code applied! Full access granted.');
+        }
       } else {
         toast.error('Invalid promo code');
       }
@@ -70,7 +79,14 @@ const BillingSetup = () => {
 
       if (error) throw error;
 
-      // Create PayFast form and submit
+      // Handle developer account response
+      if (data.devAccount) {
+        toast.success(data.message);
+        navigate('/dashboard');
+        return;
+      }
+
+      // Create PayFast form and submit for regular accounts
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = data.payfastUrl;
@@ -104,7 +120,7 @@ const BillingSetup = () => {
   };
 
   const trialDaysLeft = 7;
-  const finalPrice = promoApplied ? 50 : 95;
+  const finalPrice = isDevCode ? 0 : (promoApplied ? 50 : 95);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
@@ -112,32 +128,61 @@ const BillingSetup = () => {
         <Card className="shadow-lg">
           <CardHeader className="text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CreditCard className="w-8 h-8 text-green-600" />
+              {isDevCode ? (
+                <Crown className="w-8 h-8 text-yellow-600" />
+              ) : (
+                <CreditCard className="w-8 h-8 text-green-600" />
+              )}
             </div>
-            <CardTitle className="text-xl sm:text-2xl">Start Your 7-Day Free Trial</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl">
+              {isDevCode ? 'Developer Access' : 'Start Your 7-Day Free Trial'}
+            </CardTitle>
             <p className="text-sm text-gray-600 mt-2">
-              Setup billing to start your free trial. You'll only be charged after {trialDaysLeft} days.
+              {isDevCode 
+                ? 'Welcome developer! You have full access to all features.'
+                : `Setup billing to start your free trial. You'll only be charged after ${trialDaysLeft} days.`
+              }
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Pricing */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="font-medium">After Trial (Monthly)</span>
+                <span className="font-medium">
+                  {isDevCode ? 'Developer Account' : 'After Trial (Monthly)'}
+                </span>
                 <div className="text-right">
-                  {promoApplied && (
+                  {promoApplied && !isDevCode && (
                     <div className="text-sm text-gray-500 line-through">R95.00</div>
                   )}
-                  <div className="font-bold text-lg">R{finalPrice}.00</div>
+                  <div className="font-bold text-lg">
+                    {isDevCode ? 'FREE' : `R${finalPrice}.00`}
+                  </div>
                 </div>
               </div>
               <div className="text-sm text-green-600 font-medium">
-                Free for {trialDaysLeft} days - Cancel anytime
+                {isDevCode 
+                  ? 'Full access - No charges ever'
+                  : `Free for ${trialDaysLeft} days - Cancel anytime`
+                }
               </div>
               {promoApplied && (
-                <Badge variant="secondary" className="bg-green-100 text-green-800 mt-2">
-                  <Zap className="w-3 h-3 mr-1" />
-                  BETA50 Applied - R45 Off!
+                <Badge variant="secondary" className={`mt-2 ${
+                  isDevCode 
+                    ? 'bg-yellow-100 text-yellow-800' 
+                    : 'bg-green-100 text-green-800'
+                }`}>
+                  {isDevCode ? (
+                    <>
+                      <Crown className="w-3 h-3 mr-1" />
+                      Developer Access Granted!
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-3 h-3 mr-1" />
+                      BETA50 Applied - R45 Off!
+                    </>
+                  )}
                 </Badge>
               )}
             </div>
@@ -149,7 +194,7 @@ const BillingSetup = () => {
                 <div className="flex gap-2">
                   <Input
                     id="promo"
-                    placeholder="Enter BETA50 for discount"
+                    placeholder="Enter promo code"
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value)}
                   />
@@ -205,14 +250,21 @@ const BillingSetup = () => {
               <Button 
                 onClick={setupSubscription} 
                 disabled={loading}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className={`flex-1 ${
+                  isDevCode 
+                    ? 'bg-yellow-600 hover:bg-yellow-700' 
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
               >
-                {loading ? 'Setting up...' : 'Start Trial'}
+                {loading ? 'Setting up...' : (isDevCode ? 'Activate Account' : 'Start Trial')}
               </Button>
             </div>
 
             <p className="text-xs text-gray-500 text-center">
-              Secure payment processing by PayFast. Cancel anytime during your trial.
+              {isDevCode 
+                ? 'Developer account - No payment required'
+                : 'Secure payment processing by PayFast. Cancel anytime during your trial.'
+              }
             </p>
           </CardContent>
         </Card>

@@ -37,9 +37,13 @@ serve(async (req) => {
 
     const { promoCode, billingDetails }: SubscriptionRequest = await req.json();
 
+    console.log("Processing subscription for user:", user.id);
+    console.log("Promo code:", promoCode);
+
     // Check promo code if provided
     let subscriptionPrice = 95.00;
     let discountApplied = false;
+    let isDevAccount = false;
 
     if (promoCode) {
       const { data: promoData } = await supabaseClient
@@ -49,43 +53,109 @@ serve(async (req) => {
         .eq('is_active', true)
         .single();
 
-      if (promoData && promoData.code === 'BETA50') {
-        subscriptionPrice = 50.00;
-        discountApplied = true;
+      if (promoData) {
+        if (promoData.code === 'BETA50') {
+          subscriptionPrice = 50.00;
+          discountApplied = true;
+        } else if (promoData.code === 'DEVJOHN') {
+          // Developer account - bypass everything
+          isDevAccount = true;
+          console.log("Developer account detected - bypassing PayFast");
+        }
       }
     }
 
-    // Create PayFast tokenization request
+    // Handle developer account
+    if (isDevAccount) {
+      // Create Supabase service client for admin operations
+      const supabaseService = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { auth: { persistSession: false, autoRefreshToken: false } }
+      );
+
+      // Update profile to mark as dev account with permanent subscription
+      await supabaseService
+        .from('profiles')
+        .update({
+          has_active_subscription: true,
+          subscription_price: 0,
+          discount_applied: true,
+          trial_ends_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
+          billing_start_date: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      // Create a dev account transaction record
+      await supabaseService
+        .from('subscription_transactions')
+        .insert({
+          user_id: user.id,
+          transaction_type: 'subscription_payment',
+          amount: 0,
+          status: 'completed',
+          reference: 'Developer account - DEVJOHN code'
+        });
+
+      console.log("Developer account setup complete");
+
+      return new Response(JSON.stringify({ 
+        success: true,
+        devAccount: true,
+        message: "Developer account activated successfully!"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Regular PayFast subscription setup
     const merchantId = "18305104";
     const merchantKey = "kse495ugy7ekz";
     const passphrase = Deno.env.get("PAYFAST_SECRET_KEY") || "";
+
+    if (!passphrase) {
+      throw new Error("PAYFAST_SECRET_KEY not configured");
+    }
+
+    console.log("PayFast credentials check - Merchant ID:", merchantId);
+
+    // Split name for PayFast requirements
+    const nameParts = billingDetails.name.trim().split(' ');
+    const firstName = nameParts[0] || 'Customer';
+    const lastName = nameParts.slice(1).join(' ') || firstName;
+
+    const billingDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     const payfastData = {
       merchant_id: merchantId,
       merchant_key: merchantKey,
       return_url: `${req.headers.get("origin")}/dashboard?subscription=success`,
       cancel_url: `${req.headers.get("origin")}/dashboard?subscription=cancelled`,
-      notify_url: "https://link2pay.co.za/api/payfast/itn",
-      name_first: billingDetails.name.split(' ')[0],
-      name_last: billingDetails.name.split(' ').slice(1).join(' ') || billingDetails.name.split(' ')[0],
+      notify_url: "https://mpzqlidtvlbijloeusuj.supabase.co/functions/v1/payfast-notify",
+      name_first: firstName,
+      name_last: lastName,
       email_address: billingDetails.email,
       m_payment_id: user.id,
       amount: "5.00", // Small tokenization amount
       item_name: "Link2Pay Subscription Setup",
       subscription_type: "2", // Ad hoc subscription
-      billing_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
+      billing_date: billingDate,
       recurring_amount: subscriptionPrice.toFixed(2),
       frequency: "3", // Monthly
       cycles: "0", // Unlimited
     };
 
-    // Generate signature
+    console.log("PayFast data before signature:", payfastData);
+
+    // Generate signature using PayFast's exact algorithm
     const createSignature = (data: any, passphrase: string) => {
-      const crypto = globalThis.crypto;
       let pfOutput = "";
       
-      for (const key in data) {
-        if (data[key] !== "") {
+      // Sort parameters alphabetically and build query string
+      const sortedKeys = Object.keys(data).sort();
+      for (const key of sortedKeys) {
+        if (data[key] !== "" && data[key] !== null && data[key] !== undefined) {
           pfOutput += `${key}=${encodeURIComponent(data[key].toString().trim()).replace(/%20/g, "+")}&`;
         }
       }
@@ -97,7 +167,9 @@ serve(async (req) => {
         pfOutput += `&passphrase=${encodeURIComponent(passphrase.trim()).replace(/%20/g, "+")}`;
       }
       
-      return crypto.subtle.digest("SHA-1", new TextEncoder().encode(pfOutput))
+      console.log("Signature string:", pfOutput);
+      
+      return crypto.subtle.digest("MD5", new TextEncoder().encode(pfOutput))
         .then(hashBuffer => {
           const hashArray = Array.from(new Uint8Array(hashBuffer));
           return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -105,11 +177,14 @@ serve(async (req) => {
     };
 
     const signature = await createSignature(payfastData, passphrase);
+    console.log("Generated signature:", signature);
     
     const formData = {
       ...payfastData,
       signature: signature
     };
+
+    console.log("Final PayFast form data:", formData);
 
     // Update user profile with subscription details
     await supabaseClient
@@ -122,7 +197,7 @@ serve(async (req) => {
       .eq('id', user.id);
 
     return new Response(JSON.stringify({ 
-      payfastUrl: "https://www.payfast.co.za/eng/process",
+      payfastUrl: "https://sandbox.payfast.co.za/eng/process",
       formData: formData
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -131,7 +206,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in payfast-subscribe:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: "Check edge function logs for more information"
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
