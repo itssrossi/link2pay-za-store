@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { toast } from 'sonner';
 
 const BillingSetup = () => {
   const { user } = useAuth();
+  const { setNeedsBillingSetup, setShowOnboarding } = useOnboarding();
   const navigate = useNavigate();
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
@@ -42,12 +44,7 @@ const BillingSetup = () => {
         .single();
 
       if (data) {
-        if (data.code === 'BETA50') {
-          setPromoApplied(true);
-          setDiscountAmount(data.discount_amount);
-          setIsDevCode(false);
-          toast.success('Promo code applied! R45 discount applied.');
-        } else if (data.code === 'DEVJOHN') {
+        if (data.code === 'DEVJOHN') {
           setPromoApplied(true);
           setIsDevCode(true);
           setDiscountAmount(95);
@@ -82,6 +79,12 @@ const BillingSetup = () => {
       // Handle developer account response
       if (data.devAccount) {
         toast.success(data.message);
+        
+        // Update context state immediately
+        setNeedsBillingSetup(false);
+        setShowOnboarding(true);
+        
+        // Navigate to dashboard
         navigate('/dashboard');
         return;
       }
@@ -120,7 +123,7 @@ const BillingSetup = () => {
   };
 
   const trialDaysLeft = 7;
-  const finalPrice = isDevCode ? 0 : (promoApplied ? 50 : 95);
+  const finalPrice = isDevCode ? 0 : 95;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
@@ -152,9 +155,6 @@ const BillingSetup = () => {
                   {isDevCode ? 'Developer Account' : 'After Trial (Monthly)'}
                 </span>
                 <div className="text-right">
-                  {promoApplied && !isDevCode && (
-                    <div className="text-sm text-gray-500 line-through">R95.00</div>
-                  )}
                   <div className="font-bold text-lg">
                     {isDevCode ? 'FREE' : `R${finalPrice}.00`}
                   </div>
@@ -167,22 +167,9 @@ const BillingSetup = () => {
                 }
               </div>
               {promoApplied && (
-                <Badge variant="secondary" className={`mt-2 ${
-                  isDevCode 
-                    ? 'bg-yellow-100 text-yellow-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {isDevCode ? (
-                    <>
-                      <Crown className="w-3 h-3 mr-1" />
-                      Developer Access Granted!
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-3 h-3 mr-1" />
-                      BETA50 Applied - R45 Off!
-                    </>
-                  )}
+                <Badge variant="secondary" className="mt-2 bg-yellow-100 text-yellow-800">
+                  <Crown className="w-3 h-3 mr-1" />
+                  Developer Access Granted!
                 </Badge>
               )}
             </div>

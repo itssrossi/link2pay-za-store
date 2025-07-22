@@ -38,19 +38,26 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           .single();
 
         if (profile) {
-          // Check if user needs billing setup (first time login without subscription)
-          if (!profile.has_active_subscription && !profile.onboarding_completed) {
+          console.log('Profile data:', profile);
+          
+          // If user has active subscription (including dev accounts), no billing setup needed
+          if (profile.has_active_subscription) {
+            setNeedsBillingSetup(false);
+            // Show onboarding modal if not completed yet
+            if (!profile.onboarding_completed) {
+              setShowOnboarding(true);
+            }
+          } else if (!profile.onboarding_completed) {
+            // User needs billing setup (first time login without subscription)
             setNeedsBillingSetup(true);
-          } else if (profile.onboarding_completed && !showOnboarding) {
-            // User has completed billing setup, show onboarding modal
-            setShowOnboarding(true);
+            setShowOnboarding(false);
           }
         }
       }
     };
 
     checkOnboardingStatus();
-  }, [user, session, showOnboarding]);
+  }, [user, session]);
 
   const createDefaultSections = async () => {
     if (!user) return;
