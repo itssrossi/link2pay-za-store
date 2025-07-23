@@ -44,7 +44,12 @@ const BillingSetup = () => {
         .single();
 
       if (data) {
-        if (data.code === 'DEVJOHN') {
+        if (data.code === 'BETA50') {
+          setPromoApplied(true);
+          setIsDevCode(false);
+          setDiscountAmount(data.discount_amount);
+          toast.success('Promo code applied! R45 discount applied.');
+        } else if (data.code === 'DEVJOHN') {
           setPromoApplied(true);
           setIsDevCode(true);
           setDiscountAmount(95);
@@ -123,7 +128,7 @@ const BillingSetup = () => {
   };
 
   const trialDaysLeft = 7;
-  const finalPrice = isDevCode ? 0 : 95;
+  const finalPrice = isDevCode ? 0 : (promoApplied ? 50 : 95);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
@@ -155,6 +160,9 @@ const BillingSetup = () => {
                   {isDevCode ? 'Developer Account' : 'After Trial (Monthly)'}
                 </span>
                 <div className="text-right">
+                  {promoApplied && !isDevCode && (
+                    <div className="text-sm text-gray-500 line-through">R95.00</div>
+                  )}
                   <div className="font-bold text-lg">
                     {isDevCode ? 'FREE' : `R${finalPrice}.00`}
                   </div>
@@ -167,9 +175,22 @@ const BillingSetup = () => {
                 }
               </div>
               {promoApplied && (
-                <Badge variant="secondary" className="mt-2 bg-yellow-100 text-yellow-800">
-                  <Crown className="w-3 h-3 mr-1" />
-                  Developer Access Granted!
+                <Badge variant="secondary" className={`mt-2 ${
+                  isDevCode 
+                    ? 'bg-yellow-100 text-yellow-800' 
+                    : 'bg-green-100 text-green-800'
+                }`}>
+                  {isDevCode ? (
+                    <>
+                      <Crown className="w-3 h-3 mr-1" />
+                      Developer Access Granted!
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-3 h-3 mr-1" />
+                      BETA50 Applied - R45 Off!
+                    </>
+                  )}
                 </Badge>
               )}
             </div>

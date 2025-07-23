@@ -57,6 +57,7 @@ serve(async (req) => {
         if (promoData.code === 'BETA50') {
           subscriptionPrice = 50.00;
           discountApplied = true;
+          console.log("BETA50 promo applied - Price reduced to R50");
         } else if (promoData.code === 'DEVJOHN') {
           // Developer account - bypass everything
           isDevAccount = true;
@@ -109,7 +110,7 @@ serve(async (req) => {
       });
     }
 
-    // Regular PayFast subscription setup
+    // Regular PayFast subscription setup (for both regular and BETA50 discount)
     const merchantId = "18305104";
     const merchantKey = "kse495ugy7ekz";
     const passphrase = Deno.env.get("PAYFAST_SECRET_KEY") || "";
@@ -119,6 +120,7 @@ serve(async (req) => {
     }
 
     console.log("PayFast credentials check - Merchant ID:", merchantId);
+    console.log("Final subscription price:", subscriptionPrice);
 
     // Split name for PayFast requirements
     const nameParts = billingDetails.name.trim().split(' ');
