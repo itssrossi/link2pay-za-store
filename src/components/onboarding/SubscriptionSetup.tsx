@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Check, Zap, Crown } from 'lucide-react';
+import { CreditCard, Check, Zap, Crown, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -24,6 +23,7 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
     email: ''
   });
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   const validatePromoCode = async () => {
     if (!promoCode.trim()) return;
@@ -82,29 +82,37 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
       }
 
       // Create PayFast form and submit for regular accounts
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = data.payfastUrl;
-      form.target = '_blank';
+      if (data.success && data.payfastUrl && data.formData) {
+        setRedirecting(true);
+        toast.success('Redirecting to PayFast for payment setup...');
+        
+        // Wait a moment to show the redirecting message
+        setTimeout(() => {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = data.payfastUrl;
+          // Remove target="_blank" to keep in same window
 
-      Object.entries(data.formData).forEach(([key, value]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = value as string;
-        form.appendChild(input);
-      });
+          Object.entries(data.formData).forEach(([key, value]) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value as string;
+            form.appendChild(input);
+          });
 
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
-
-      toast.success('Billing setup complete! Your 7-day trial has started.');
-      onComplete();
+          document.body.appendChild(form);
+          form.submit();
+          document.body.removeChild(form);
+        }, 1500);
+      } else {
+        throw new Error('Invalid response from payment service');
+      }
 
     } catch (error) {
       console.error('Subscription setup error:', error);
       toast.error('Failed to setup subscription. Please try again.');
+      setRedirecting(false);
     } finally {
       setLoading(false);
     }
@@ -112,6 +120,20 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
 
   const trialDaysLeft = 7;
   const finalPrice = isDevCode ? 0 : (promoApplied ? 50 : 95);
+
+  if (redirecting) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardContent className="p-8 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-green-600" />
+          <h3 className="text-lg font-semibold mb-2">Redirecting to PayFast</h3>
+          <p className="text-gray-600">
+            Please wait while we redirect you to PayFast for secure payment setup...
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -230,20 +252,27 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
 
         <Button 
           onClick={setupSubscription} 
-          disabled={loading}
+          disabled={loading || redirecting}
           className={`w-full ${
             isDevCode 
               ? 'bg-yellow-600 hover:bg-yellow-700' 
               : 'bg-green-600 hover:bg-green-700'
           }`}
         >
-          {loading ? 'Setting up...' : (isDevCode ? 'Activate Account' : 'Start Free Trial')}
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Setting up...
+            </>
+          ) : (
+            isDevCode ? 'Activate Account' : 'Start Free Trial'
+          )}
         </Button>
 
         <p className="text-xs text-gray-500 text-center">
           {isDevCode 
             ? 'Developer account - No payment required'
-            : 'Secure payment processing by PayFast. Cancel anytime during your trial.'
+            : 'Secure payment processing by PayFast. You\'ll be redirected to PayFast for setup.'
           }
         </p>
       </CardContent>

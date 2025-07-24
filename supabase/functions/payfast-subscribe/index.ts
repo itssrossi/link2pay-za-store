@@ -121,6 +121,7 @@ serve(async (req) => {
 
     console.log("PayFast credentials check - Merchant ID:", merchantId);
     console.log("Final subscription price:", subscriptionPrice);
+    console.log("Using LIVE PayFast environment");
 
     // Split name for PayFast requirements
     const nameParts = billingDetails.name.trim().split(' ');
@@ -199,8 +200,9 @@ serve(async (req) => {
       .eq('id', user.id);
 
     return new Response(JSON.stringify({ 
-      payfastUrl: "https://sandbox.payfast.co.za/eng/process",
-      formData: formData
+      payfastUrl: "https://www.payfast.co.za/eng/process", // LIVE PayFast URL
+      formData: formData,
+      success: true
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

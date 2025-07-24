@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Check, Zap, ArrowLeft, Crown } from 'lucide-react';
+import { CreditCard, Check, Zap, ArrowLeft, Crown, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -25,6 +24,7 @@ const BillingSetup = () => {
     email: user?.email || ''
   });
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -95,29 +95,37 @@ const BillingSetup = () => {
       }
 
       // Create PayFast form and submit for regular accounts
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = data.payfastUrl;
-      form.target = '_blank';
+      if (data.success && data.payfastUrl && data.formData) {
+        setRedirecting(true);
+        toast.success('Redirecting to PayFast for payment setup...');
+        
+        // Wait a moment to show the redirecting message
+        setTimeout(() => {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = data.payfastUrl;
+          // Remove target="_blank" to keep in same window
+          
+          Object.entries(data.formData).forEach(([key, value]) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value as string;
+            form.appendChild(input);
+          });
 
-      Object.entries(data.formData).forEach(([key, value]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = value as string;
-        form.appendChild(input);
-      });
-
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
-
-      toast.success('Billing setup complete! Your 7-day trial has started.');
-      navigate('/dashboard');
+          document.body.appendChild(form);
+          form.submit();
+          document.body.removeChild(form);
+        }, 1500);
+      } else {
+        throw new Error('Invalid response from payment service');
+      }
 
     } catch (error) {
       console.error('Subscription setup error:', error);
       toast.error('Failed to setup subscription. Please try again.');
+      setRedirecting(false);
     } finally {
       setLoading(false);
     }
@@ -129,6 +137,22 @@ const BillingSetup = () => {
 
   const trialDaysLeft = 7;
   const finalPrice = isDevCode ? 0 : (promoApplied ? 50 : 95);
+
+  if (redirecting) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-green-600" />
+            <h3 className="text-lg font-semibold mb-2">Redirecting to PayFast</h3>
+            <p className="text-gray-600">
+              Please wait while we redirect you to PayFast for secure payment setup...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
@@ -252,26 +276,34 @@ const BillingSetup = () => {
                 variant="outline"
                 onClick={handleSkip}
                 className="flex-1"
+                disabled={loading}
               >
                 Skip for now
               </Button>
               <Button 
                 onClick={setupSubscription} 
-                disabled={loading}
+                disabled={loading || redirecting}
                 className={`flex-1 ${
                   isDevCode 
                     ? 'bg-yellow-600 hover:bg-yellow-700' 
                     : 'bg-green-600 hover:bg-green-700'
                 }`}
               >
-                {loading ? 'Setting up...' : (isDevCode ? 'Activate Account' : 'Start Trial')}
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Setting up...
+                  </>
+                ) : (
+                  isDevCode ? 'Activate Account' : 'Start Trial'
+                )}
               </Button>
             </div>
 
             <p className="text-xs text-gray-500 text-center">
               {isDevCode 
                 ? 'Developer account - No payment required'
-                : 'Secure payment processing by PayFast. Cancel anytime during your trial.'
+                : 'Secure payment processing by PayFast. You\'ll be redirected to PayFast for setup.'
               }
             </p>
           </CardContent>
