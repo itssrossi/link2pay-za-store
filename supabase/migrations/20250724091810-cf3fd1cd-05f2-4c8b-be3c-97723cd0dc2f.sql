@@ -1,7 +1,5 @@
 
--- This is a SQL function that will be used as a trigger
--- to update the handle_new_user function
-
+-- Create or update the handle_new_user function to generate unique store handles
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
