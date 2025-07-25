@@ -7,8 +7,9 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -18,6 +19,8 @@ Deno.serve(async (req) => {
     )
 
     const { businessName } = await req.json()
+    
+    console.log('Generating unique handle for business:', businessName)
     
     // Generate base handle from business name
     let baseHandle = businessName
@@ -43,6 +46,7 @@ Deno.serve(async (req) => {
       
       if (error && error.code === 'PGRST116') {
         // Handle doesn't exist, we can use it
+        console.log('Found unique handle:', uniqueHandle)
         break
       }
       
@@ -50,8 +54,17 @@ Deno.serve(async (req) => {
         // Handle exists, try next number
         uniqueHandle = `${baseHandle}${counter}`
         counter++
+        console.log('Handle exists, trying:', uniqueHandle)
       } else {
-        // Some other error occurred
+        // Some other error occurred, but we can still use this handle
+        console.log('Other error occurred, using handle:', uniqueHandle)
+        break
+      }
+      
+      // Safety check to prevent infinite loops
+      if (counter > 1000) {
+        console.error('Too many attempts, using fallback')
+        uniqueHandle = `${baseHandle}${Date.now()}`
         break
       }
     }
@@ -61,6 +74,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
+    console.error('Error in generate-unique-handle function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }

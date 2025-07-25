@@ -31,21 +31,32 @@ const Auth = () => {
 
   const generateUniqueHandle = async (businessName: string) => {
     try {
+      console.log('Calling generate-unique-handle function with:', businessName);
+      
       const { data, error } = await supabase.functions.invoke('generate-unique-handle', {
         body: { businessName }
       });
 
       if (error) {
         console.error('Error generating unique handle:', error);
-        // Fallback to basic handle generation
-        return businessName.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20) || 'store';
+        // Fallback to basic handle generation with timestamp
+        const fallbackHandle = businessName
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '')
+          .substring(0, 15) || 'store';
+        return `${fallbackHandle}${Date.now()}`;
       }
 
-      return data.uniqueHandle;
+      console.log('Generated unique handle:', data?.uniqueHandle);
+      return data?.uniqueHandle || 'store';
     } catch (error) {
       console.error('Error calling generate-unique-handle function:', error);
-      // Fallback to basic handle generation
-      return businessName.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20) || 'store';
+      // Fallback to basic handle generation with timestamp
+      const fallbackHandle = businessName
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .substring(0, 15) || 'store';
+      return `${fallbackHandle}${Date.now()}`;
     }
   };
 
@@ -63,6 +74,7 @@ const Auth = () => {
         email: formData.email,
         password: formData.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             business_name: formData.businessName,
             full_name: formData.fullName,
@@ -72,12 +84,16 @@ const Auth = () => {
       });
 
       if (error) {
+        console.error('Sign up error:', error);
         if (error.message.includes('User already registered')) {
           toast.error('An account with this email already exists. Please sign in instead.');
+        } else if (error.message.includes('Password')) {
+          toast.error('Password must be at least 6 characters long.');
         } else {
-          toast.error(error.message);
+          toast.error(error.message || 'An error occurred during sign up.');
         }
       } else {
+        console.log('Sign up successful:', data);
         toast.success('Account created successfully! Please check your email for verification.');
         navigate('/dashboard');
       }
@@ -100,12 +116,14 @@ const Auth = () => {
       });
 
       if (error) {
+        console.error('Sign in error:', error);
         if (error.message.includes('Invalid login credentials')) {
           toast.error('Invalid email or password. Please try again.');
         } else {
-          toast.error(error.message);
+          toast.error(error.message || 'An error occurred during sign in.');
         }
       } else {
+        console.log('Sign in successful:', data);
         toast.success('Welcome back!');
         navigate('/dashboard');
       }
@@ -252,8 +270,9 @@ const Auth = () => {
                     type="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    placeholder="Choose a password"
+                    placeholder="Choose a password (min 6 characters)"
                     required
+                    minLength={6}
                   />
                 </div>
                 
