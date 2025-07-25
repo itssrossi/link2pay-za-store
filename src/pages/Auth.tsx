@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
+  const { signIn, signUp } = useAuth();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -29,57 +30,18 @@ const Auth = () => {
     });
   };
 
-  const generateUniqueHandle = async (businessName: string) => {
-    try {
-      console.log('Calling generate-unique-handle function with:', businessName);
-      
-      const { data, error } = await supabase.functions.invoke('generate-unique-handle', {
-        body: { businessName }
-      });
-
-      if (error) {
-        console.error('Error generating unique handle:', error);
-        // Fallback to basic handle generation with timestamp
-        const fallbackHandle = businessName
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '')
-          .substring(0, 15) || 'store';
-        return `${fallbackHandle}${Date.now()}`;
-      }
-
-      console.log('Generated unique handle:', data?.uniqueHandle);
-      return data?.uniqueHandle || 'store';
-    } catch (error) {
-      console.error('Error calling generate-unique-handle function:', error);
-      // Fallback to basic handle generation with timestamp
-      const fallbackHandle = businessName
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '')
-        .substring(0, 15) || 'store';
-      return `${fallbackHandle}${Date.now()}`;
-    }
-  };
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Generate unique store handle
-      const uniqueHandle = await generateUniqueHandle(formData.businessName);
+      console.log('Starting sign up process...');
       
-      console.log('Generated unique handle:', uniqueHandle);
-
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-          data: {
-            business_name: formData.businessName,
-            full_name: formData.fullName,
-            store_handle: uniqueHandle
-          }
+      const { error } = await signUp(formData.email, formData.password, {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: {
+          business_name: formData.businessName,
+          full_name: formData.fullName
         }
       });
 
@@ -93,7 +55,7 @@ const Auth = () => {
           toast.error(error.message || 'An error occurred during sign up.');
         }
       } else {
-        console.log('Sign up successful:', data);
+        console.log('Sign up successful');
         toast.success('Account created successfully! Please check your email for verification.');
         navigate('/dashboard');
       }
@@ -110,10 +72,9 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password
-      });
+      console.log('Starting sign in process...');
+      
+      const { error } = await signIn(formData.email, formData.password);
 
       if (error) {
         console.error('Sign in error:', error);
@@ -123,7 +84,7 @@ const Auth = () => {
           toast.error(error.message || 'An error occurred during sign in.');
         }
       } else {
-        console.log('Sign in successful:', data);
+        console.log('Sign in successful');
         toast.success('Welcome back!');
         navigate('/dashboard');
       }
