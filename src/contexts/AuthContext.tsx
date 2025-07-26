@@ -52,8 +52,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('User signed out');
         } else if (event === 'TOKEN_REFRESHED') {
           console.log('Token refreshed');
-        } else if (event === 'SIGNED_UP' && session?.user) {
-          console.log('User signed up, profile being created...');
         }
       }
     );
