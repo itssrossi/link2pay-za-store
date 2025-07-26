@@ -9,12 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Loader2, Building2, User, Mail, Lock, AlertTriangle } from 'lucide-react';
+import { Loader2, Building2, User, Mail, Lock, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
-  const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  const [authStatus, setAuthStatus] = useState<string[]>([]);
   const navigate = useNavigate();
   const { signIn, signUp, user, session } = useAuth();
 
@@ -33,9 +33,10 @@ const Auth = () => {
     }
   }, [user, session, navigate]);
 
-  const addDebugInfo = (info: string) => {
+  const addAuthStatus = (status: string, type: 'info' | 'success' | 'error' = 'info') => {
     const timestamp = new Date().toLocaleTimeString();
-    setDebugInfo(prev => [...prev.slice(-4), `[${timestamp}] ${info}`]);
+    const statusWithIcon = type === 'success' ? `✅ ${status}` : type === 'error' ? `❌ ${status}` : `ℹ️ ${status}`;
+    setAuthStatus(prev => [...prev.slice(-4), `[${timestamp}] ${statusWithIcon}`]);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,25 +46,41 @@ const Auth = () => {
     });
   };
 
+  const validateForm = (isSignUp = false) => {
+    if (!formData.email || !formData.password) {
+      toast.error('Email and password are required');
+      return false;
+    }
+
+    if (!formData.email.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return false;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return false;
+    }
+
+    if (isSignUp && (!formData.businessName || !formData.fullName)) {
+      toast.error('Business name and full name are required for sign up');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setDebugInfo([]);
+    setAuthStatus([]);
 
     try {
-      addDebugInfo('Starting sign up process...');
-      
-      if (!formData.email || !formData.password || !formData.businessName || !formData.fullName) {
-        toast.error('Please fill in all required fields.');
+      if (!validateForm(true)) {
         return;
       }
 
-      if (formData.password.length < 6) {
-        toast.error('Password must be at least 6 characters long.');
-        return;
-      }
-
-      addDebugInfo('Calling signUp function...');
+      addAuthStatus('Starting sign up process...');
       
       const { error } = await signUp(formData.email, formData.password, {
         emailRedirectTo: `${window.location.origin}/dashboard`,
@@ -74,7 +91,7 @@ const Auth = () => {
       });
 
       if (error) {
-        addDebugInfo(`Sign up error: ${error.message}`);
+        addAuthStatus(`Sign up failed: ${error.message}`, 'error');
         
         if (error.message.includes('User already registered')) {
           toast.error('An account with this email already exists. Please sign in instead.');
@@ -89,16 +106,17 @@ const Auth = () => {
           toast.error(error.message || 'An error occurred during sign up.');
         }
       } else {
-        addDebugInfo('Sign up successful');
-        toast.success('Account created successfully! Please check your email for verification.');
+        addAuthStatus('Account created successfully!', 'success');
+        toast.success('Account created! Check your email for verification, then you can sign in.');
         
-        // Small delay to allow the auth state to update
+        // Switch to sign in tab
         setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
+          setIsLogin(true);
+          setFormData(prev => ({ ...prev, businessName: '', fullName: '' }));
+        }, 2000);
       }
     } catch (error: any) {
-      addDebugInfo(`Unexpected error: ${error.message}`);
+      addAuthStatus(`Unexpected error: ${error.message}`, 'error');
       console.error('Sign up error:', error);
       toast.error('An unexpected error occurred. Please try again.');
     } finally {
@@ -109,43 +127,37 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setDebugInfo([]);
+    setAuthStatus([]);
 
     try {
-      addDebugInfo('Starting sign in process...');
-      
-      if (!formData.email || !formData.password) {
-        toast.error('Please enter both email and password.');
+      if (!validateForm(false)) {
         return;
       }
 
-      addDebugInfo('Calling signIn function...');
+      addAuthStatus('Starting sign in process...');
       
       const { error } = await signIn(formData.email, formData.password);
 
       if (error) {
-        addDebugInfo(`Sign in error: ${error.message}`);
+        addAuthStatus(`Sign in failed: ${error.message}`, 'error');
         
         if (error.message.includes('Invalid login credentials')) {
-          toast.error('Invalid email or password. Please check your credentials and try again.');
+          toast.error('Invalid email or password. Please check your credentials.');
         } else if (error.message.includes('Email not confirmed')) {
           toast.error('Please check your email and click the confirmation link before signing in.');
         } else if (error.message.includes('rate limit')) {
-          toast.error('Too many sign-in attempts. Please wait a moment and try again.');
+          toast.error('Too many sign-in attempts. Please wait and try again.');
         } else {
           toast.error(error.message || 'An error occurred during sign in.');
         }
       } else {
-        addDebugInfo('Sign in successful');
+        addAuthStatus('Sign in successful!', 'success');
         toast.success('Welcome back!');
         
-        // Small delay to allow the auth state to update
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
+        // Navigation will happen automatically via the useEffect
       }
     } catch (error: any) {
-      addDebugInfo(`Unexpected error: ${error.message}`);
+      addAuthStatus(`Unexpected error: ${error.message}`, 'error');
       console.error('Sign in error:', error);
       toast.error('An unexpected error occurred. Please try again.');
     } finally {
@@ -169,7 +181,7 @@ const Auth = () => {
               {isLogin ? 'Welcome Back' : 'Create Account'}
             </CardTitle>
             <CardDescription className="text-gray-600">
-              {isLogin ? 'Sign in to your account' : 'Start your business journey today'}
+              {isLogin ? 'Sign in to your account' : 'Start your 7-day free trial'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -212,6 +224,7 @@ const Auth = () => {
                       placeholder="Enter your password"
                       required
                       disabled={loading}
+                      minLength={6}
                     />
                   </div>
                   
@@ -312,7 +325,7 @@ const Auth = () => {
                         Creating Account...
                       </>
                     ) : (
-                      'Create Account'
+                      'Start Free Trial'
                     )}
                   </Button>
                 </form>
@@ -321,20 +334,20 @@ const Auth = () => {
           </CardContent>
         </Card>
 
-        {/* Debug Information */}
-        {debugInfo.length > 0 && (
+        {/* Authentication Status */}
+        {authStatus.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm">
-                <AlertTriangle className="w-4 h-4" />
-                Debug Information
+                <CheckCircle className="w-4 h-4" />
+                Authentication Status
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-1">
-                {debugInfo.map((info, index) => (
+                {authStatus.map((status, index) => (
                   <p key={index} className="text-xs font-mono text-gray-600">
-                    {info}
+                    {status}
                   </p>
                 ))}
               </div>
@@ -346,7 +359,7 @@ const Auth = () => {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            If you're having trouble signing in or up, make sure the Supabase Site URL and Redirect URLs are configured properly in your Supabase dashboard under Authentication → URL Configuration.
+            If authentication isn't working, make sure your Supabase Site URL and Redirect URLs are configured properly in your Supabase dashboard under Authentication → URL Configuration.
           </AlertDescription>
         </Alert>
       </div>

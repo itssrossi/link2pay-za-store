@@ -44,10 +44,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Handle specific auth events
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('User signed in successfully');
+          // Small delay to allow trigger to complete profile creation
+          setTimeout(() => {
+            console.log('Profile should be created by now');
+          }, 1000);
         } else if (event === 'SIGNED_OUT') {
           console.log('User signed out');
         } else if (event === 'TOKEN_REFRESHED') {
           console.log('Token refreshed');
+        } else if (event === 'SIGNED_UP' && session?.user) {
+          console.log('User signed up, profile being created...');
         }
       }
     );
@@ -114,7 +120,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         options: {
           ...options,
-          emailRedirectTo: options?.emailRedirectTo || `${window.location.origin}/dashboard`
+          emailRedirectTo: options?.emailRedirectTo || `${window.location.origin}/dashboard`,
+          data: {
+            business_name: options?.data?.business_name || 'My Business',
+            full_name: options?.data?.full_name || '',
+            ...options?.data
+          }
         }
       });
 
