@@ -4,10 +4,11 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { Navigate, useLocation } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, session, loading } = useAuth();
   const { needsBillingSetup } = useOnboarding();
   const location = useLocation();
 
+  // Show loading spinner while authentication is being determined
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -16,12 +17,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) {
+  // Redirect to auth if no user or session
+  if (!user || !session) {
+    console.log('User not authenticated, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
   // Redirect to billing setup if needed (except if already on billing setup page)
   if (needsBillingSetup && location.pathname !== '/billing-setup') {
+    console.log('User needs billing setup, redirecting');
     return <Navigate to="/billing-setup" replace />;
   }
 
