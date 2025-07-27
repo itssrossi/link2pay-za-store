@@ -44,9 +44,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Handle specific auth events
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('User signed in successfully');
-          // Small delay to allow trigger to complete profile creation
+          // Give the trigger time to create the profile
           setTimeout(() => {
-            console.log('Profile should be created by now');
+            console.log('Profile should be created by trigger');
           }, 1000);
         } else if (event === 'SIGNED_OUT') {
           console.log('User signed out');
@@ -90,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       console.log('Attempting to sign in user:', email);
+      setLoading(true);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -106,12 +107,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Unexpected sign in error:', error);
       return { error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, options?: any) => {
     try {
       console.log('Attempting to sign up user:', email);
+      setLoading(true);
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -143,12 +147,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Unexpected sign up error:', error);
       return { error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
       console.log('Signing out user');
+      setLoading(true);
+      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -158,6 +166,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('Unexpected sign out error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -72,14 +72,12 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm(true)) return;
+
     setLoading(true);
     setAuthStatus([]);
 
     try {
-      if (!validateForm(true)) {
-        return;
-      }
-
       addAuthStatus('Starting sign up process...');
       
       const { error } = await signUp(formData.email, formData.password, {
@@ -126,14 +124,12 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm(false)) return;
+
     setLoading(true);
     setAuthStatus([]);
 
     try {
-      if (!validateForm(false)) {
-        return;
-      }
-
       addAuthStatus('Starting sign in process...');
       
       const { error } = await signIn(formData.email, formData.password);
