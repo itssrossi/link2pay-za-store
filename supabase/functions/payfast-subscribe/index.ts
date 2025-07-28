@@ -166,16 +166,16 @@ serve(async (req) => {
       }
     }
 
-    // PayFast subscription setup - using sandbox credentials for testing
-    const useSandbox = true;
+    // PayFast subscription setup - using LIVE credentials
+    const useSandbox = false;
     const merchantId = useSandbox ? "10040152" : "18305104";
     const merchantKey = useSandbox ? "6ncn7sof6argd" : "kse495ugy7ekz";
     const passphrase = useSandbox ? "johnrosspersonal" : "Bonbon123123";
 
-    // Adjust amounts for sandbox limits (sandbox has lower limits than live)
-    if (useSandbox) {
-      subscriptionPrice = subscriptionPrice > 50 ? 25.00 : 15.00; // Reduce for sandbox
-      console.log("Sandbox mode - adjusted subscription price to:", subscriptionPrice);
+    // Use original pricing for live mode
+    if (!useSandbox) {
+      subscriptionPrice = promoApplied ? 50.00 : 95.00; // Restore original pricing
+      console.log("Live mode - using original subscription price:", subscriptionPrice);
     }
 
     // Handle developer account
