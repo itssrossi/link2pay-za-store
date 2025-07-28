@@ -252,12 +252,12 @@ serve(async (req) => {
         name_last: lastName,
         email_address: billingDetails.email,
         m_payment_id: user.id,
-        amount: "0.00", // Free trial - no initial payment required
+        amount: "0", // Free trial - no initial payment required (in cents)
         item_name: "Link2Pay Trial Setup",
         item_description: "7-day free trial setup for Link2Pay subscription service",
         subscription_type: "2", // Ad hoc subscription
         billing_date: billingDate, // 7 days from now
-        recurring_amount: subscriptionPrice.toFixed(2),
+        recurring_amount: (subscriptionPrice * 100).toFixed(0), // Convert to cents
         frequency: "3", // Monthly (3 = Monthly in PayFast)
         cycles: "0", // Unlimited
       };
@@ -272,12 +272,20 @@ serve(async (req) => {
         name_last: lastName,
         email_address: billingDetails.email,
         m_payment_id: user.id,
-        amount: subscriptionPrice.toFixed(2),
+        amount: (subscriptionPrice * 100).toFixed(0), // Convert to cents
         item_name: "Link2Pay Monthly Subscription",
       };
     }
 
     console.log("PayFast data before signature:", payfastData);
+    console.log("Raw PayFast data structure:");
+    console.log("- merchant_id:", payfastData.merchant_id);
+    console.log("- merchant_key:", payfastData.merchant_key);
+    console.log("- amount:", payfastData.amount);
+    console.log("- recurring_amount:", payfastData.recurring_amount);
+    console.log("- frequency:", payfastData.frequency);
+    console.log("- subscription_type:", payfastData.subscription_type);
+    console.log("- billing_date:", payfastData.billing_date);
 
     // Generate signature for PayFast (no URL encoding for signature generation)
     const createSignature = (data: any, passphrase: string) => {
