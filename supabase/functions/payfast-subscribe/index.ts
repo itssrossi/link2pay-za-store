@@ -252,12 +252,12 @@ serve(async (req) => {
         name_last: lastName,
         email_address: billingDetails.email,
         m_payment_id: user.id,
-        amount: "0", // Free trial - no initial payment required (in cents)
+        amount: "0.00", // Free trial - no initial payment required
         item_name: "Link2Pay Trial Setup",
         item_description: "7-day free trial setup for Link2Pay subscription service",
-        subscription_type: "2", // Ad hoc subscription
+        subscription_type: "1", // 1 = Subscription (NOT 2 = Tokenization)
         billing_date: billingDate, // 7 days from now
-        recurring_amount: (subscriptionPrice * 100).toFixed(0), // Convert to cents
+        recurring_amount: subscriptionPrice.toFixed(2), // Keep in ZAR format for form submission
         frequency: "3", // Monthly (3 = Monthly in PayFast)
         cycles: "0", // Unlimited
       };
@@ -272,7 +272,7 @@ serve(async (req) => {
         name_last: lastName,
         email_address: billingDetails.email,
         m_payment_id: user.id,
-        amount: (subscriptionPrice * 100).toFixed(0), // Convert to cents
+        amount: subscriptionPrice.toFixed(2), // Keep in ZAR format
         item_name: "Link2Pay Monthly Subscription",
       };
     }
