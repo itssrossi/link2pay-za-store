@@ -210,11 +210,7 @@ serve(async (req) => {
     // PayFast subscription setup
     const merchantId = "18305104";
     const merchantKey = "kse495ugy7ekz";
-    const passphrase = Deno.env.get("PAYFAST_SECRET_KEY") || "";
-
-    if (!passphrase) {
-      throw new Error("PAYFAST_SECRET_KEY not configured");
-    }
+    const passphrase = "Bonbon123123";
 
     console.log("PayFast credentials check - Merchant ID:", merchantId);
     console.log("Final subscription price:", subscriptionPrice);
@@ -241,7 +237,7 @@ serve(async (req) => {
         name_last: lastName,
         email_address: billingDetails.email,
         m_payment_id: user.id,
-        amount: "5.00", // Small tokenization amount
+        amount: "1.00", // Minimum possible amount for trial
         item_name: "Link2Pay Trial Setup",
         subscription_type: "2", // Ad hoc subscription
         billing_date: billingDate, // 7 days from now
@@ -267,7 +263,7 @@ serve(async (req) => {
 
     console.log("PayFast data before signature:", payfastData);
 
-    // Generate signature for PayFast
+    // Generate signature for PayFast (no URL encoding for signature generation)
     const createSignature = (data: any, passphrase: string) => {
       let pfOutput = "";
       
@@ -275,7 +271,7 @@ serve(async (req) => {
       const sortedKeys = Object.keys(data).sort();
       for (const key of sortedKeys) {
         if (data[key] !== "" && data[key] !== null && data[key] !== undefined) {
-          pfOutput += `${key}=${encodeURIComponent(data[key].toString().trim()).replace(/%20/g, "+")}&`;
+          pfOutput += `${key}=${data[key].toString().trim()}&`;
         }
       }
       
@@ -283,7 +279,7 @@ serve(async (req) => {
       pfOutput = pfOutput.slice(0, -1);
       
       if (passphrase !== "") {
-        pfOutput += `&passphrase=${encodeURIComponent(passphrase.trim()).replace(/%20/g, "+")}`;
+        pfOutput += `&passphrase=${passphrase.trim()}`;
       }
       
       console.log("Signature string:", pfOutput);
