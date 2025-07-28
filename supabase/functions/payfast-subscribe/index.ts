@@ -207,11 +207,11 @@ serve(async (req) => {
       });
     }
 
-    // PayFast subscription setup
-    const merchantId = "18305104";
-    const merchantKey = "kse495ugy7ekz";
-    const passphrase = "Bonbon123123";
-    const useSandbox = true; // Set to true for testing
+    // PayFast subscription setup - using sandbox credentials for testing
+    const useSandbox = true;
+    const merchantId = useSandbox ? "10040152" : "18305104";
+    const merchantKey = useSandbox ? "6ncn7sof6argd" : "kse495ugy7ekz";
+    const passphrase = useSandbox ? "johnrosspersonal" : "Bonbon123123";
 
     console.log("PayFast credentials check - Merchant ID:", merchantId);
     console.log("Final subscription price:", subscriptionPrice);
