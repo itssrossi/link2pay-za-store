@@ -166,6 +166,18 @@ serve(async (req) => {
       }
     }
 
+    // PayFast subscription setup - using sandbox credentials for testing
+    const useSandbox = true;
+    const merchantId = useSandbox ? "10040152" : "18305104";
+    const merchantKey = useSandbox ? "6ncn7sof6argd" : "kse495ugy7ekz";
+    const passphrase = useSandbox ? "johnrosspersonal" : "Bonbon123123";
+
+    // Adjust amounts for sandbox limits (sandbox has lower limits than live)
+    if (useSandbox) {
+      subscriptionPrice = subscriptionPrice > 50 ? 25.00 : 15.00; // Reduce for sandbox
+      console.log("Sandbox mode - adjusted subscription price to:", subscriptionPrice);
+    }
+
     // Handle developer account
     if (isDevAccount) {
       const supabaseService = createClient(
@@ -207,15 +219,6 @@ serve(async (req) => {
       });
     }
 
-    // PayFast subscription setup - using sandbox credentials for testing
-    const useSandbox = true;
-    const merchantId = useSandbox ? "10040152" : "18305104";
-    const merchantKey = useSandbox ? "6ncn7sof6argd" : "kse495ugy7ekz";
-    const passphrase = useSandbox ? "johnrosspersonal" : "Bonbon123123";
-
-    console.log("PayFast credentials check - Merchant ID:", merchantId);
-    console.log("Final subscription price:", subscriptionPrice);
-    console.log(useSandbox ? "Using SANDBOX PayFast environment" : "Using LIVE PayFast environment");
 
     // Clean and validate fields for PayFast requirements
     const cleanName = billingDetails.name.replace(/[^a-zA-Z\s\-]/g, '').trim();
@@ -249,7 +252,7 @@ serve(async (req) => {
         name_last: lastName,
         email_address: billingDetails.email,
         m_payment_id: user.id,
-        amount: "1.00", // Minimum possible amount for trial
+        amount: useSandbox ? "5.00" : "1.00", // Higher minimum for sandbox
         item_name: "Link2Pay Trial Setup",
         item_description: "7-day free trial setup for Link2Pay subscription service",
         subscription_type: "2", // Ad hoc subscription
