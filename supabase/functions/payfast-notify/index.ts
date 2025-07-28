@@ -29,10 +29,38 @@ serve(async (req) => {
 
     const userId = data.m_payment_id;
     const paymentStatus = data.payment_status;
+    const webhookType = data.type; // For subscription webhooks
     const token = data.token;
-    const amount = parseFloat(data.amount_gross || "0");
+    const amount = parseFloat(data.amount_gross || data.amount || "0");
 
-    if (paymentStatus === "COMPLETE") {
+    // Handle subscription free trial webhook
+    if (webhookType === "subscription.free-trial") {
+      console.log("Processing subscription free trial webhook");
+      
+      await supabaseClient
+        .from('profiles')
+        .update({
+          payfast_billing_token: token,
+          has_active_subscription: false, // Still in trial period
+          trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+        })
+        .eq('id', userId);
+
+      // Record trial setup transaction
+      await supabaseClient
+        .from('subscription_transactions')
+        .insert({
+          user_id: userId,
+          transaction_type: 'trial_setup',
+          amount: 0,
+          payfast_payment_id: data.pf_payment_id,
+          status: 'completed',
+          reference: 'Free trial setup completed'
+        });
+
+      console.log("Free trial setup completed for user:", userId);
+      
+    } else if (paymentStatus === "COMPLETE") {
       if (token) {
         // This is a tokenization success - store the billing token
         await supabaseClient

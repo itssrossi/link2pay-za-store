@@ -252,7 +252,7 @@ serve(async (req) => {
         name_last: lastName,
         email_address: billingDetails.email,
         m_payment_id: user.id,
-        amount: useSandbox ? "5.00" : "1.00", // Higher minimum for sandbox
+        amount: "0.00", // Free trial - no initial payment required
         item_name: "Link2Pay Trial Setup",
         item_description: "7-day free trial setup for Link2Pay subscription service",
         subscription_type: "2", // Ad hoc subscription
