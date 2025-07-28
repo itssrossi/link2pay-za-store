@@ -211,18 +211,30 @@ serve(async (req) => {
     const merchantId = "18305104";
     const merchantKey = "kse495ugy7ekz";
     const passphrase = "Bonbon123123";
+    const useSandbox = true; // Set to true for testing
 
     console.log("PayFast credentials check - Merchant ID:", merchantId);
     console.log("Final subscription price:", subscriptionPrice);
-    console.log("Using LIVE PayFast environment");
+    console.log(useSandbox ? "Using SANDBOX PayFast environment" : "Using LIVE PayFast environment");
 
-    // Split name for PayFast requirements
-    const nameParts = billingDetails.name.trim().split(' ');
+    // Clean and validate fields for PayFast requirements
+    const cleanName = billingDetails.name.replace(/[^a-zA-Z\s\-]/g, '').trim();
+    const nameParts = cleanName.split(' ');
     const firstName = nameParts[0] || 'Customer';
     const lastName = nameParts.slice(1).join(' ') || firstName;
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(billingDetails.email)) {
+      throw new Error("Invalid email format");
+    }
 
-    // Set billing date 7 days from now for trial setup
+    // Set billing date 7 days from now for trial setup (YYYY-MM-DD format)
     const billingDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    console.log("Cleaned firstName:", firstName);
+    console.log("Cleaned lastName:", lastName);
+    console.log("Billing date:", billingDate);
 
     let payfastData;
 
@@ -239,6 +251,7 @@ serve(async (req) => {
         m_payment_id: user.id,
         amount: "1.00", // Minimum possible amount for trial
         item_name: "Link2Pay Trial Setup",
+        item_description: "7-day free trial setup for Link2Pay subscription service",
         subscription_type: "2", // Ad hoc subscription
         billing_date: billingDate, // 7 days from now
         recurring_amount: subscriptionPrice.toFixed(2),
@@ -310,7 +323,7 @@ serve(async (req) => {
       .eq('id', user.id);
 
     return new Response(JSON.stringify({ 
-      payfastUrl: "https://www.payfast.co.za/eng/process",
+      payfastUrl: useSandbox ? "https://sandbox.payfast.co.za/eng/process" : "https://www.payfast.co.za/eng/process",
       formData: formData,
       success: true,
       isTrialSetup: isTrialSetup
