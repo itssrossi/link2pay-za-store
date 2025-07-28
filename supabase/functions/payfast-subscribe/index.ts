@@ -172,11 +172,9 @@ serve(async (req) => {
     const merchantKey = useSandbox ? "6ncn7sof6argd" : "kse495ugy7ekz";
     const passphrase = useSandbox ? "johnrosspersonal" : "Bonbon123123";
 
-    // Use original pricing for live mode
-    if (!useSandbox) {
-      subscriptionPrice = promoApplied ? 50.00 : 95.00; // Restore original pricing
-      console.log("Live mode - using original subscription price:", subscriptionPrice);
-    }
+    console.log("PayFast credentials check - Merchant ID:", merchantId);
+    console.log("Final subscription price:", subscriptionPrice);
+    console.log(useSandbox ? "Using SANDBOX PayFast environment" : "Using LIVE PayFast environment");
 
     // Handle developer account
     if (isDevAccount) {
@@ -345,8 +343,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in payfast-subscribe:", error);
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    
     return new Response(JSON.stringify({ 
       error: error.message,
+      errorName: error.name,
       details: "Check edge function logs for more information"
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

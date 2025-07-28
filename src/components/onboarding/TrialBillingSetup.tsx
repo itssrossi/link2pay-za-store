@@ -114,7 +114,14 @@ const TrialBillingSetup = ({ onComplete }: TrialBillingSetupProps) => {
 
     } catch (error) {
       console.error('Trial billing setup error:', error);
-      toast.error('Failed to setup billing. Please try again.');
+      
+      // Try to get more specific error details
+      let errorMessage = 'Failed to setup billing. Please try again.';
+      if (error.message) {
+        errorMessage = `Billing setup failed: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
       setRedirecting(false);
     } finally {
       setLoading(false);
