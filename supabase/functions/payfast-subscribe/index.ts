@@ -166,8 +166,8 @@ serve(async (req) => {
       }
     }
 
-    // PayFast subscription setup - use sandbox for trials, live for regular subscriptions
-    const useSandbox = isTrialSetup;
+    // PayFast subscription setup - using LIVE credentials
+    const useSandbox = false;
     const merchantId = useSandbox ? "10040152" : "18305104";
     const merchantKey = useSandbox ? "6ncn7sof6argd" : "kse495ugy7ekz";
     const passphrase = useSandbox ? "johnrosspersonal" : "Bonbon123123";
