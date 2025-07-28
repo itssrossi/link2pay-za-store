@@ -105,13 +105,14 @@ const Auth = () => {
         }
       } else {
         addAuthStatus('Account created successfully!', 'success');
-        toast.success('Account created! Check your email for verification, then you can sign in.');
+        addAuthStatus('📧 Check your email for verification link', 'info');
+        toast.success('Account created! Please check your email and click the verification link before signing in.');
         
         // Switch to sign in tab
         setTimeout(() => {
           setIsLogin(true);
           setFormData(prev => ({ ...prev, businessName: '', fullName: '' }));
-        }, 2000);
+        }, 3000);
       }
     } catch (error: any) {
       addAuthStatus(`Unexpected error: ${error.message}`, 'error');
