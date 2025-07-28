@@ -15,8 +15,10 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [authStatus, setAuthStatus] = useState<string[]>([]);
+  const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState('');
   const navigate = useNavigate();
-  const { signIn, signUp, user, session } = useAuth();
+  const { signIn, signUp, user, session, resendConfirmation } = useAuth();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -108,6 +110,10 @@ const Auth = () => {
         addAuthStatus('📧 Check your email for verification link', 'info');
         toast.success('Account created! Please check your email and click the verification link before signing in.');
         
+        // Set email confirmation state
+        setNeedsEmailConfirmation(true);
+        setConfirmationEmail(formData.email);
+        
         // Switch to sign in tab
         setTimeout(() => {
           setIsLogin(true);
@@ -156,6 +162,31 @@ const Auth = () => {
     } catch (error: any) {
       addAuthStatus(`Unexpected error: ${error.message}`, 'error');
       console.error('Sign in error:', error);
+      toast.error('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!confirmationEmail) return;
+
+    setLoading(true);
+    try {
+      addAuthStatus('Resending confirmation email...');
+      
+      const { error } = await resendConfirmation(confirmationEmail);
+
+      if (error) {
+        addAuthStatus(`Resend failed: ${error.message}`, 'error');
+        toast.error(error.message || 'Failed to resend confirmation email.');
+      } else {
+        addAuthStatus('Confirmation email resent successfully!', 'success');
+        toast.success('Confirmation email sent! Please check your inbox.');
+      }
+    } catch (error: any) {
+      addAuthStatus(`Unexpected error: ${error.message}`, 'error');
+      console.error('Resend confirmation error:', error);
       toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -348,6 +379,45 @@ const Auth = () => {
                   </p>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Email Confirmation Resend */}
+        {needsEmailConfirmation && confirmationEmail && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-sm text-blue-800">
+                <Mail className="w-4 h-4" />
+                Email Confirmation Required
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-blue-700">
+                A confirmation email was sent to <strong>{confirmationEmail}</strong>
+              </p>
+              <p className="text-xs text-blue-600">
+                Didn't receive the email? Check your spam folder or click below to resend.
+              </p>
+              <Button 
+                onClick={handleResendConfirmation}
+                variant="outline"
+                size="sm"
+                disabled={loading}
+                className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Resending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="mr-2 h-3 w-3" />
+                    Resend Confirmation Email
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
         )}
