@@ -258,7 +258,7 @@ serve(async (req) => {
         subscription_type: "2", // Ad hoc subscription
         billing_date: billingDate, // 7 days from now
         recurring_amount: subscriptionPrice.toFixed(2),
-        frequency: "5", // Monthly (5 = Monthly in PayFast)
+        frequency: "3", // Monthly (3 = Monthly in PayFast)
         cycles: "0", // Unlimited
       };
     } else {
