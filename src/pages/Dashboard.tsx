@@ -57,7 +57,7 @@ interface DashboardStats {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { needsBillingSetup } = useOnboarding();
+  const { needsBillingSetup, showOnboarding, setShowOnboarding } = useOnboarding();
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
     totalInvoices: 0,
@@ -160,6 +160,10 @@ const Dashboard = () => {
     const link = `${window.location.origin}/store/${stats.storeHandle}`;
     navigator.clipboard.writeText(link);
     toast.success('Store link copied to clipboard!');
+  };
+
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
   };
 
   if (loading) {
@@ -332,7 +336,10 @@ const Dashboard = () => {
         onClose={() => setShowInvoicesModal(false)} 
       />
 
-      <OnboardingModal />
+      <OnboardingModal 
+        isOpen={showOnboarding}
+        onClose={handleCloseOnboarding}
+      />
     </Layout>
   );
 };
