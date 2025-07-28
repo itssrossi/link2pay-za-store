@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -13,6 +12,7 @@ interface SubscriptionRequest {
     name: string;
     email: string;
   };
+  isTrialSetup?: boolean;
 }
 
 serve(async (req) => {
@@ -35,10 +35,11 @@ serve(async (req) => {
       throw new Error("User not authenticated");
     }
 
-    const { promoCode, billingDetails }: SubscriptionRequest = await req.json();
+    const { promoCode, billingDetails, isTrialSetup }: SubscriptionRequest = await req.json();
 
     console.log("Processing subscription for user:", user.id);
     console.log("Promo code:", promoCode);
+    console.log("Is trial setup:", isTrialSetup);
 
     // Check promo code if provided
     let subscriptionPrice = 95.00;
@@ -110,7 +111,7 @@ serve(async (req) => {
       });
     }
 
-    // Regular PayFast subscription setup (for both regular and BETA50 discount)
+    // PayFast subscription setup
     const merchantId = "18305104";
     const merchantKey = "kse495ugy7ekz";
     const passphrase = Deno.env.get("PAYFAST_SECRET_KEY") || "";
@@ -128,26 +129,47 @@ serve(async (req) => {
     const firstName = nameParts[0] || 'Customer';
     const lastName = nameParts.slice(1).join(' ') || firstName;
 
+    // Set billing date 7 days from now for trial setup
     const billingDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    const payfastData = {
-      merchant_id: merchantId,
-      merchant_key: merchantKey,
-      return_url: `${req.headers.get("origin")}/dashboard?subscription=success`,
-      cancel_url: `${req.headers.get("origin")}/dashboard?subscription=cancelled`,
-      notify_url: "https://mpzqlidtvlbijloeusuj.supabase.co/functions/v1/payfast-notify",
-      name_first: firstName,
-      name_last: lastName,
-      email_address: billingDetails.email,
-      m_payment_id: user.id,
-      amount: "5.00", // Small tokenization amount
-      item_name: "Link2Pay Subscription Setup",
-      subscription_type: "2", // Ad hoc subscription
-      billing_date: billingDate,
-      recurring_amount: subscriptionPrice.toFixed(2),
-      frequency: "3", // Monthly
-      cycles: "0", // Unlimited
-    };
+    let payfastData;
+
+    if (isTrialSetup) {
+      // For trial setup, use tokenization with delayed billing
+      payfastData = {
+        merchant_id: merchantId,
+        merchant_key: merchantKey,
+        return_url: `${req.headers.get("origin")}/dashboard?trial=success`,
+        cancel_url: `${req.headers.get("origin")}/billing-setup?trial=cancelled`,
+        notify_url: "https://mpzqlidtvlbijloeusuj.supabase.co/functions/v1/payfast-notify",
+        name_first: firstName,
+        name_last: lastName,
+        email_address: billingDetails.email,
+        m_payment_id: user.id,
+        amount: "5.00", // Small tokenization amount
+        item_name: "Link2Pay Trial Setup",
+        subscription_type: "2", // Ad hoc subscription
+        billing_date: billingDate, // 7 days from now
+        recurring_amount: subscriptionPrice.toFixed(2),
+        frequency: "3", // Monthly
+        cycles: "0", // Unlimited
+      };
+    } else {
+      // Regular subscription setup (immediate)
+      payfastData = {
+        merchant_id: merchantId,
+        merchant_key: merchantKey,
+        return_url: `${req.headers.get("origin")}/dashboard?subscription=success`,
+        cancel_url: `${req.headers.get("origin")}/dashboard?subscription=cancelled`,
+        notify_url: "https://mpzqlidtvlbijloeusuj.supabase.co/functions/v1/payfast-notify",
+        name_first: firstName,
+        name_last: lastName,
+        email_address: billingDetails.email,
+        m_payment_id: user.id,
+        amount: subscriptionPrice.toFixed(2),
+        item_name: "Link2Pay Monthly Subscription",
+      };
+    }
 
     console.log("PayFast data before signature:", payfastData);
 
@@ -195,14 +217,17 @@ serve(async (req) => {
       .update({
         subscription_price: subscriptionPrice,
         discount_applied: discountApplied,
-        billing_start_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        billing_start_date: isTrialSetup ? billingDate : new Date().toISOString(),
+        // Keep trial active until billing is processed
+        trial_ends_at: isTrialSetup ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null
       })
       .eq('id', user.id);
 
     return new Response(JSON.stringify({ 
       payfastUrl: "https://www.payfast.co.za/eng/process", // LIVE PayFast URL
       formData: formData,
-      success: true
+      success: true,
+      isTrialSetup: isTrialSetup
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

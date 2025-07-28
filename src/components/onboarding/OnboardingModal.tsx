@@ -1,165 +1,129 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent } from '@/components/ui/card';
+import { CheckCircle, Store, CreditCard, Users, BarChart3, ArrowRight } from 'lucide-react';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useAuth } from '@/contexts/AuthContext';
-import OnboardingStep from './OnboardingStep';
-import { 
-  Package, 
-  FileText, 
-  Store, 
-  Heart,
-  ArrowRight,
-  ArrowLeft,
-  X
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
-const OnboardingModal: React.FC = () => {
-  const { showOnboarding, completeOnboarding } = useOnboarding();
-  const { user, signOut } = useAuth();
+interface OnboardingModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
+  const navigate = useNavigate();
+  const { setShowOnboarding, setNeedsBillingSetup } = useOnboarding();
   const [currentStep, setCurrentStep] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const steps = [
     {
-      title: "Welcome to Link2Pay",
-      subtitle: "The fastest way to grow your business",
-      description: "Send invoices, accept payments, and run your store — all from WhatsApp.",
-      icon: <Heart className="w-12 sm:w-16 h-12 sm:h-16 text-[#4C9F70]" />
+      title: "Welcome to Link2Pay!",
+      icon: <Store className="w-12 h-12 text-green-600" />,
+      description: "Transform your business with our complete e-commerce solution. Let's get you started!",
+      features: [
+        "Create your online store in minutes",
+        "Accept payments with PayFast integration",
+        "WhatsApp automation for customer engagement",
+        "Professional invoice generation"
+      ]
     },
     {
-      title: "Step 1: Add Your Products",
-      description: "Click 'Products' in the dashboard to add your first item or service. Upload a photo, add a price, and save. You'll use this when sending invoices.",
-      icon: <Package className="w-12 sm:w-16 h-12 sm:h-16 text-[#4C9F70]" />
-    },
-    {
-      title: "Step 2: Send Your First Invoice",
-      description: "Use the 'Invoices' tab or our Quick Command format: l2p:Name:Amount:ProductID:PhoneNumber. Share via WhatsApp instantly. Add SnapScan or PayFast links in Settings to accept payments.",
-      icon: <FileText className="w-12 sm:w-16 h-12 sm:h-16 text-[#4C9F70]" />
-    },
-    {
-      title: "Step 3: Share Your Store",
-      description: "Your store link is ready! Go to 'Store' to copy your custom link and share with customers. You can customize your handle in Settings and show all your products beautifully.",
-      icon: <Store className="w-12 sm:w-16 h-12 sm:h-16 text-[#4C9F70]" />,
-      children: (
-        <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-          <p className="text-sm text-green-700">
-            🔗 Example: link2pay.com/yourname
-          </p>
-        </div>
-      )
+      title: "Start Your Free Trial",
+      icon: <CreditCard className="w-12 h-12 text-blue-600" />,
+      description: "Get 7 days free to explore all features. Setup billing information now to activate your trial.",
+      features: [
+        "7-day completely free trial",
+        "Full access to all features",
+        "No charges until trial ends",
+        "Cancel anytime during trial"
+      ]
     }
   ];
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
-    } else {
-      handleComplete();
     }
   };
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
+  const handleStartTrial = () => {
+    setShowOnboarding(false);
+    setNeedsBillingSetup(true);
+    onClose();
+    navigate('/billing-setup');
   };
 
-  const handleSkip = async () => {
-    await completeOnboarding();
-    toast.success("Welcome to Link2Pay! You can always access help from the settings.");
+  const handleSkip = () => {
+    setShowOnboarding(false);
+    onClose();
   };
 
-  const handleComplete = async () => {
-    await completeOnboarding();
-    toast.success("You're all set! Let's create your first product.", {
-      action: {
-        label: "Add Product",
-        onClick: () => window.location.href = "/products/add"
-      }
-    });
-  };
-
-  const progressValue = ((currentStep + 1) / steps.length) * 100;
   const currentStepData = steps[currentStep];
 
   return (
-    <Dialog open={showOnboarding} onOpenChange={() => {}}>
-      <DialogContent className="max-w-xs sm:max-w-2xl p-0 overflow-hidden mx-auto my-auto">
-        <div className="relative">
-          {/* Header with progress and skip button */}
-          <div className="flex items-center justify-between p-3 sm:p-6 border-b bg-white">
-            <div className="flex items-center space-x-2 sm:space-x-4 flex-1">
-              <div className="flex items-center space-x-1 sm:space-x-2">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#4C9F70] rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xs sm:text-sm">L2P</span>
-                </div>
-                <span className="font-bold text-sm sm:text-lg text-gray-900">Link2Pay</span>
-              </div>
-              <div className="flex-1 max-w-xs">
-                <Progress value={progressValue} className="h-1 sm:h-2" />
-              </div>
-              <span className="text-xs sm:text-sm text-gray-500">
-                {currentStep + 1} of {steps.length}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSkip}
-              className="text-gray-500 hover:text-gray-700 text-xs sm:text-sm p-1 sm:p-2"
-            >
-              <X className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-              Skip
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Onboarding</DialogTitle>
+        </DialogHeader>
+        
+        <div className="text-center space-y-6">
+          {/* Icon */}
+          <div className="flex justify-center">
+            {currentStepData.icon}
+          </div>
+
+          {/* Content */}
+          <div>
+            <h2 className="text-2xl font-bold mb-3">{currentStepData.title}</h2>
+            <p className="text-gray-600 mb-6">{currentStepData.description}</p>
+          </div>
+
+          {/* Features */}
+          <Card>
+            <CardContent className="p-4">
+              <ul className="space-y-3">
+                {currentStepData.features.map((feature, index) => (
+                  <li key={index} className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span className="text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Actions */}
+          <div className="space-y-3">
+            {currentStep === 0 ? (
+              <Button onClick={handleNext} className="w-full bg-green-600 hover:bg-green-700">
+                Get Started
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <Button onClick={handleStartTrial} className="w-full bg-blue-600 hover:bg-blue-700">
+                Start Free Trial
+                <CreditCard className="w-4 h-4 ml-2" />
+              </Button>
+            )}
+            
+            <Button variant="outline" onClick={handleSkip} className="w-full">
+              Skip for now
             </Button>
           </div>
 
-          {/* Step content */}
-          <div className="bg-gradient-to-br from-green-50 to-white min-h-[350px] sm:min-h-[500px]">
-            <OnboardingStep
-              title={currentStepData.title}
-              subtitle={currentStepData.subtitle}
-              description={currentStepData.description}
-              icon={currentStepData.icon}
-            >
-              {currentStepData.children}
-            </OnboardingStep>
-          </div>
-
-          {/* Footer with navigation buttons */}
-          <div className="flex items-center justify-between p-3 sm:p-6 border-t bg-white">
-            <Button
-              variant="ghost"
-              onClick={handleBack}
-              disabled={currentStep === 0}
-              className="flex items-center text-xs sm:text-sm"
-              size="sm"
-            >
-              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Back
-            </Button>
-
-            <Button
-              onClick={handleNext}
-              className="bg-[#4C9F70] hover:bg-[#3d8159] flex items-center text-xs sm:text-sm"
-              size="sm"
-            >
-              {currentStep === steps.length - 1 ? (
-                <>
-                  Complete
-                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
-                </>
-              ) : (
-                <>
-                  Next
-                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
-                </>
-              )}
-            </Button>
+          {/* Step indicators */}
+          <div className="flex justify-center gap-2">
+            {steps.map((_, index) => (
+              <div
+                key={index}
+                className={`w-2 h-2 rounded-full ${
+                  index === currentStep ? 'bg-green-600' : 'bg-gray-300'
+                }`}
+              />
+            ))}
           </div>
         </div>
       </DialogContent>
