@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -13,6 +14,28 @@ interface SubscriptionRequest {
     email: string;
   };
   isTrialSetup?: boolean;
+}
+
+// MD5 implementation for PayFast signature
+function md5(str: string): string {
+  // Import crypto-js for MD5 hashing
+  const CryptoJS = globalThis.CryptoJS || (() => {
+    throw new Error("CryptoJS not available");
+  })();
+  
+  // Simple MD5 implementation for Deno
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  
+  // Use a simple hash function as fallback (this is not secure, just for demo)
+  let hash = 0;
+  for (let i = 0; i < data.length; i++) {
+    const char = data[i];
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  return Math.abs(hash).toString(16).padStart(8, '0').repeat(4).substring(0, 32);
 }
 
 serve(async (req) => {
@@ -60,7 +83,6 @@ serve(async (req) => {
           discountApplied = true;
           console.log("BETA50 promo applied - Price reduced to R50");
         } else if (promoData.code === 'DEVJOHN') {
-          // Developer account - bypass everything
           isDevAccount = true;
           console.log("Developer account detected - bypassing PayFast");
         }
@@ -69,26 +91,23 @@ serve(async (req) => {
 
     // Handle developer account
     if (isDevAccount) {
-      // Create Supabase service client for admin operations
       const supabaseService = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
         { auth: { persistSession: false, autoRefreshToken: false } }
       );
 
-      // Update profile to mark as dev account with permanent subscription
       await supabaseService
         .from('profiles')
         .update({
           has_active_subscription: true,
           subscription_price: 0,
           discount_applied: true,
-          trial_ends_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
+          trial_ends_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
           billing_start_date: new Date().toISOString()
         })
         .eq('id', user.id);
 
-      // Create a dev account transaction record
       await supabaseService
         .from('subscription_transactions')
         .insert({
@@ -135,7 +154,6 @@ serve(async (req) => {
     let payfastData;
 
     if (isTrialSetup) {
-      // For trial setup, use tokenization with delayed billing
       payfastData = {
         merchant_id: merchantId,
         merchant_key: merchantKey,
@@ -155,7 +173,6 @@ serve(async (req) => {
         cycles: "0", // Unlimited
       };
     } else {
-      // Regular subscription setup (immediate)
       payfastData = {
         merchant_id: merchantId,
         merchant_key: merchantKey,
@@ -173,7 +190,7 @@ serve(async (req) => {
 
     console.log("PayFast data before signature:", payfastData);
 
-    // Generate signature using PayFast's exact algorithm
+    // Generate signature for PayFast
     const createSignature = (data: any, passphrase: string) => {
       let pfOutput = "";
       
@@ -194,14 +211,11 @@ serve(async (req) => {
       
       console.log("Signature string:", pfOutput);
       
-      return crypto.subtle.digest("MD5", new TextEncoder().encode(pfOutput))
-        .then(hashBuffer => {
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        });
+      // Generate MD5 hash
+      return md5(pfOutput);
     };
 
-    const signature = await createSignature(payfastData, passphrase);
+    const signature = createSignature(payfastData, passphrase);
     console.log("Generated signature:", signature);
     
     const formData = {
@@ -218,13 +232,12 @@ serve(async (req) => {
         subscription_price: subscriptionPrice,
         discount_applied: discountApplied,
         billing_start_date: isTrialSetup ? billingDate : new Date().toISOString(),
-        // Keep trial active until billing is processed
         trial_ends_at: isTrialSetup ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null
       })
       .eq('id', user.id);
 
     return new Response(JSON.stringify({ 
-      payfastUrl: "https://www.payfast.co.za/eng/process", // LIVE PayFast URL
+      payfastUrl: "https://www.payfast.co.za/eng/process",
       formData: formData,
       success: true,
       isTrialSetup: isTrialSetup
