@@ -318,8 +318,7 @@ serve(async (req) => {
     console.log("Generated signature:", signature);
     
     // Remove merchant_key from final form data (PayFast doesn't expect it in submission)
-    const finalData = { ...payfastData };
-    delete finalData.merchant_key;
+    const { merchant_key, ...finalData } = payfastData;
     
     const formData = {
       ...finalData,
