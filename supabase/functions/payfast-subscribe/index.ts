@@ -305,9 +305,9 @@ serve(async (req) => {
       // Sort keys alphabetically
       const sortedKeys = Object.keys(filteredData).sort();
       
-      // Create URL-encoded parameter string
+      // Create query string without URL encoding (PayFast expects raw values for signature)
       const paramString = sortedKeys
-        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(filteredData[key])}`)
+        .map(key => `${key}=${filteredData[key]}`)
         .join('&');
 
       console.log('PayFast signature parameter string:', paramString);
