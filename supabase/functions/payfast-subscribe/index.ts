@@ -285,33 +285,43 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // Generate signature for PayFast (no URL encoding for signature generation)
+    // Generate signature for PayFast - aligned with PayFast service implementation
     const createSignature = (data: any, passphrase: string) => {
-      let pfOutput = "";
+      console.log('PayFast: Generating signature for data:', data);
       
-      // Create a copy of data without merchant_key for signature generation
-      const signatureData = { ...data };
-      delete signatureData.merchant_key; // PayFast doesn't include merchant_key in signature
-      
-      // Sort parameters alphabetically and build query string
-      const sortedKeys = Object.keys(signatureData).sort();
-      for (const key of sortedKeys) {
-        if (signatureData[key] !== "" && signatureData[key] !== null && signatureData[key] !== undefined) {
-          pfOutput += `${key}=${signatureData[key].toString().trim()}&`;
+      // Filter out empty values and trim - same logic as PayFast service
+      const filteredData: Record<string, string> = {};
+      Object.keys(data).forEach(key => {
+        const value = data[key];
+        if (value !== undefined && value !== null && value.toString().trim() !== '') {
+          filteredData[key] = value.toString().trim();
         }
-      }
+      });
+
+      console.log('PayFast: Filtered data for signature:', filteredData);
+
+      // Sort parameters alphabetically by key
+      const sortedKeys = Object.keys(filteredData).sort();
       
-      // Remove last ampersand
-      pfOutput = pfOutput.slice(0, -1);
-      
-      if (passphrase !== "") {
-        pfOutput += `&passphrase=${passphrase.trim()}`;
-      }
-      
-      console.log("Signature string (without merchant_key):", pfOutput);
-      
+      // Create query string without URL encoding (PayFast expects raw values for signature)
+      const queryString = sortedKeys
+        .map(key => `${key}=${filteredData[key]}`)
+        .join('&');
+
+      console.log('PayFast: Query string for signature:', queryString);
+
+      // Add passphrase if provided
+      const finalString = passphrase && passphrase.trim() 
+        ? `${queryString}&passphrase=${passphrase.trim()}`
+        : queryString;
+
+      console.log('PayFast: Final string for signature:', finalString);
+
       // Generate MD5 hash
-      return md5(pfOutput);
+      const signature = md5(finalString);
+      console.log('PayFast: Generated signature:', signature);
+      
+      return signature;
     };
 
     const signature = createSignature(payfastData, passphrase);
