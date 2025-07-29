@@ -285,46 +285,49 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // Generate signature according to PayFast documentation
-    // Based on PayFast Node.js example - values MUST be URL encoded
+    // Generate signature according to PayFast documentation - CRITICAL FIXES
     const generatePayFastSignature = (data: Record<string, any>, passphrase?: string) => {
       console.log('PayFast: Generating signature for data:', data);
       
-      // Remove empty values first
+      // Step 1: Remove empty values and trim ALL values (PayFast requirement)
       const filteredData: Record<string, string> = {};
       Object.keys(data).forEach(key => {
         const value = data[key];
         if (value !== undefined && value !== null && value.toString().trim() !== '') {
+          // CRITICAL: Trim ALL values to remove whitespace at ends
           filteredData[key] = value.toString().trim();
         }
       });
 
       console.log('PayFast: Filtered data for signature:', filteredData);
 
-      // Add passphrase to the data before sorting (if provided)
+      // Step 2: Add passphrase BEFORE sorting (PayFast requirement)
       if (passphrase && passphrase.trim()) {
         filteredData.passphrase = passphrase.trim();
       }
 
-      // Sort parameters alphabetically by key  
+      // Step 3: Sort parameters alphabetically by key (CRITICAL for PayFast)
       const sortedKeys = Object.keys(filteredData).sort();
       
-      // Create parameter string with URL encoding (PayFast requirement)
-      let paramString = '';
+      // Step 4: Build parameter string with CORRECT URL encoding
+      const paramPairs: string[] = [];
       sortedKeys.forEach(key => {
         const value = filteredData[key];
-        // URL encode the value and replace %20 with + (PayFast specific requirement)
-        const encodedValue = encodeURIComponent(value).replace(/%20/g, '+');
-        paramString += `${key}=${encodedValue}&`;
+        // CRITICAL: URL encode and ensure uppercase encoding + spaces as '+'
+        let encodedValue = encodeURIComponent(value);
+        // Ensure all hex characters are UPPERCASE (PayFast requirement)
+        encodedValue = encodedValue.replace(/%[0-9a-f]{2}/gi, (match) => match.toUpperCase());
+        // Replace %20 with + (PayFast specific requirement)
+        encodedValue = encodedValue.replace(/%20/g, '+');
+        
+        paramPairs.push(`${key}=${encodedValue}`);
       });
 
-      // Remove trailing '&'
-      paramString = paramString.replace(/&$/, '');
-
+      const paramString = paramPairs.join('&');
       console.log('PayFast: Final parameter string for signature:', paramString);
 
-      // Generate MD5 hash
-      const signature = md5(paramString);
+      // Step 5: Generate MD5 hash (ensure lowercase)
+      const signature = md5(paramString).toLowerCase();
       console.log('PayFast: Generated signature:', signature);
       
       return signature;
