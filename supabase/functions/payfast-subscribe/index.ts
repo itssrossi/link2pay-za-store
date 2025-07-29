@@ -166,12 +166,12 @@ serve(async (req) => {
       }
     }
 
-    // PayFast subscription setup - using LIVE credentials (NO PASSPHRASE)
+    // PayFast subscription setup - using LIVE credentials with correct passphrase
     const useSandbox = false;
     const merchantId = useSandbox ? "10040152" : "18305104";
     const merchantKey = useSandbox ? "6ncn7sof6argd" : "kse495ugy7ekz";
-    // No passphrase since user removed it from PayFast account
-    const passphrase = "";
+    // Use the correct passphrase
+    const passphrase = "Bonbon123123";
 
     console.log("PayFast credentials check - Merchant ID:", merchantId);
     console.log("Final subscription price:", subscriptionPrice);
@@ -286,37 +286,35 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // Generate signature using exact PayFast Node.js logic
-    const generatePayFastSignature = (data: Record<string, any>, passphrase?: string) => {
+    // Generate signature using exact PayFast Node.js logic from user's working example
+    const generatePayFastSignature = (data: Record<string, any>, passphrase: string) => {
       console.log('PayFast: Generating signature for data:', data);
       
-      // Step 1: Sort data alphabetically by key and filter out empty values
+      // Step 1: Sort data alphabetically by key and filter out empty values (exact Node.js logic)
       const sorted: Record<string, string> = {};
       Object.keys(data).sort().forEach(key => {
         const value = data[key];
-        if (value !== undefined && value !== null && value.toString() !== '') {
+        if (value !== undefined && value !== '') {
           sorted[key] = value.toString();
         }
       });
 
       console.log('PayFast: Sorted filtered data:', sorted);
 
-      // Step 2: Serialize data without encoding (equivalent to qs.stringify with encode: false)
+      // Step 2: Create query string from sorted data (equivalent to qs.stringify with encode: false)
       const queryString = Object.keys(sorted)
         .map(key => `${key}=${sorted[key]}`)
         .join('&');
 
       console.log('PayFast: Query string for signature:', queryString);
 
-      // Step 3: Append passphrase if provided
-      const finalString = passphrase && passphrase.trim()
-        ? `${queryString}&passphrase=${passphrase.trim()}`
-        : queryString;
+      // Step 3: Append passphrase manually (not URL encoded)
+      const stringToHash = queryString + '&passphrase=' + passphrase;
 
-      console.log('PayFast: Final string for signature:', finalString);
+      console.log('PayFast: Final string for signature:', stringToHash);
 
       // Step 4: MD5 Hash
-      const signature = md5(finalString).toLowerCase();
+      const signature = md5(stringToHash).toLowerCase();
       console.log('PayFast: Generated signature:', signature);
       
       return signature;
