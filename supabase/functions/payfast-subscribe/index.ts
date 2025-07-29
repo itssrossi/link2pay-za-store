@@ -289,11 +289,15 @@ serve(async (req) => {
     const createSignature = (data: any, passphrase: string) => {
       let pfOutput = "";
       
+      // Create a copy of data without merchant_key for signature generation
+      const signatureData = { ...data };
+      delete signatureData.merchant_key; // PayFast doesn't include merchant_key in signature
+      
       // Sort parameters alphabetically and build query string
-      const sortedKeys = Object.keys(data).sort();
+      const sortedKeys = Object.keys(signatureData).sort();
       for (const key of sortedKeys) {
-        if (data[key] !== "" && data[key] !== null && data[key] !== undefined) {
-          pfOutput += `${key}=${data[key].toString().trim()}&`;
+        if (signatureData[key] !== "" && signatureData[key] !== null && signatureData[key] !== undefined) {
+          pfOutput += `${key}=${signatureData[key].toString().trim()}&`;
         }
       }
       
@@ -304,7 +308,7 @@ serve(async (req) => {
         pfOutput += `&passphrase=${passphrase.trim()}`;
       }
       
-      console.log("Signature string:", pfOutput);
+      console.log("Signature string (without merchant_key):", pfOutput);
       
       // Generate MD5 hash
       return md5(pfOutput);
