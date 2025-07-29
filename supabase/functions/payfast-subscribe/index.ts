@@ -285,22 +285,26 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // Generate signature for PayFast - aligned with PayFast service implementation
+    // Generate signature for PayFast - following PayFast documentation exactly
     const createSignature = (data: any, passphrase: string) => {
       console.log('PayFast: Generating signature for data:', data);
       
-      // Filter out empty values and trim - same logic as PayFast service
+      // Create signature data WITHOUT merchant_key (PayFast requirement)
+      const signatureData = { ...data };
+      delete signatureData.merchant_key;
+      
+      // Filter out empty values and trim
       const filteredData: Record<string, string> = {};
-      Object.keys(data).forEach(key => {
-        const value = data[key];
+      Object.keys(signatureData).forEach(key => {
+        const value = signatureData[key];
         if (value !== undefined && value !== null && value.toString().trim() !== '') {
           filteredData[key] = value.toString().trim();
         }
       });
 
-      console.log('PayFast: Filtered data for signature:', filteredData);
+      console.log('PayFast: Filtered data for signature (without merchant_key):', filteredData);
 
-      // Sort parameters alphabetically by key
+      // Sort parameters alphabetically by key for consistent ordering
       const sortedKeys = Object.keys(filteredData).sort();
       
       // Create query string without URL encoding (PayFast expects raw values for signature)
@@ -310,7 +314,7 @@ serve(async (req) => {
 
       console.log('PayFast: Query string for signature:', queryString);
 
-      // Add passphrase if provided
+      // Add passphrase as last parameter if provided
       const finalString = passphrase && passphrase.trim() 
         ? `${queryString}&passphrase=${passphrase.trim()}`
         : queryString;
