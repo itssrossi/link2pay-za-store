@@ -321,10 +321,9 @@ serve(async (req) => {
 
     const signature = generatePayFastSignature(payfastData, passphrase);
     
-    // Create form data with signature (excluding merchant_key as per PayFast requirements)
-    const { merchant_key, ...formDataWithoutKey } = payfastData;
+    // Create form data with signature - include merchant_key as PayFast requires it
     const formData = {
-      ...formDataWithoutKey,
+      ...payfastData,
       signature: signature
     };
 
