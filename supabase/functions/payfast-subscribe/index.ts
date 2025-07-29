@@ -285,26 +285,22 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // Generate signature for PayFast - following PayFast documentation exactly
-    const createSignature = (data: any, passphrase: string) => {
+    // Generate signature for PayFast - EXACTLY matching PayFastService implementation
+    const createSignature = (data: any, passphrase?: string) => {
       console.log('PayFast: Generating signature for data:', data);
       
-      // Create signature data WITHOUT merchant_key (PayFast requirement)
-      const signatureData = { ...data };
-      delete signatureData.merchant_key;
-      
-      // Filter out empty values and trim
+      // Remove empty values and sort parameters alphabetically - SAME AS PayFastService
       const filteredData: Record<string, string> = {};
-      Object.keys(signatureData).forEach(key => {
-        const value = signatureData[key];
+      Object.keys(data).forEach(key => {
+        const value = data[key];
         if (value !== undefined && value !== null && value.toString().trim() !== '') {
           filteredData[key] = value.toString().trim();
         }
       });
 
-      console.log('PayFast: Filtered data for signature (without merchant_key):', filteredData);
+      console.log('PayFast: Filtered data for signature:', filteredData);
 
-      // Sort parameters alphabetically by key for consistent ordering
+      // Sort parameters alphabetically by key - SAME AS PayFastService
       const sortedKeys = Object.keys(filteredData).sort();
       
       // Create query string without URL encoding (PayFast expects raw values for signature)
@@ -314,7 +310,7 @@ serve(async (req) => {
 
       console.log('PayFast: Query string for signature:', queryString);
 
-      // Add passphrase as last parameter if provided
+      // Add passphrase if provided - SAME AS PayFastService
       const finalString = passphrase && passphrase.trim() 
         ? `${queryString}&passphrase=${passphrase.trim()}`
         : queryString;
