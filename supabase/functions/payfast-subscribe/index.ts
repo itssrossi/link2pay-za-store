@@ -286,11 +286,11 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // Generate signature using exact PayFast Node.js logic from user's working example
+    // Generate signature using correct PayFast specification
     const generatePayFastSignature = (data: Record<string, any>, passphrase: string) => {
       console.log('PayFast: Generating signature for data:', data);
       
-      // Step 1: Sort data alphabetically by key and filter out empty values (exact Node.js logic)
+      // Step 1: Sort data alphabetically by key and filter out empty values
       const sorted: Record<string, string> = {};
       Object.keys(data).sort().forEach(key => {
         const value = data[key];
@@ -301,13 +301,13 @@ serve(async (req) => {
 
       console.log('\n🧩 Sorted Parameters:\n', sorted);
 
-      // Step 2: Create query string from sorted data (equivalent to qs.stringify with encode: false)
+      // Step 2: Create query string with URL encoding for signature calculation
       const queryString = Object.keys(sorted)
-        .map(key => `${key}=${sorted[key]}`)
+        .map(key => `${key}=${encodeURIComponent(sorted[key])}`)
         .join('&');
 
-      // Step 3: Append passphrase manually (not URL encoded)
-      const stringToHash = `${queryString}&passphrase=${passphrase}`;
+      // Step 3: Append URL encoded passphrase
+      const stringToHash = `${queryString}&passphrase=${encodeURIComponent(passphrase)}`;
 
       console.log('\n🔐 String to Hash:\n', stringToHash);
 
