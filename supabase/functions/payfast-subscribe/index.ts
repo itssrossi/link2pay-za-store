@@ -285,9 +285,47 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // PayFast data structure for form submission (no signature required)
+    // Generate signature according to PayFast documentation
+    const generatePayFastSignature = (data: Record<string, any>, passphrase?: string) => {
+      // Add passphrase to data if provided
+      const dataWithPassphrase = { ...data };
+      if (passphrase && passphrase.trim()) {
+        dataWithPassphrase.passphrase = passphrase.trim();
+      }
+
+      // Remove empty values and sort alphabetically by key
+      const filteredData: Record<string, string> = {};
+      Object.keys(dataWithPassphrase).forEach(key => {
+        const value = dataWithPassphrase[key];
+        if (value !== undefined && value !== null && value.toString().trim() !== '') {
+          filteredData[key] = value.toString().trim();
+        }
+      });
+
+      // Sort keys alphabetically
+      const sortedKeys = Object.keys(filteredData).sort();
+      
+      // Create URL-encoded parameter string
+      const paramString = sortedKeys
+        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(filteredData[key])}`)
+        .join('&');
+
+      console.log('PayFast signature parameter string:', paramString);
+
+      // Generate MD5 hash
+      const signature = md5(paramString);
+      console.log('PayFast generated signature:', signature);
+      
+      return signature;
+    };
+
+    const signature = generatePayFastSignature(payfastData, passphrase);
+    
+    // Create form data with signature (excluding merchant_key as per PayFast requirements)
+    const { merchant_key, ...formDataWithoutKey } = payfastData;
     const formData = {
-      ...payfastData
+      ...formDataWithoutKey,
+      signature: signature
     };
 
     console.log("Final PayFast form data:", formData);
