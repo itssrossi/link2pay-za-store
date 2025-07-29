@@ -286,7 +286,7 @@ serve(async (req) => {
     console.log("- billing_date:", payfastData.billing_date);
 
     // Generate signature according to PayFast documentation
-    // Generate signature exactly as PayFast documentation specifies
+    // Based on PayFast Node.js example - values MUST be URL encoded
     const generatePayFastSignature = (data: Record<string, any>, passphrase?: string) => {
       console.log('PayFast: Generating signature for data:', data);
       
@@ -301,21 +301,22 @@ serve(async (req) => {
 
       console.log('PayFast: Filtered data for signature:', filteredData);
 
-      // Sort parameters alphabetically by key
+      // Add passphrase to the data before sorting (if provided)
+      if (passphrase && passphrase.trim()) {
+        filteredData.passphrase = passphrase.trim();
+      }
+
+      // Sort parameters alphabetically by key  
       const sortedKeys = Object.keys(filteredData).sort();
       
-      // Create parameter string exactly like PayFast PHP example
+      // Create parameter string with URL encoding (PayFast requirement)
       let paramString = '';
       sortedKeys.forEach(key => {
         const value = filteredData[key];
-        // Use JavaScript equivalent of PHP urlencode (but PayFast expects raw values)
-        paramString += `${key}=${value}&`;
+        // URL encode the value and replace %20 with + (PayFast specific requirement)
+        const encodedValue = encodeURIComponent(value).replace(/%20/g, '+');
+        paramString += `${key}=${encodedValue}&`;
       });
-
-      // Add passphrase if provided (before removing trailing &)
-      if (passphrase && passphrase.trim()) {
-        paramString += `passphrase=${passphrase.trim()}&`;
-      }
 
       // Remove trailing '&'
       paramString = paramString.replace(/&$/, '');
