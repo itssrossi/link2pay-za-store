@@ -299,23 +299,22 @@ serve(async (req) => {
         }
       });
 
-      console.log('PayFast: Sorted filtered data:', sorted);
+      console.log('\n🧩 Sorted Parameters:\n', sorted);
 
       // Step 2: Create query string from sorted data (equivalent to qs.stringify with encode: false)
       const queryString = Object.keys(sorted)
         .map(key => `${key}=${sorted[key]}`)
         .join('&');
 
-      console.log('PayFast: Query string for signature:', queryString);
-
       // Step 3: Append passphrase manually (not URL encoded)
-      const stringToHash = queryString + '&passphrase=' + passphrase;
+      const stringToHash = `${queryString}&passphrase=${passphrase}`;
 
-      console.log('PayFast: Final string for signature:', stringToHash);
+      console.log('\n🔐 String to Hash:\n', stringToHash);
 
       // Step 4: MD5 Hash
       const signature = md5(stringToHash).toLowerCase();
-      console.log('PayFast: Generated signature:', signature);
+      
+      console.log('\n✅ Generated Signature:\n', signature);
       
       return signature;
     };
@@ -329,6 +328,12 @@ serve(async (req) => {
     };
 
     console.log("Final PayFast form data:", formData);
+
+    // Build final URL for debugging (equivalent to what will be submitted)
+    const debugUrl = `https://www.payfast.co.za/eng/process?${Object.entries(formData)
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join('&')}`;
+    console.log('\n🌐 Debug URL (what would be submitted):\n', debugUrl);
 
     // Update user profile with subscription details
     await supabaseClient
