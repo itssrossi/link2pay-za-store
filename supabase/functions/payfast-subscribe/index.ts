@@ -166,11 +166,12 @@ serve(async (req) => {
       }
     }
 
-    // PayFast subscription setup - using LIVE credentials
+    // PayFast subscription setup - using LIVE credentials (NO PASSPHRASE)
     const useSandbox = false;
     const merchantId = useSandbox ? "10040152" : "18305104";
     const merchantKey = useSandbox ? "6ncn7sof6argd" : "kse495ugy7ekz";
-    const passphrase = useSandbox ? "johnrosspersonal" : "Bonbon123123";
+    // No passphrase since user removed it from PayFast account
+    const passphrase = "";
 
     console.log("PayFast credentials check - Merchant ID:", merchantId);
     console.log("Final subscription price:", subscriptionPrice);
