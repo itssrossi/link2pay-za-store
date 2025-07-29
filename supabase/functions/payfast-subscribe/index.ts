@@ -286,35 +286,45 @@ serve(async (req) => {
     console.log("- billing_date:", payfastData.billing_date);
 
     // Generate signature according to PayFast documentation
+    // Generate signature exactly as PayFast documentation specifies
     const generatePayFastSignature = (data: Record<string, any>, passphrase?: string) => {
-      // Add passphrase to data if provided
-      const dataWithPassphrase = { ...data };
-      if (passphrase && passphrase.trim()) {
-        dataWithPassphrase.passphrase = passphrase.trim();
-      }
-
-      // Remove empty values and sort alphabetically by key
+      console.log('PayFast: Generating signature for data:', data);
+      
+      // Remove empty values first
       const filteredData: Record<string, string> = {};
-      Object.keys(dataWithPassphrase).forEach(key => {
-        const value = dataWithPassphrase[key];
+      Object.keys(data).forEach(key => {
+        const value = data[key];
         if (value !== undefined && value !== null && value.toString().trim() !== '') {
           filteredData[key] = value.toString().trim();
         }
       });
 
-      // Sort keys alphabetically
+      console.log('PayFast: Filtered data for signature:', filteredData);
+
+      // Sort parameters alphabetically by key
       const sortedKeys = Object.keys(filteredData).sort();
       
-      // Create query string without URL encoding (PayFast expects raw values for signature)
-      const paramString = sortedKeys
-        .map(key => `${key}=${filteredData[key]}`)
-        .join('&');
+      // Create parameter string exactly like PayFast PHP example
+      let paramString = '';
+      sortedKeys.forEach(key => {
+        const value = filteredData[key];
+        // Use JavaScript equivalent of PHP urlencode (but PayFast expects raw values)
+        paramString += `${key}=${value}&`;
+      });
 
-      console.log('PayFast signature parameter string:', paramString);
+      // Add passphrase if provided (before removing trailing &)
+      if (passphrase && passphrase.trim()) {
+        paramString += `passphrase=${passphrase.trim()}&`;
+      }
+
+      // Remove trailing '&'
+      paramString = paramString.replace(/&$/, '');
+
+      console.log('PayFast: Final parameter string for signature:', paramString);
 
       // Generate MD5 hash
       const signature = md5(paramString);
-      console.log('PayFast generated signature:', signature);
+      console.log('PayFast: Generated signature:', signature);
       
       return signature;
     };
