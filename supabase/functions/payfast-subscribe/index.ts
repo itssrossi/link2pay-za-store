@@ -171,7 +171,7 @@ serve(async (req) => {
     const merchantId = useSandbox ? "10040152" : "18305104";
     const merchantKey = useSandbox ? "6ncn7sof6argd" : "kse495ugy7ekz";
     // Use the correct passphrase
-    const passphrase = "bonbon123123";
+    const passphrase = "Bonbon123123";
 
     console.log("PayFast credentials check - Merchant ID:", merchantId);
     console.log("Final subscription price:", subscriptionPrice);
