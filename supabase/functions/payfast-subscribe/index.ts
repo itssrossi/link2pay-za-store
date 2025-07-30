@@ -286,36 +286,38 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // Generate signature using correct PayFast specification
+    // Generate signature using PayFast official specification (no alphabetical sorting)
     const generatePayFastSignature = (data: Record<string, any>, passphrase: string) => {
       console.log('PayFast: Generating signature for data:', data);
       
-      // Step 1: Sort data alphabetically by key and filter out empty values
-      const sorted: Record<string, string> = {};
-      Object.keys(data).sort().forEach(key => {
+      // Step 1: Filter out empty values while preserving original order
+      const filteredParams: Array<string> = [];
+      
+      Object.keys(data).forEach(key => {
         const value = data[key];
-        if (value !== undefined && value !== '') {
-          sorted[key] = value.toString();
+        if (value !== undefined && value !== null && value.toString().trim() !== '') {
+          const cleanValue = value.toString().trim();
+          // URL encode the value as per PayFast specification
+          filteredParams.push(`${key}=${encodeURIComponent(cleanValue)}`);
+          console.log(`Adding parameter: ${key}=${cleanValue}`);
         }
       });
 
-      console.log('\n🧩 Sorted Parameters:\n', sorted);
+      console.log('\n🧩 Filtered Parameters (original order):\n', filteredParams);
 
-      // Step 2: Create query string with URL encoding for signature calculation
-      const queryString = Object.keys(sorted)
-        .map(key => `${key}=${encodeURIComponent(sorted[key])}`)
-        .join('&');
+      // Step 2: Create query string from filtered parameters
+      const queryString = filteredParams.join('&');
 
-      // Step 3: Append URL encoded passphrase
+      // Step 3: Append encoded passphrase as per PayFast docs
       const stringToHash = `${queryString}&passphrase=${encodeURIComponent(passphrase)}`;
 
       console.log('\n🔐 String to Hash:\n', stringToHash);
 
-      // Step 4: MD5 Hash
-      const signature = md5(stringToHash).toLowerCase();
-      
-      console.log('\n✅ Generated Signature:\n', signature);
-      
+      // Step 4: Generate MD5 hash
+      const signature = md5(stringToHash);
+
+      console.log('\n🎯 Generated Signature:\n', signature);
+
       return signature;
     };
 
