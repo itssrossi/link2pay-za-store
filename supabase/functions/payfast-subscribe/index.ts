@@ -286,50 +286,40 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // Generate signature using PayFast EXACT specification - field order matters!
+    // Generate signature using SAME approach as working payfastService.ts
     const generatePayFastSignature = (data: Record<string, any>, passphrase: string) => {
       console.log('PayFast: Generating signature for data:', data);
       
-      // Step 1: Define EXACT field order as per PayFast documentation
-      const payfastFieldOrder = [
-        'merchant_id', 'merchant_key', 'return_url', 'cancel_url', 'notify_url',
-        'name_first', 'name_last', 'email_address', 'cell_number',
-        'm_payment_id', 'amount', 'item_name', 'item_description',
-        'custom_int1', 'custom_int2', 'custom_int3', 'custom_int4', 'custom_int5',
-        'custom_str1', 'custom_str2', 'custom_str3', 'custom_str4', 'custom_str5',
-        'subscription_type', 'billing_date', 'recurring_amount', 'frequency', 'cycles'
-      ];
-      
-      // Step 2: Build parameters in EXACT PayFast field order, skipping empty values
-      const urlParams: string[] = [];
-      
-      payfastFieldOrder.forEach(fieldName => {
-        if (data[fieldName] !== undefined && data[fieldName] !== null && data[fieldName].toString().trim() !== '') {
-          const value = data[fieldName].toString().trim();
-          // PayFast requires uppercase hex and + for spaces in URL encoding
-          const encodedValue = encodeURIComponent(value).replace(/%20/g, '+').replace(/[!'()*]/g, (c) => {
-            return '%' + c.charCodeAt(0).toString(16).toUpperCase();
-          });
-          urlParams.push(`${fieldName}=${encodedValue}`);
-          console.log(`Adding field: ${fieldName}=${value} (encoded: ${encodedValue})`);
+      // Step 1: Remove empty values and sort parameters alphabetically (like payfastService.ts)
+      const filteredData: Record<string, string> = {};
+      Object.keys(data).forEach(key => {
+        const value = data[key];
+        if (value !== undefined && value !== null && value.toString().trim() !== '') {
+          filteredData[key] = value.toString().trim();
         }
       });
 
-      console.log('\n🧩 Ordered Parameters (PayFast field order):\n', urlParams);
+      console.log('PayFast: Filtered data for signature:', filteredData);
 
-      // Step 3: Create query string
-      const queryString = urlParams.join('&');
+      // Step 2: Sort parameters alphabetically by key (CRITICAL - like payfastService.ts)
+      const sortedKeys = Object.keys(filteredData).sort();
+      
+      // Step 3: Create query string WITHOUT URL encoding (for signature only)
+      const queryString = sortedKeys
+        .map(key => `${key}=${filteredData[key]}`)
+        .join('&');
 
-      // Step 4: Append passphrase with proper encoding
-      const encodedPassphrase = encodeURIComponent(passphrase).replace(/%20/g, '+').replace(/[!'()*]/g, (c) => {
-        return '%' + c.charCodeAt(0).toString(16).toUpperCase();
-      });
-      const stringToHash = `${queryString}&passphrase=${encodedPassphrase}`;
+      console.log('PayFast: Query string for signature:', queryString);
 
-      console.log('\n🔐 String to Hash:\n', stringToHash);
+      // Step 4: Add passphrase WITHOUT URL encoding (for signature)
+      const finalString = passphrase && passphrase.trim() 
+        ? `${queryString}&passphrase=${passphrase.trim()}`
+        : queryString;
 
-      // Step 5: Generate MD5 hash (lowercase as per PayFast spec)
-      const signature = md5(stringToHash).toLowerCase();
+      console.log('PayFast: Final string for signature:', finalString);
+
+      // Step 5: Generate MD5 hash
+      const signature = md5(finalString).toString();
 
       console.log('\n🎯 Generated Signature:\n', signature);
 
