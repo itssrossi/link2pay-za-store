@@ -284,36 +284,70 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // Generate signature using EXACT PHP code provided by user
+    // PHP-compatible URL encoding function
+    const phpUrlencode = (str: string): string => {
+      return encodeURIComponent(str)
+        .replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toLowerCase())
+        .replace(/%20/g, '+');
+    };
+
+    // Generate signature using PayFast required field order
     const generatePayFastSignature = (data: Record<string, any>, passPhrase: string | null) => {
       console.log('PayFast: Generating signature for data:', data);
       
-      // Create parameter string (exactly like PHP foreach)
-      let pfOutput = '';
-      for (const key in data) {
-        const val = data[key];
-        if (val !== '') {
-          pfOutput += key + '=' + encodeURIComponent(String(val).trim()) + '&';
-          console.log(`Adding field: ${key}=${String(val).trim()} (encoded: ${encodeURIComponent(String(val).trim())})`);
+      // PayFast required field order - CRITICAL for signature generation
+      const fieldOrder = [
+        'merchant_id',
+        'merchant_key', 
+        'return_url',
+        'cancel_url',
+        'notify_url',
+        'name_first',
+        'name_last',
+        'email_address',
+        'm_payment_id',
+        'amount',
+        'item_name',
+        'item_description',
+        'subscription_type',
+        'billing_date',
+        'recurring_amount',
+        'frequency',
+        'cycles'
+      ];
+
+      console.log('Raw PayFast data structure:');
+      fieldOrder.forEach(field => {
+        console.log(`- ${field}: ${data[field]}`);
+      });
+
+      // Build parameter string in exact order, only including non-empty fields
+      const paramPairs: string[] = [];
+      
+      fieldOrder.forEach(field => {
+        const value = data[field];
+        if (value !== undefined && value !== null && value.toString().trim() !== '') {
+          const trimmedValue = value.toString().trim();
+          const encodedValue = phpUrlencode(trimmedValue);
+          paramPairs.push(`${field}=${encodedValue}`);
+          console.log(`Adding field: ${field}=${trimmedValue} (encoded: ${encodedValue})`);
         }
-      }
-      
-      // Remove last ampersand (exactly like PHP substr)
-      const getString = pfOutput.substring(0, pfOutput.length - 1);
-      console.log('PayFast: Parameter string:', getString);
-      
-      // Add passphrase if provided (exactly like PHP)
-      let finalString = getString;
-      if (passPhrase !== null) {
-        finalString += '&passphrase=' + encodeURIComponent(String(passPhrase).trim());
-      }
+      });
+
+      const paramString = paramPairs.join('&');
+      console.log('PayFast: Parameter string:', paramString);
+
+      // Add passphrase if provided (also URL encoded)
+      const finalString = passPhrase && passPhrase.trim() 
+        ? `${paramString}&passphrase=${phpUrlencode(passPhrase.trim())}`
+        : paramString;
+
       console.log('PayFast: Final string to hash:', finalString);
-      
-      // Generate MD5 hash (exactly like PHP)
+
+      // Generate MD5 hash (lowercase)
       const signature = md5(finalString);
-
       console.log('\n🎯 Generated Signature:\n', signature);
-
+      
       return signature;
     };
 

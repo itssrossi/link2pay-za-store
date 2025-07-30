@@ -32,39 +32,62 @@ export class PayFastService {
     };
   }
 
+  // PHP-compatible URL encoding function
+  private static phpUrlencode(str: string): string {
+    return encodeURIComponent(str)
+      .replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toLowerCase())
+      .replace(/%20/g, '+');
+  }
+
   private static generateSignature(data: Record<string, string>, passphrase?: string): string {
     console.log('PayFast: Generating signature for data:', data);
     
-    // Remove empty values and sort parameters alphabetically
-    const filteredData: Record<string, string> = {};
-    Object.keys(data).forEach(key => {
-      const value = data[key];
+    // PayFast required field order - CRITICAL for signature generation
+    const fieldOrder = [
+      'merchant_id',
+      'merchant_key', 
+      'return_url',
+      'cancel_url',
+      'notify_url',
+      'name_first',
+      'name_last',
+      'email_address',
+      'm_payment_id',
+      'amount',
+      'item_name',
+      'item_description',
+      'subscription_type',
+      'billing_date',
+      'recurring_amount',
+      'frequency',
+      'cycles'
+    ];
+
+    // Build parameter string in exact order, only including non-empty fields
+    const paramPairs: string[] = [];
+    
+    fieldOrder.forEach(field => {
+      const value = data[field];
       if (value !== undefined && value !== null && value.toString().trim() !== '') {
-        filteredData[key] = value.toString().trim();
+        const trimmedValue = value.toString().trim();
+        const encodedValue = this.phpUrlencode(trimmedValue);
+        paramPairs.push(`${field}=${encodedValue}`);
+        console.log(`PayFast: Adding field: ${field}=${trimmedValue} (encoded: ${encodedValue})`);
       }
     });
 
-    console.log('PayFast: Filtered data for signature:', filteredData);
+    const paramString = paramPairs.join('&');
+    console.log('PayFast: Parameter string:', paramString);
 
-    // Sort parameters alphabetically by key
-    const sortedKeys = Object.keys(filteredData).sort();
-    
-    // Create query string without URL encoding (PayFast expects raw values for signature)
-    const queryString = sortedKeys
-      .map(key => `${key}=${filteredData[key]}`)
-      .join('&');
-
-    console.log('PayFast: Query string for signature:', queryString);
-
-    // Add passphrase if provided
+    // Add passphrase if provided (also URL encoded)
     const finalString = passphrase && passphrase.trim() 
-      ? `${queryString}&passphrase=${passphrase.trim()}`
-      : queryString;
+      ? `${paramString}&passphrase=${this.phpUrlencode(passphrase.trim())}`
+      : paramString;
 
-    console.log('PayFast: Final string for signature:', finalString);
+    console.log('PayFast: Final string to hash:', finalString);
 
-    // Generate MD5 hash
-    const signature = CryptoJS.MD5(finalString).toString();
+    // Generate MD5 hash (lowercase)
+    const signature = CryptoJS.MD5(finalString).toString().toLowerCase();
     console.log('PayFast: Generated signature:', signature);
     
     return signature;
