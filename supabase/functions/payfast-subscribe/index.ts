@@ -286,35 +286,50 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // Generate signature using PayFast official specification (no alphabetical sorting)
+    // Generate signature using PayFast EXACT specification - field order matters!
     const generatePayFastSignature = (data: Record<string, any>, passphrase: string) => {
       console.log('PayFast: Generating signature for data:', data);
       
-      // Step 1: Filter out empty values while preserving original order
-      const filteredParams: Array<string> = [];
+      // Step 1: Define EXACT field order as per PayFast documentation
+      const payfastFieldOrder = [
+        'merchant_id', 'merchant_key', 'return_url', 'cancel_url', 'notify_url',
+        'name_first', 'name_last', 'email_address', 'cell_number',
+        'm_payment_id', 'amount', 'item_name', 'item_description',
+        'custom_int1', 'custom_int2', 'custom_int3', 'custom_int4', 'custom_int5',
+        'custom_str1', 'custom_str2', 'custom_str3', 'custom_str4', 'custom_str5',
+        'subscription_type', 'billing_date', 'recurring_amount', 'frequency', 'cycles'
+      ];
       
-      Object.keys(data).forEach(key => {
-        const value = data[key];
-        if (value !== undefined && value !== null && value.toString().trim() !== '') {
-          const cleanValue = value.toString().trim();
-          // URL encode the value as per PayFast specification
-          filteredParams.push(`${key}=${encodeURIComponent(cleanValue)}`);
-          console.log(`Adding parameter: ${key}=${cleanValue}`);
+      // Step 2: Build parameters in EXACT PayFast field order, skipping empty values
+      const urlParams: string[] = [];
+      
+      payfastFieldOrder.forEach(fieldName => {
+        if (data[fieldName] !== undefined && data[fieldName] !== null && data[fieldName].toString().trim() !== '') {
+          const value = data[fieldName].toString().trim();
+          // PayFast requires uppercase hex and + for spaces in URL encoding
+          const encodedValue = encodeURIComponent(value).replace(/%20/g, '+').replace(/[!'()*]/g, (c) => {
+            return '%' + c.charCodeAt(0).toString(16).toUpperCase();
+          });
+          urlParams.push(`${fieldName}=${encodedValue}`);
+          console.log(`Adding field: ${fieldName}=${value} (encoded: ${encodedValue})`);
         }
       });
 
-      console.log('\n🧩 Filtered Parameters (original order):\n', filteredParams);
+      console.log('\n🧩 Ordered Parameters (PayFast field order):\n', urlParams);
 
-      // Step 2: Create query string from filtered parameters
-      const queryString = filteredParams.join('&');
+      // Step 3: Create query string
+      const queryString = urlParams.join('&');
 
-      // Step 3: Append encoded passphrase as per PayFast docs
-      const stringToHash = `${queryString}&passphrase=${encodeURIComponent(passphrase)}`;
+      // Step 4: Append passphrase with proper encoding
+      const encodedPassphrase = encodeURIComponent(passphrase).replace(/%20/g, '+').replace(/[!'()*]/g, (c) => {
+        return '%' + c.charCodeAt(0).toString(16).toUpperCase();
+      });
+      const stringToHash = `${queryString}&passphrase=${encodedPassphrase}`;
 
       console.log('\n🔐 String to Hash:\n', stringToHash);
 
-      // Step 4: Generate MD5 hash
-      const signature = md5(stringToHash);
+      // Step 5: Generate MD5 hash (lowercase as per PayFast spec)
+      const signature = md5(stringToHash).toLowerCase();
 
       console.log('\n🎯 Generated Signature:\n', signature);
 
