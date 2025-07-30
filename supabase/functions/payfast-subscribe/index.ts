@@ -171,7 +171,7 @@ serve(async (req) => {
     const merchantId = useSandbox ? "10040152" : "18305104";
     const merchantKey = useSandbox ? "6ncn7sof6argd" : "kse495ugy7ekz";
     // Use the correct passphrase
-    const passphrase = "Bonbon123123";
+    const passphrase = "bonbon123123";
 
     console.log("PayFast credentials check - Merchant ID:", merchantId);
     console.log("Final subscription price:", subscriptionPrice);
@@ -286,40 +286,32 @@ serve(async (req) => {
     console.log("- subscription_type:", payfastData.subscription_type);
     console.log("- billing_date:", payfastData.billing_date);
 
-    // Generate signature using EXACT PHP logic - replicate the provided generateSignature() function
-    const generatePayFastSignature = (data: Record<string, any>, passphrase: string) => {
+    // Generate signature using EXACT PHP code provided by user
+    const generatePayFastSignature = (data: Record<string, any>, passPhrase: string | null) => {
       console.log('PayFast: Generating signature for data:', data);
       
-      // PHP-compatible URL encoding function
-      const phpUrlencode = (str: string): string => {
-        return encodeURIComponent(str)
-          .replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase())
-          .replace(/%20/g, '+');
-      };
-      
-      // Step 1: Create parameter string - iterate through data object in insertion order (like PHP foreach)
+      // Create parameter string (exactly like PHP foreach)
       let pfOutput = '';
-      
       for (const key in data) {
         const val = data[key];
-        // Only include non-empty values (exactly like PHP: if($val !== ''))
         if (val !== '') {
-          const trimmedVal = val.toString().trim();
-          const encodedVal = phpUrlencode(trimmedVal);
-          pfOutput += `${key}=${encodedVal}&`;
-          console.log(`Adding field: ${key}=${trimmedVal} (encoded: ${encodedVal})`);
+          pfOutput += key + '=' + encodeURIComponent(String(val).trim()) + '&';
+          console.log(`Adding field: ${key}=${String(val).trim()} (encoded: ${encodeURIComponent(String(val).trim())})`);
         }
       }
-
-      // Step 2: Remove last ampersand (exactly like PHP: substr($pfOutput, 0, -1))
+      
+      // Remove last ampersand (exactly like PHP substr)
       const getString = pfOutput.substring(0, pfOutput.length - 1);
       console.log('PayFast: Parameter string:', getString);
-
-      // Step 3: Add passphrase with URL encoding (exactly like PHP)
-      const finalString = `${getString}&passphrase=${phpUrlencode(passphrase.trim())}`;
+      
+      // Add passphrase if provided (exactly like PHP)
+      let finalString = getString;
+      if (passPhrase !== null) {
+        finalString += '&passphrase=' + encodeURIComponent(String(passPhrase).trim());
+      }
       console.log('PayFast: Final string to hash:', finalString);
-
-      // Step 4: Generate MD5 hash (exactly like PHP: md5($getString))
+      
+      // Generate MD5 hash (exactly like PHP)
       const signature = md5(finalString);
 
       console.log('\n🎯 Generated Signature:\n', signature);
