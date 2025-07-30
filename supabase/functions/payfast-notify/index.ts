@@ -32,10 +32,19 @@ serve(async (req) => {
     const webhookType = data.type; // For subscription webhooks
     const token = data.token;
     const amount = parseFloat(data.amount_gross || data.amount || "0");
+    const subscriptionType = data.subscription_type;
 
-    // Handle subscription free trial webhook
-    if (webhookType === "subscription.free-trial") {
-      console.log("Processing subscription free trial webhook");
+    console.log("Processing PayFast notification:");
+    console.log("- User ID:", userId);
+    console.log("- Payment Status:", paymentStatus);
+    console.log("- Webhook Type:", webhookType);
+    console.log("- Token:", token);
+    console.log("- Amount:", amount);
+    console.log("- Subscription Type:", subscriptionType);
+
+    // Handle tokenization success (for free trial setup)
+    if (paymentStatus === "COMPLETE" && token && subscriptionType === "2") {
+      console.log("Processing tokenization success for trial setup");
       
       await supabaseClient
         .from('profiles')
@@ -55,10 +64,10 @@ serve(async (req) => {
           amount: 0,
           payfast_payment_id: data.pf_payment_id,
           status: 'completed',
-          reference: 'Free trial setup completed'
+          reference: 'Trial billing setup completed - tokenization successful'
         });
 
-      console.log("Free trial setup completed for user:", userId);
+      console.log("Trial tokenization setup completed for user:", userId);
       
     } else if (paymentStatus === "COMPLETE") {
       if (token) {

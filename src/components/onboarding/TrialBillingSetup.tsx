@@ -90,6 +90,9 @@ const TrialBillingSetup = ({ onComplete }: TrialBillingSetupProps) => {
         setRedirecting(true);
         toast.success('Redirecting to PayFast to setup billing...');
         
+        console.log('PayFast response:', data);
+        console.log('Form data to submit:', data.formData);
+        
         // Wait a moment to show the redirecting message
         setTimeout(() => {
           const form = document.createElement('form');
@@ -109,6 +112,7 @@ const TrialBillingSetup = ({ onComplete }: TrialBillingSetupProps) => {
           document.body.removeChild(form);
         }, 1500);
       } else {
+        console.error('Invalid PayFast response:', data);
         throw new Error('Invalid response from payment service');
       }
 
