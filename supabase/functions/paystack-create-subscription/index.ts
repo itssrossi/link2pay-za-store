@@ -36,10 +36,10 @@ Deno.serve(async (req) => {
     // Parse request body
     const { email, fullName, promoCode }: SubscriptionRequest = await req.json();
 
-    // Check if user has already used their trial
+    // Check user's current trial and subscription status
     const { data: profile } = await supabase
       .from('profiles')
-      .select('trial_used, trial_started_at, has_active_subscription, paystack_customer_code')
+      .select('trial_used, trial_started_at, trial_ends_at, has_active_subscription, paystack_customer_code')
       .eq('id', user.id)
       .single();
 
@@ -47,8 +47,29 @@ Deno.serve(async (req) => {
       throw new Error('User already has an active subscription');
     }
 
-    if (profile?.trial_used || profile?.trial_started_at) {
-      throw new Error('Trial has already been used for this account');
+    // If user has an active trial, return success with existing trial info
+    if (profile?.trial_started_at && profile?.trial_ends_at) {
+      const trialEndsAt = new Date(profile.trial_ends_at);
+      const now = new Date();
+      
+      if (trialEndsAt > now) {
+        // Trial is still active
+        console.log('Trial is already active for user:', user.id);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            trial_started: true,
+            trial_ends_at: profile.trial_ends_at,
+            message: 'Your 7-day free trial is already active! Enjoy full access to all features.',
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      } else {
+        // Trial has expired, redirect to payment setup
+        throw new Error('Your free trial has expired. Please set up payment to continue using the service.');
+      }
     }
 
     const paystackSecretKey = Deno.env.get('PAYSTACK_SECRET_KEY');

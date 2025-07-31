@@ -96,8 +96,8 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
           toast.error('Payment system is not configured. Please contact support.');
         } else if (error.message?.includes('Authentication failed')) {
           toast.error('Authentication error. Please try logging out and back in.');
-        } else if (error.message?.includes('Trial has already been used')) {
-          toast.error('You have already used your free trial. Please contact support if you need assistance.');
+        } else if (error.message?.includes('expired')) {
+          toast.error('Your free trial has expired. Please set up payment to continue.');
         } else if (error.message?.includes('active subscription')) {
           toast.error('You already have an active subscription.');
         } else {
