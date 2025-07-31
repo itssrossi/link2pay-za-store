@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Palette } from 'lucide-react';
 import ImageUpload from '@/components/ui/image-upload';
+import SectionManager from './SectionManager';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Profile {
   business_name: string;
@@ -46,6 +50,34 @@ interface StoreDesignTabProps {
 }
 
 const StoreDesignTab = ({ profile, setProfile, onSave, loading }: StoreDesignTabProps) => {
+  const { user } = useAuth();
+  const [sections, setSections] = useState<any[]>([]);
+  const [sectionsLoading, setSectionsLoading] = useState(true);
+
+  const fetchSections = async () => {
+    if (!user) return;
+    
+    try {
+      setSectionsLoading(true);
+      const { data, error } = await supabase
+        .from('store_sections')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('section_order', { ascending: true });
+
+      if (error) throw error;
+      setSections(data || []);
+    } catch (error) {
+      console.error('Error fetching sections:', error);
+    } finally {
+      setSectionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSections();
+  }, [user]);
+
   const handleChange = (field: string, value: string) => {
     setProfile({ ...profile, [field]: value });
   };
@@ -155,6 +187,13 @@ const StoreDesignTab = ({ profile, setProfile, onSave, loading }: StoreDesignTab
           </div>
         </CardContent>
       </Card>
+
+      <SectionManager
+        sections={sections}
+        setSections={setSections}
+        loading={sectionsLoading}
+        onUpdate={fetchSections}
+      />
 
       <Button 
         onClick={onSave} 

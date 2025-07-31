@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GripVertical, Plus, Edit, Trash2, Package, Info, MessageCircle, Star, Code } from 'lucide-react';
+import { GripVertical, Plus, Edit, Trash2, Package, Info, MessageCircle, Star, Code, CalendarDays } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -26,6 +26,7 @@ const sectionTypes = [
   { value: 'about', label: 'About Us', icon: Info, description: 'Tell your story' },
   { value: 'contact', label: 'Contact', icon: MessageCircle, description: 'Contact information' },
   { value: 'testimonials', label: 'Testimonials', icon: Star, description: 'Customer reviews' },
+  { value: 'booking_calendar', label: 'Booking Calendar', icon: CalendarDays, description: 'Appointment booking' },
   { value: 'custom_html', label: 'Custom HTML', icon: Code, description: 'Custom content' }
 ];
 
