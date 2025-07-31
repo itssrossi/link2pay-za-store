@@ -116,11 +116,11 @@ const Settings = () => {
 
   return (
     <Layout>
-      <div className="space-y-20 px-4 sm:px-6">
+      <div className="space-y-6 px-4 sm:px-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 gap-2 sm:grid-cols-6 sm:gap-1 px-2 py-2 mb-20">
+          <TabsList className="grid w-full grid-cols-4 gap-2 sm:grid-cols-6 sm:gap-1 px-2 py-2 mb-20">
             <TabsTrigger value="business" className="text-xs sm:text-sm">Business</TabsTrigger>
             <TabsTrigger value="design" className="text-xs sm:text-sm">Design</TabsTrigger>
             <TabsTrigger value="storefront" className="text-xs sm:text-sm">Storefront</TabsTrigger>
