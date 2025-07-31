@@ -28,11 +28,10 @@ const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
     ]
   };
 
-  const handleStartTrial = () => {
+  const handleGetStarted = () => {
     setShowOnboarding(false);
-    setNeedsBillingSetup(true);
     onClose();
-    navigate('/billing-setup');
+    navigate('/dashboard');
   };
 
   const handleSkip = () => {
@@ -75,7 +74,7 @@ const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
 
           {/* Actions */}
           <div className="space-y-3">
-            <Button onClick={handleStartTrial} className="w-full bg-green-600 hover:bg-green-700">
+            <Button onClick={handleGetStarted} className="w-full bg-green-600 hover:bg-green-700">
               Get Started
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
