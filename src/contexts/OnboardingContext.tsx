@@ -26,6 +26,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const { user, session, loading: authLoading } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [needsBillingSetup, setNeedsBillingSetup] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -60,10 +61,10 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           console.log('Profile data:', profile);
           
           // If user has active subscription (including dev accounts), no billing setup needed
-          if (profile.has_active_subscription) {
+            if (profile.has_active_subscription) {
             setNeedsBillingSetup(false);
-            // Show onboarding modal if not completed yet
-            if (!profile.onboarding_completed) {
+            // Show onboarding modal if not completed yet and not already completed in this session
+            if (!profile.onboarding_completed && !onboardingCompleted) {
               console.log('User has subscription but onboarding not completed');
               setShowOnboarding(true);
             }
@@ -73,7 +74,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             const now = new Date();
             const isTrialActive = trialEnd > now;
             
-            if (!profile.onboarding_completed) {
+            if (!profile.onboarding_completed && !onboardingCompleted) {
               // User needs to complete onboarding during active trial
               console.log('User needs to complete onboarding during trial');
               setShowOnboarding(true);
@@ -152,6 +153,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       setShowOnboarding(false);
       setNeedsBillingSetup(false);
+      setOnboardingCompleted(true);
       
       console.log('Onboarding completed successfully');
     } catch (error) {

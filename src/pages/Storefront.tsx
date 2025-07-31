@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, ShoppingCart, MapPin, Phone, Mail } from 'lucide-react';
 import DeliveryForm from '@/components/DeliveryForm';
+import BookingSection from '@/components/booking/BookingSection';
 
 interface Product {
   id: string;
@@ -311,6 +312,22 @@ const Storefront = () => {
               <CardContent className="pt-4 sm:pt-6 p-4 sm:p-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">{section.section_title}</h2>
                 <div dangerouslySetInnerHTML={{ __html: section.section_content || '' }} />
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 'booking_calendar':
+        return (
+          <div key={section.id} className="mb-8 sm:mb-12 px-4">
+            <Card>
+              <CardContent className="pt-4 sm:pt-6 p-4 sm:p-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">{section.section_title}</h2>
+                <BookingSection
+                  userId={profile.id}
+                  businessName={profile.business_name}
+                  isOwner={false}
+                />
               </CardContent>
             </Card>
           </div>
