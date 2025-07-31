@@ -9,6 +9,7 @@ import InvoiceBuilder from '@/pages/InvoiceBuilder';
 import InvoicePreview from '@/pages/InvoicePreview';
 import BillingSetup from '@/pages/BillingSetup';
 import Settings from '@/pages/Settings';
+import Storefront from '@/pages/Storefront';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
@@ -25,6 +26,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/store/:username" element={<Storefront />} />
                 <Route path="/invoice/:invoiceId" element={<InvoicePreview />} />
                 <Route
                   path="/billing-setup"

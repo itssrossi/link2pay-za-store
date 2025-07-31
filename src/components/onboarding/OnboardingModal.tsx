@@ -14,7 +14,7 @@ interface OnboardingModalProps {
 
 const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
   const navigate = useNavigate();
-  const { setShowOnboarding, setNeedsBillingSetup } = useOnboarding();
+  const { completeOnboarding, skipOnboarding } = useOnboarding();
 
   const stepData = {
     title: "Welcome to Link2Pay!",
@@ -28,14 +28,14 @@ const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
     ]
   };
 
-  const handleGetStarted = () => {
-    setShowOnboarding(false);
+  const handleGetStarted = async () => {
+    await completeOnboarding();
     onClose();
     navigate('/dashboard');
   };
 
-  const handleSkip = () => {
-    setShowOnboarding(false);
+  const handleSkip = async () => {
+    await skipOnboarding();
     onClose();
   };
 
