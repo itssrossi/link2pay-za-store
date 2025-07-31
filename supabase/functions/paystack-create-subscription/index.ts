@@ -109,30 +109,54 @@ Deno.serve(async (req) => {
     }
 
     // Step 2: Create plan (or use existing)
-    const planCode = promoApplied ? 'link2pay-beta50' : 'link2pay-standard';
     const planName = promoApplied ? 'Link2Pay Beta Plan' : 'Link2Pay Standard Plan';
+    let planCode: string;
 
-    const planResponse = await fetch('https://api.paystack.co/plan', {
-      method: 'POST',
+    // First, try to fetch existing plans to see if our plan already exists
+    const listPlansResponse = await fetch('https://api.paystack.co/plan', {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${paystackSecretKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        name: planName,
-        interval: 'monthly',
-        amount: finalPrice,
-        currency: 'ZAR',
-        plan_code: planCode,
-      }),
     });
 
-    const planData = await planResponse.json();
-    console.log('Plan creation response:', planData);
+    const listPlansData = await listPlansResponse.json();
+    console.log('List plans response:', listPlansData);
 
-    // If plan already exists, that's fine
-    if (!planResponse.ok && !planData.message?.includes('already exists')) {
-      throw new Error(`Failed to create plan: ${planData.message}`);
+    // Check if plan with this name and amount already exists
+    const existingPlan = listPlansData.data?.find((plan: any) => 
+      plan.name === planName && plan.amount === finalPrice
+    );
+
+    if (existingPlan) {
+      planCode = existingPlan.plan_code;
+      console.log('Using existing plan:', planCode);
+    } else {
+      // Create new plan without plan_code parameter
+      const planResponse = await fetch('https://api.paystack.co/plan', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${paystackSecretKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: planName,
+          interval: 'monthly',
+          amount: finalPrice,
+          currency: 'ZAR',
+        }),
+      });
+
+      const planData = await planResponse.json();
+      console.log('Plan creation response:', planData);
+
+      if (!planResponse.ok) {
+        throw new Error(`Failed to create plan: ${planData.message}`);
+      }
+
+      planCode = planData.data.plan_code;
+      console.log('Created new plan:', planCode);
     }
 
     // Step 3: Create subscription with 7-day trial
