@@ -22,3 +22,6 @@ verify_jwt = false
 
 [functions.cancel-subscription]
 verify_jwt = true
+
+[functions.simulate-trial-end]
+verify_jwt = true
