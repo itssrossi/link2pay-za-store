@@ -10,6 +10,8 @@ interface OnboardingContextType {
   skipOnboarding: () => Promise<void>;
   needsBillingSetup: boolean;
   setNeedsBillingSetup: (needs: boolean) => void;
+  needsSubscriptionPayment: boolean;
+  setNeedsSubscriptionPayment: (needs: boolean) => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -26,6 +28,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const { user, session, loading: authLoading } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [needsBillingSetup, setNeedsBillingSetup] = useState(false);
+  const [needsSubscriptionPayment, setNeedsSubscriptionPayment] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
 
   useEffect(() => {
@@ -51,10 +54,11 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (error) {
           console.error('Error fetching profile:', error);
           
-          if (error.code === 'PGRST116') {
+        if (error.code === 'PGRST116') {
             console.log('Profile not found - setting up for billing');
             // Profile doesn't exist yet, user needs billing setup
             setNeedsBillingSetup(true);
+            setNeedsSubscriptionPayment(false);
             setShowOnboarding(false);
           }
         } else if (profile) {
@@ -63,32 +67,45 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           // If user has active subscription (including dev accounts), no billing setup needed
             if (profile.has_active_subscription) {
             setNeedsBillingSetup(false);
+            setNeedsSubscriptionPayment(false);
             // Show onboarding modal if not completed yet and not already completed in this session
             if (!profile.onboarding_completed && !onboardingCompleted) {
               console.log('User has subscription but onboarding not completed');
               setShowOnboarding(true);
             }
           } else {
-            // Check if trial is still active
-            const trialEnd = new Date(profile.trial_ends_at);
-            const now = new Date();
-            const isTrialActive = trialEnd > now;
-            
-            if (!profile.onboarding_completed && !onboardingCompleted) {
-              // User needs to complete onboarding during active trial
-              console.log('User needs to complete onboarding during trial');
-              setShowOnboarding(true);
-              setNeedsBillingSetup(false);
-            } else if (!isTrialActive) {
-              // Trial has expired, user needs billing setup
-              console.log('Trial expired, user needs billing setup');
+            // Check if user has started a trial
+            if (!profile.trial_ends_at) {
+              // User has never started a trial, needs billing setup
+              console.log('User has no trial, needs billing setup');
               setNeedsBillingSetup(true);
+              setNeedsSubscriptionPayment(false);
               setShowOnboarding(false);
             } else {
-              // Trial is active and onboarding completed
-              console.log('Trial active, onboarding completed');
-              setNeedsBillingSetup(false);
-              setShowOnboarding(false);
+              // User has trial_ends_at, check if trial is still active
+              const trialEnd = new Date(profile.trial_ends_at);
+              const now = new Date();
+              const isTrialActive = trialEnd > now;
+              
+              if (!profile.onboarding_completed && !onboardingCompleted && isTrialActive) {
+                // User needs to complete onboarding during active trial
+                console.log('User needs to complete onboarding during trial');
+                setShowOnboarding(true);
+                setNeedsBillingSetup(false);
+                setNeedsSubscriptionPayment(false);
+              } else if (!isTrialActive) {
+                // Trial has expired, user needs subscription payment
+                console.log('Trial expired, user needs subscription payment');
+                setNeedsBillingSetup(false);
+                setNeedsSubscriptionPayment(true);
+                setShowOnboarding(false);
+              } else {
+                // Trial is active and onboarding completed
+                console.log('Trial active, onboarding completed');
+                setNeedsBillingSetup(false);
+                setNeedsSubscriptionPayment(false);
+                setShowOnboarding(false);
+              }
             }
           }
         }
@@ -153,6 +170,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       setShowOnboarding(false);
       setNeedsBillingSetup(false);
+      setNeedsSubscriptionPayment(false);
       setOnboardingCompleted(true);
       
       console.log('Onboarding completed successfully');
@@ -172,6 +190,8 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     skipOnboarding,
     needsBillingSetup,
     setNeedsBillingSetup,
+    needsSubscriptionPayment,
+    setNeedsSubscriptionPayment,
   };
 
   return (

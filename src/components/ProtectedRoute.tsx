@@ -5,7 +5,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, session, loading } = useAuth();
-  const { needsBillingSetup } = useOnboarding();
+  const { needsBillingSetup, needsSubscriptionPayment } = useOnboarding();
   const location = useLocation();
 
   // Show loading spinner while authentication is being determined
@@ -27,6 +27,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (needsBillingSetup && location.pathname !== '/billing-setup') {
     console.log('User needs billing setup, redirecting');
     return <Navigate to="/billing-setup" replace />;
+  }
+
+  // Redirect to subscription payment if trial expired (except if already on subscription payment page)
+  if (needsSubscriptionPayment && location.pathname !== '/subscription-payment') {
+    console.log('User needs subscription payment, redirecting');
+    return <Navigate to="/subscription-payment" replace />;
   }
 
   return <>{children}</>;
