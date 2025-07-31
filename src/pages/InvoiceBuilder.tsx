@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Send, CreditCard, Truck } from 'lucide-react';
 import { ZokoService } from '@/utils/zokoService';
-import { PayFastService, type PayFastCredentials } from '@/utils/payfastService';
+// PayFast integration removed - migrated to Paystack
 
 interface InvoiceItem {
   id: string;
@@ -63,7 +63,7 @@ const InvoiceBuilder = () => {
   
   // Profile data for payment links
   const [profile, setProfile] = useState<any>(null);
-  const [payfastCredentials, setPayfastCredentials] = useState<Partial<PayFastCredentials>>({});
+  // PayFast credentials removed - migrated to Paystack
   
   // Invoice items
   const [items, setItems] = useState<InvoiceItem[]>([
@@ -90,22 +90,15 @@ const InvoiceBuilder = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('snapscan_link, payfast_link, payfast_merchant_id, payfast_merchant_key, payfast_passphrase, payfast_mode')
+        .select('snapscan_link')
         .eq('id', user.id)
         .single();
 
       if (error) throw error;
       setProfile(data);
 
-      // Load PayFast credentials for automated payment links
-      if (data?.payfast_merchant_id && data?.payfast_merchant_key) {
-        setPayfastCredentials({
-          merchant_id: data.payfast_merchant_id,
-          merchant_key: data.payfast_merchant_key,
-          passphrase: data.payfast_passphrase || '',
-          mode: (data.payfast_mode as 'sandbox' | 'live') || 'sandbox'
-        });
-      }
+      // PayFast credentials removed - migrated to Paystack
+      // Payment integration now handled by Paystack subscription system
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
@@ -513,27 +506,17 @@ const InvoiceBuilder = () => {
                     id="showPayFast"
                     checked={showPayFast}
                     onCheckedChange={(checked) => setShowPayFast(!!checked)}
-                    disabled={!profile?.payfast_link && !payfastCredentials.merchant_id}
+                    disabled={true} // PayFast removed - migrated to Paystack
                   />
                   <Label htmlFor="showPayFast">Show PayFast Payment Button</Label>
-                  {payfastCredentials.merchant_id ? (
-                    <Badge variant="outline" className="text-xs text-green-600">
-                      Automated
-                    </Badge>
-                  ) : !profile?.payfast_link ? (
-                    <Badge variant="outline" className="text-xs text-orange-600">
-                      Not Configured
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-xs text-blue-600">
-                      Manual Link
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className="text-xs text-gray-600">
+                    Deprecated
+                  </Badge>
                 </div>
 
-                {!profile?.snapscan_link && !payfastCredentials.merchant_id && !profile?.payfast_link && (
+                {!profile?.snapscan_link && (
                   <p className="text-xs text-gray-500">
-                    💡 Configure payment methods in Settings → Payment Settings or PayFast Integration
+                    💡 Configure payment methods in Settings → Payment Settings
                   </p>
                 )}
               </CardContent>
@@ -756,7 +739,7 @@ const InvoiceBuilder = () => {
                         SnapScan
                       </Badge>
                     )}
-                    {showPayFast && profile?.payfast_link && (
+                    {false && ( // PayFast removed
                       <Badge variant="secondary" className="bg-purple-500 text-white mr-1">
                         PayFast
                       </Badge>

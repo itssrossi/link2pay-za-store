@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { FileText, Download, CreditCard, Truck, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
-import { PayFastService, type PayFastCredentials } from '@/utils/payfastService';
+// PayFast integration removed - migrated to Paystack
 import InvoiceStatusBadge from '@/components/InvoiceStatusBadge';
 
 interface InvoiceItem {
@@ -52,11 +52,6 @@ interface Profile {
   business_name: string;
   logo_url: string;
   snapscan_link: string;
-  payfast_link: string;
-  payfast_merchant_id: string;
-  payfast_merchant_key: string;
-  payfast_passphrase: string;
-  payfast_mode: string;
   eft_details: string;
   whatsapp_number: string;
   store_address: string;
@@ -70,7 +65,7 @@ const InvoicePreview = () => {
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [payfastCredentials, setPayfastCredentials] = useState<Partial<PayFastCredentials>>({});
+  // PayFast credentials removed - migrated to Paystack
 
   useEffect(() => {
     if (invoiceId) {
@@ -102,29 +97,15 @@ const InvoicePreview = () => {
       // Fetch business profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('business_name, logo_url, snapscan_link, payfast_link, payfast_merchant_id, payfast_merchant_key, payfast_passphrase, payfast_mode, eft_details, whatsapp_number, store_address, capitec_paylink, show_capitec')
+        .select('business_name, logo_url, snapscan_link, eft_details, whatsapp_number, store_address, capitec_paylink, show_capitec')
         .eq('id', invoiceData.user_id)
         .single();
 
       if (profileError) throw profileError;
       setProfile(profileData);
 
-      // Load PayFast credentials for automated payment links
-      if (profileData?.payfast_merchant_id && profileData?.payfast_merchant_key) {
-        const credentials = {
-          merchant_id: profileData.payfast_merchant_id,
-          merchant_key: profileData.payfast_merchant_key,
-          passphrase: profileData.payfast_passphrase || '',
-          mode: (profileData.payfast_mode as 'sandbox' | 'live') || 'sandbox'
-        };
-        
-        console.log('PayFast: Loaded credentials from profile:', { 
-          merchant_id: credentials.merchant_id, 
-          mode: credentials.mode 
-        });
-        
-        setPayfastCredentials(credentials);
-      }
+      // PayFast credentials removed - migrated to Paystack
+      // Payment integration now handled by Paystack subscription system
 
     } catch (error) {
       console.error('Error fetching invoice data:', error);
@@ -158,43 +139,8 @@ const InvoicePreview = () => {
       }
       window.open(link, '_blank');
     } else if (method === 'payfast') {
-      // Try automated PayFast first, then fall back to manual link
-      if (payfastCredentials.merchant_id && payfastCredentials.merchant_key) {
-        try {
-          console.log('PayFast: Attempting to generate payment link...');
-          
-          // Validate credentials first
-          const validation = PayFastService.validateCredentials(payfastCredentials);
-          if (!validation.isValid) {
-            console.error('PayFast: Invalid credentials:', validation.errors);
-            validation.errors.forEach(error => toast.error(error));
-            return;
-          }
-
-          const paymentLink = PayFastService.generatePaymentLink(
-            payfastCredentials as PayFastCredentials,
-            {
-              amount: invoice.total_amount,
-              invoice_number: invoice.invoice_number,
-              client_name: invoice.client_name,
-              client_email: invoice.client_email || undefined,
-              invoice_id: invoice.id
-            }
-          );
-          
-          console.log('PayFast: Generated payment link successfully');
-          window.open(paymentLink, '_blank');
-          toast.success('PayFast payment link opened in new tab');
-        } catch (error) {
-          console.error('PayFast: Error generating payment link:', error);
-          toast.error('Failed to generate PayFast payment link. Please check your credentials.');
-        }
-      } else if (profile.payfast_link) {
-        console.log('PayFast: Using manual link fallback');
-        window.open(profile.payfast_link, '_blank');
-      } else {
-        toast.error('PayFast payment not configured. Please contact the business owner.');
-      }
+      // PayFast integration removed - migrated to Paystack
+      toast.error('PayFast payment method is no longer supported. Please use alternative payment methods.');
     }
   };
 
@@ -232,7 +178,7 @@ const InvoicePreview = () => {
         payment_instructions: invoice.payment_instructions,
         eft_details: profile.eft_details,
         snapscan_link: profile.snapscan_link,
-        payfast_link: profile.payfast_link,
+        // PayFast link removed
         capitec_paylink: profile.capitec_paylink,
         show_capitec: profile.show_capitec,
         store_address: profile.store_address,
@@ -484,7 +430,7 @@ const InvoicePreview = () => {
                       </Button>
                     )}
 
-                    {invoice.show_payfast && (payfastCredentials.merchant_id || profile?.payfast_link) && (
+                    {false && ( // PayFast removed - migrated to Paystack
                       <Button
                         size="lg"
                         onClick={() => handlePayment('payfast')}

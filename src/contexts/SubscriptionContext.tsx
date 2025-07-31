@@ -43,7 +43,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('has_active_subscription, trial_ends_at, payfast_billing_token')
+        .select('has_active_subscription, trial_ends_at, paystack_customer_code')
         .eq('id', user.id)
         .single();
 
@@ -65,8 +65,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         const now = new Date();
         const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Check if user has billing token (trial setup complete) but no active subscription
-        const hasTrialSetup = data.payfast_billing_token && !data.has_active_subscription;
+        // Check if user has customer code (trial setup complete) but no active subscription
+        const hasTrialSetup = data.paystack_customer_code && !data.has_active_subscription;
         const trialActive = trialEnd > now && (hasTrialSetup || !data.has_active_subscription);
 
         setHasActiveSubscription(data.has_active_subscription);
@@ -79,7 +79,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
           hasTrialSetup,
           isTrialActive: trialActive,
           trialDaysLeft: Math.max(0, daysLeft),
-          billingToken: data.payfast_billing_token ? 'Present' : 'Missing'
+          customerCode: data.paystack_customer_code ? 'Present' : 'Missing'
         });
       }
     } catch (error) {

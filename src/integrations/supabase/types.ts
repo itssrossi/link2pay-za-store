@@ -292,13 +292,9 @@ export type Database = {
           last_customized_at: string | null
           logo_url: string | null
           onboarding_completed: boolean | null
-          payfast_billing_token: string | null
           payfast_link: string | null
-          payfast_merchant_id: string | null
-          payfast_merchant_key: string | null
-          payfast_mode: string | null
-          payfast_passphrase: string | null
           payment_method: string | null
+          paystack_customer_code: string | null
           primary_color: string | null
           show_capitec: boolean | null
           snapscan_link: string | null
@@ -312,6 +308,7 @@ export type Database = {
           subscription_price: number | null
           theme_preset: string | null
           trial_ends_at: string | null
+          trial_used: boolean | null
           updated_at: string
           whatsapp_number: string | null
         }
@@ -342,13 +339,9 @@ export type Database = {
           last_customized_at?: string | null
           logo_url?: string | null
           onboarding_completed?: boolean | null
-          payfast_billing_token?: string | null
           payfast_link?: string | null
-          payfast_merchant_id?: string | null
-          payfast_merchant_key?: string | null
-          payfast_mode?: string | null
-          payfast_passphrase?: string | null
           payment_method?: string | null
+          paystack_customer_code?: string | null
           primary_color?: string | null
           show_capitec?: boolean | null
           snapscan_link?: string | null
@@ -362,6 +355,7 @@ export type Database = {
           subscription_price?: number | null
           theme_preset?: string | null
           trial_ends_at?: string | null
+          trial_used?: boolean | null
           updated_at?: string
           whatsapp_number?: string | null
         }
@@ -392,13 +386,9 @@ export type Database = {
           last_customized_at?: string | null
           logo_url?: string | null
           onboarding_completed?: boolean | null
-          payfast_billing_token?: string | null
           payfast_link?: string | null
-          payfast_merchant_id?: string | null
-          payfast_merchant_key?: string | null
-          payfast_mode?: string | null
-          payfast_passphrase?: string | null
           payment_method?: string | null
+          paystack_customer_code?: string | null
           primary_color?: string | null
           show_capitec?: boolean | null
           snapscan_link?: string | null
@@ -412,6 +402,7 @@ export type Database = {
           subscription_price?: number | null
           theme_preset?: string | null
           trial_ends_at?: string | null
+          trial_used?: boolean | null
           updated_at?: string
           whatsapp_number?: string | null
         }
@@ -521,6 +512,54 @@ export type Database = {
           status?: string
           transaction_type?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string | null
+          id: string
+          next_billing_date: string | null
+          paystack_plan_code: string | null
+          paystack_subscription_code: string | null
+          promo_applied: boolean | null
+          start_date: string | null
+          status: string
+          trial_end_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string | null
+          id?: string
+          next_billing_date?: string | null
+          paystack_plan_code?: string | null
+          paystack_subscription_code?: string | null
+          promo_applied?: boolean | null
+          start_date?: string | null
+          status?: string
+          trial_end_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string | null
+          id?: string
+          next_billing_date?: string | null
+          paystack_plan_code?: string | null
+          paystack_subscription_code?: string | null
+          promo_applied?: boolean | null
+          start_date?: string | null
+          status?: string
+          trial_end_date?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

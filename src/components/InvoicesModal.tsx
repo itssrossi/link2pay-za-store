@@ -71,7 +71,7 @@ const InvoicesModal = ({ isOpen, onClose }: InvoicesModalProps) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('business_name, logo_url, eft_details, snapscan_link, payfast_link')
+        .select('business_name, logo_url, eft_details, snapscan_link')
         .eq('id', user.id)
         .single();
 
@@ -161,7 +161,7 @@ const InvoicesModal = ({ isOpen, onClose }: InvoicesModalProps) => {
         delivery_method: invoice.delivery_method,
         eft_details: profile.eft_details,
         snapscan_link: profile.snapscan_link,
-        payfast_link: profile.payfast_link,
+        // PayFast link removed - migrated to Paystack
         payment_enabled: true,
         created_at: invoice.created_at,
       });

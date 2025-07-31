@@ -1,10 +1,9 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { CreditCard, Check, Zap, Crown, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, CreditCard, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -15,197 +14,136 @@ interface SubscriptionSetupProps {
 
 const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) => {
   const [promoCode, setPromoCode] = useState('');
-  const [promoApplied, setPromoApplied] = useState(false);
-  const [isDevCode, setIsDevCode] = useState(false);
-  const [discountAmount, setDiscountAmount] = useState(0);
-  const [billingDetails, setBillingDetails] = useState({
-    name: '',
-    email: ''
-  });
+  const [discount, setDiscount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
+  const [billingDetails, setBillingDetails] = useState({
+    fullName: '',
+    email: '',
+  });
+
+  // Load user email on mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setBillingDetails(prev => ({ ...prev, email: user.email! }));
+      }
+    };
+    loadUserData();
+  }, []);
+
+  // Calculate pricing
+  const basePrice = 95;
+  const finalPrice = basePrice - discount;
+  const formattedTrialEnd = new Date(trialEndsAt).toLocaleDateString('en-ZA', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
   const validatePromoCode = async () => {
-    if (!promoCode.trim()) return;
+    if (!promoCode.trim()) {
+      setDiscount(0);
+      return;
+    }
 
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('promo_codes')
         .select('*')
         .eq('code', promoCode.toUpperCase())
         .eq('is_active', true)
         .single();
 
-      if (data) {
-        if (data.code === 'BETA50') {
-          setPromoApplied(true);
-          setDiscountAmount(data.discount_amount);
-          setIsDevCode(false);
-          toast.success('Promo code applied! R45 discount applied.');
-        } else if (data.code === 'DEVJOHN') {
-          setPromoApplied(true);
-          setIsDevCode(true);
-          setDiscountAmount(95);
-          toast.success('Developer code applied! Full access granted.');
-        }
-      } else {
+      if (error || !data) {
         toast.error('Invalid promo code');
+        setDiscount(0);
+        return;
       }
+
+      setDiscount(data.discount_amount);
+      toast.success(`Promo code applied! R${data.discount_amount} discount`);
     } catch (error) {
-      toast.error('Invalid promo code');
+      console.error('Error validating promo code:', error);
+      toast.error('Error validating promo code');
+      setDiscount(0);
     }
   };
 
   const setupSubscription = async () => {
-    if (!billingDetails.name || !billingDetails.email) {
-      toast.error('Please fill in all billing details');
+    if (!billingDetails.fullName || !billingDetails.email) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('payfast-subscribe', {
+      // Call our Supabase function to create the Paystack subscription
+      const { data, error } = await supabase.functions.invoke('paystack-create-subscription', {
         body: {
-          promoCode: promoApplied ? promoCode : null,
-          billingDetails
-        }
+          email: billingDetails.email,
+          fullName: billingDetails.fullName,
+          promoCode: promoCode || null,
+        },
       });
 
-      if (error) throw error;
-
-      // Handle developer account response
-      if (data.devAccount) {
-        toast.success(data.message);
-        onComplete();
-        return;
+      if (error) {
+        console.error('Subscription setup error:', error);
+        throw new Error(error.message || 'Failed to setup subscription');
       }
 
-      // Create PayFast form and submit for regular accounts
-      if (data.success && data.payfastUrl && data.formData) {
-        setRedirecting(true);
-        toast.success('Redirecting to PayFast for payment setup...');
-        
-        // Wait a moment to show the redirecting message
-        setTimeout(() => {
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = data.payfastUrl;
-          // Remove target="_blank" to keep in same window
-
-          Object.entries(data.formData).forEach(([key, value]) => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = value as string;
-            form.appendChild(input);
-          });
-
-          document.body.appendChild(form);
-          form.submit();
-          document.body.removeChild(form);
-        }, 1500);
-      } else {
-        throw new Error('Invalid response from payment service');
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to setup subscription');
       }
+
+      toast.success('Subscription created successfully! Your trial is now active.');
+      onComplete();
 
     } catch (error) {
       console.error('Subscription setup error:', error);
-      toast.error('Failed to setup subscription. Please try again.');
-      setRedirecting(false);
+      toast.error(error instanceof Error ? error.message : 'Failed to setup subscription');
     } finally {
       setLoading(false);
     }
   };
 
-  const trialDaysLeft = 7;
-  const finalPrice = isDevCode ? 0 : (promoApplied ? 50 : 95);
-
-  if (redirecting) {
-    return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardContent className="p-8 text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-green-600" />
-          <h3 className="text-lg font-semibold mb-2">Redirecting to PayFast</h3>
-          <p className="text-gray-600">
-            Please wait while we redirect you to PayFast for secure payment setup...
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          {isDevCode ? (
-            <Crown className="w-8 h-8 text-yellow-600" />
-          ) : (
-            <CreditCard className="w-8 h-8 text-green-600" />
-          )}
+          <CreditCard className="w-8 h-8 text-green-600" />
         </div>
-        <CardTitle>
-          {isDevCode ? 'Developer Access' : 'Start Your 7-Day Free Trial'}
-        </CardTitle>
+        <CardTitle>Start Your 7-Day Free Trial</CardTitle>
         <p className="text-sm text-gray-600">
-          {isDevCode 
-            ? 'Welcome developer! You have full access to all features.'
-            : `Setup billing to start your free trial. You'll only be charged after ${trialDaysLeft} days.`
-          }
+          Setup your subscription to start your free trial. You'll only be charged after {formattedTrialEnd}.
         </p>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {/* Pricing */}
-        <div className="bg-gray-50 p-4 rounded-lg">
+        <div className="bg-blue-50 p-4 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-medium">
-              {isDevCode ? 'Developer Account' : 'After Trial (Monthly)'}
-            </span>
+            <span className="font-medium">After Trial (Monthly)</span>
             <div className="text-right">
-              {promoApplied && !isDevCode && (
-                <div className="text-sm text-gray-500 line-through">R95.00</div>
+              {discount > 0 && (
+                <div className="text-sm text-gray-500 line-through">R{basePrice}.00</div>
               )}
-              <div className="font-bold text-lg">
-                {isDevCode ? 'FREE' : `R${finalPrice}.00`}
-              </div>
+              <div className="font-bold text-lg">R{finalPrice}.00</div>
             </div>
           </div>
           <div className="text-sm text-green-600 font-medium">
-            {isDevCode 
-              ? 'Full access - No charges ever'
-              : `Free for ${trialDaysLeft} days - Cancel anytime`
-            }
+            Free for 7 days - Cancel anytime
           </div>
-          {promoApplied && (
-            <Badge variant="secondary" className={`mt-2 ${
-              isDevCode 
-                ? 'bg-yellow-100 text-yellow-800' 
-                : 'bg-green-100 text-green-800'
-            }`}>
-              {isDevCode ? (
-                <>
-                  <Crown className="w-3 h-3 mr-1" />
-                  Developer Access Granted!
-                </>
-              ) : (
-                <>
-                  <Zap className="w-3 h-3 mr-1" />
-                  BETA50 Applied - R45 Off!
-                </>
-              )}
-            </Badge>
-          )}
         </div>
 
         {/* Promo Code */}
-        {!promoApplied && (
+        {discount === 0 && (
           <div className="space-y-2">
             <Label htmlFor="promo">Promo Code (Optional)</Label>
             <div className="flex gap-2">
               <Input
                 id="promo"
-                placeholder="Enter promo code"
+                placeholder="Enter BETA50 for discount"
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
               />
@@ -217,63 +155,62 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
         )}
 
         {/* Billing Details */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="fullName">Full Name *</Label>
             <Input
-              id="name"
-              placeholder="John Doe"
-              value={billingDetails.name}
-              onChange={(e) => setBillingDetails(prev => ({ ...prev, name: e.target.value }))}
+              id="fullName"
+              value={billingDetails.fullName}
+              onChange={(e) => setBillingDetails(prev => ({ ...prev, fullName: e.target.value }))}
+              placeholder="Enter your full name"
+              required
             />
           </div>
+
           <div>
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="email">Email Address *</Label>
             <Input
               id="email"
               type="email"
-              placeholder="john@example.com"
               value={billingDetails.email}
               onChange={(e) => setBillingDetails(prev => ({ ...prev, email: e.target.value }))}
+              placeholder="Enter your email address"
+              required
             />
           </div>
         </div>
 
         {/* Features */}
-        <div className="bg-blue-50 p-3 rounded-lg">
-          <h4 className="font-medium text-sm mb-2">What's included:</h4>
-          <ul className="text-xs space-y-1">
-            <li className="flex items-center"><Check className="w-3 h-3 mr-2 text-green-600" />Unlimited products & invoices</li>
-            <li className="flex items-center"><Check className="w-3 h-3 mr-2 text-green-600" />WhatsApp automation</li>
-            <li className="flex items-center"><Check className="w-3 h-3 mr-2 text-green-600" />Custom store design</li>
-            <li className="flex items-center"><Check className="w-3 h-3 mr-2 text-green-600" />PayFast payments</li>
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h4 className="font-medium mb-2">What you'll get:</h4>
+          <ul className="text-sm space-y-1">
+            <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-green-600" />Unlimited products & invoices</li>
+            <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-green-600" />WhatsApp automation</li>
+            <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-green-600" />Custom store design</li>
+            <li className="flex items-center"><Check className="w-4 h-4 mr-2 text-green-600" />Paystack payment processing</li>
           </ul>
         </div>
 
         <Button 
           onClick={setupSubscription} 
-          disabled={loading || redirecting}
-          className={`w-full ${
-            isDevCode 
-              ? 'bg-yellow-600 hover:bg-yellow-700' 
-              : 'bg-green-600 hover:bg-green-700'
-          }`}
+          disabled={loading || !billingDetails.fullName || !billingDetails.email}
+          className="w-full bg-green-600 hover:bg-green-700"
         >
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Setting up...
+              Creating subscription...
             </>
           ) : (
-            isDevCode ? 'Activate Account' : 'Start Free Trial'
+            <>
+              <CreditCard className="w-4 h-4 mr-2" />
+              Start 7-Day Free Trial - R{finalPrice}/month after
+            </>
           )}
         </Button>
 
         <p className="text-xs text-gray-500 text-center">
-          {isDevCode 
-            ? 'Developer account - No payment required'
-            : 'Secure payment processing by PayFast. You\'ll be redirected to PayFast for setup.'
-          }
+          Secure payment processing by Paystack. No charge during trial period.
         </p>
       </CardContent>
     </Card>

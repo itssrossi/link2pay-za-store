@@ -33,7 +33,7 @@ interface SubscriptionInfo {
   discount_applied: boolean;
   cancelled_at: string | null;
   billing_failures: number;
-  payfast_billing_token: string | null;
+  paystack_customer_code: string | null;
 }
 
 const SubscriptionTab = () => {
@@ -54,7 +54,7 @@ const SubscriptionTab = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('has_active_subscription, trial_ends_at, subscription_price, discount_applied, cancelled_at, billing_failures, payfast_billing_token')
+        .select('has_active_subscription, trial_ends_at, subscription_price, discount_applied, cancelled_at, billing_failures, paystack_customer_code')
         .eq('id', user.id)
         .single();
 
@@ -210,7 +210,7 @@ const SubscriptionTab = () => {
                     <br />• Unlimited products and invoices
                     <br />• WhatsApp automation
                     <br />• Custom store design
-                    <br />• PayFast payment processing
+                    <br />• Paystack payment processing
                     <br /><br />
                     You can reactivate anytime by setting up billing again.
                   </AlertDialogDescription>

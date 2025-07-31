@@ -48,7 +48,7 @@ const SubscriptionGuard = ({ children, feature }: SubscriptionGuardProps) => {
               <li>• Unlimited products & invoices</li>
               <li>• WhatsApp automation</li>
               <li>• Custom store design</li>
-              <li>• PayFast payment processing</li>
+              <li>• Paystack payment processing</li>
             </ul>
             <div className="mt-3 font-bold text-lg">
               Only R95/month
