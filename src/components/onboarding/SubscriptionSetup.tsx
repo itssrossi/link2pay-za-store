@@ -90,11 +90,36 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
 
       if (error) {
         console.error('Subscription setup error:', error);
-        throw new Error(error.message || 'Failed to setup subscription');
+        
+        // Provide specific error messages for common issues
+        if (error.message?.includes('Paystack secret key not configured')) {
+          toast.error('Payment system is not configured. Please contact support.');
+        } else if (error.message?.includes('Authentication failed')) {
+          toast.error('Authentication error. Please try logging out and back in.');
+        } else if (error.message?.includes('Trial has already been used')) {
+          toast.error('You have already used your free trial. Please contact support if you need assistance.');
+        } else if (error.message?.includes('Failed to create customer')) {
+          toast.error('Unable to create customer account. Please check your email address and try again.');
+        } else if (error.message?.includes('Failed to create plan') || error.message?.includes('Failed to create subscription')) {
+          toast.error('Payment setup failed. Please try again or contact support.');
+        } else {
+          toast.error(error.message || 'Failed to setup subscription. Please try again.');
+        }
+        return;
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to setup subscription');
+      if (!data?.success) {
+        console.error('Subscription creation failed:', data);
+        
+        // Handle specific errors from the response
+        if (data?.error?.includes('Paystack secret key not configured')) {
+          toast.error('Payment system is not configured. Please contact support.');
+        } else if (data?.error?.includes('Trial has already been used')) {
+          toast.error('You have already used your free trial. Please contact support if you need assistance.');
+        } else {
+          toast.error(data?.error || 'Failed to setup subscription. Please try again.');
+        }
+        return;
       }
 
       toast.success('Subscription created successfully! Your trial is now active.');
@@ -102,7 +127,17 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
 
     } catch (error) {
       console.error('Subscription setup error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to setup subscription');
+      
+      // Handle network or other unexpected errors
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          toast.error('Network error. Please check your connection and try again.');
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.error('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
