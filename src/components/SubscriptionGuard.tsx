@@ -59,7 +59,7 @@ const SubscriptionGuard = ({ children, feature }: SubscriptionGuardProps) => {
           </div>
 
           <Button asChild className="w-full bg-green-600 hover:bg-green-700">
-            <Link to="/settings?tab=subscription">
+            <Link to="/subscription-payment">
               <CreditCard className="w-4 h-4 mr-2" />
               Activate Subscription
             </Link>

@@ -8,6 +8,7 @@ import AddProduct from '@/pages/AddProduct';
 import InvoiceBuilder from '@/pages/InvoiceBuilder';
 import InvoicePreview from '@/pages/InvoicePreview';
 import BillingSetup from '@/pages/BillingSetup';
+import SubscriptionPayment from '@/pages/SubscriptionPayment';
 import Settings from '@/pages/Settings';
 import Storefront from '@/pages/Storefront';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -65,6 +66,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <InvoiceBuilder />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/subscription-payment"
+                  element={
+                    <ProtectedRoute>
+                      <SubscriptionPayment />
                     </ProtectedRoute>
                   }
                 />
