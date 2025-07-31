@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
-import TrialBillingSetup from '@/components/onboarding/TrialBillingSetup';
+import SubscriptionSetup from '@/components/onboarding/SubscriptionSetup';
 
 const BillingSetup = () => {
   const { user } = useAuth();
@@ -61,7 +61,7 @@ const BillingSetup = () => {
     navigate('/dashboard');
   };
 
-  // Show success message if returning from PayFast
+  // Show success message if returning from Paystack
   if (showSuccessMessage) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
@@ -95,7 +95,10 @@ const BillingSetup = () => {
           </Button>
         </div>
         
-        <TrialBillingSetup onComplete={handleBillingComplete} />
+        <SubscriptionSetup 
+          trialEndsAt={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()} 
+          onComplete={handleBillingComplete} 
+        />
       </div>
     </div>
   );
