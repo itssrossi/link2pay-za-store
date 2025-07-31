@@ -122,10 +122,13 @@ const SubscriptionPayment = () => {
         return;
       }
 
-      if (data.success && data.authorization_url) {
+      console.log('Paystack response:', data);
+
+      if (data.success && data.checkout_url) {
         // Redirect to Paystack checkout
-        window.location.href = data.authorization_url;
+        window.location.href = data.checkout_url;
       } else {
+        console.error('No checkout URL in response:', data);
         toast.error(data.message || 'Failed to setup payment');
       }
 
