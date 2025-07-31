@@ -79,7 +79,7 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
     setLoading(true);
 
     try {
-      // Call our Supabase function to create the Paystack subscription
+      // Call our Supabase function to initialize Paystack payment
       const { data, error } = await supabase.functions.invoke('paystack-create-subscription', {
         body: {
           email: billingDetails.email,
@@ -100,7 +100,7 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
           toast.error('You have already used your free trial. Please contact support if you need assistance.');
         } else if (error.message?.includes('Failed to create customer')) {
           toast.error('Unable to create customer account. Please check your email address and try again.');
-        } else if (error.message?.includes('Failed to create plan') || error.message?.includes('Failed to create subscription')) {
+        } else if (error.message?.includes('Failed to create plan') || error.message?.includes('Failed to initialize payment')) {
           toast.error('Payment setup failed. Please try again or contact support.');
         } else {
           toast.error(error.message || 'Failed to setup subscription. Please try again.');
@@ -122,8 +122,13 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
         return;
       }
 
-      toast.success('Subscription created successfully! Your trial is now active.');
-      onComplete();
+      // Redirect to Paystack checkout
+      if (data.checkout_url) {
+        toast.success('Redirecting to payment...');
+        window.location.href = data.checkout_url;
+      } else {
+        toast.error('Failed to get payment URL. Please try again.');
+      }
 
     } catch (error) {
       console.error('Subscription setup error:', error);

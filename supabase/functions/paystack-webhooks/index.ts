@@ -43,12 +43,16 @@ Deno.serve(async (req) => {
     console.log('Received webhook event:', event.event, event.data);
 
     switch (event.event) {
+      case 'charge.success':
+        await handlePaymentSuccess(event.data, supabase);
+        break;
+        
       case 'subscription.create':
         await handleSubscriptionCreate(supabase, event.data);
         break;
         
       case 'invoice.payment_success':
-        await handlePaymentSuccess(supabase, event.data);
+        await handlePaymentSuccess(event.data, supabase);
         break;
         
       case 'invoice.payment_failed':
@@ -94,38 +98,117 @@ async function handleSubscriptionCreate(supabase: any, data: any) {
   }
 }
 
-async function handlePaymentSuccess(supabase: any, data: any) {
+async function handlePaymentSuccess(data: any, supabase: any) {
   console.log('Handling payment success:', data);
   
-  // Find subscription by customer
-  const { data: subscription } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('paystack_subscription_code', data.subscription?.subscription_code)
-    .single();
+  try {
+    // Check if this is a subscription setup payment
+    const metadata = data.metadata;
+    if (metadata?.subscription_setup) {
+      console.log('Detected subscription setup payment, creating subscription...');
+      
+      const paystackSecretKey = Deno.env.get('PAYSTACK_SECRET_KEY');
+      if (!paystackSecretKey) {
+        console.error('Paystack secret key not configured');
+        return;
+      }
 
-  if (subscription) {
-    // Update subscription status and next billing date
-    const { error } = await supabase
-      .from('subscriptions')
-      .update({ 
-        status: 'active',
-        next_billing_date: data.subscription?.next_payment_date,
-      })
-      .eq('id', subscription.id);
+      // Create subscription with 7-day trial
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + 7);
 
-    if (error) {
-      console.error('Error updating subscription on payment success:', error);
+      const subscriptionResponse = await fetch('https://api.paystack.co/subscription', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${paystackSecretKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer: metadata.customer_code,
+          plan: metadata.plan_code,
+          start_date: trialEndDate.toISOString(),
+          authorization: data.authorization?.authorization_code,
+        }),
+      });
+
+      const subscriptionData = await subscriptionResponse.json();
+      console.log('Subscription creation response:', subscriptionData);
+
+      if (!subscriptionResponse.ok) {
+        console.error('Failed to create subscription:', subscriptionData.message);
+        return;
+      }
+
+      // Save subscription to database
+      const { error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .insert({
+          user_id: metadata.user_id,
+          paystack_subscription_code: subscriptionData.data.subscription_code,
+          paystack_plan_code: metadata.plan_code,
+          status: 'active',
+          start_date: trialEndDate.toISOString(),
+          trial_end_date: trialEndDate.toISOString(),
+          promo_applied: metadata.promo_applied,
+          amount: metadata.final_price / 100, // Convert kobo to rand
+          currency: 'ZAR',
+        });
+
+      if (subscriptionError) {
+        console.error('Database error:', subscriptionError);
+        return;
+      }
+
+      // Update user profile
+      await supabase
+        .from('profiles')
+        .update({ 
+          trial_used: true,
+          trial_ends_at: trialEndDate.toISOString(),
+          has_active_subscription: true,
+          billing_failures: 0,
+        })
+        .eq('id', metadata.user_id);
+
+      console.log('Successfully created subscription for user:', metadata.user_id);
+      return;
     }
+    
+    // Handle regular subscription payment
+    // Find subscription by paystack code
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('paystack_subscription_code', data.subscription?.subscription_code)
+      .single();
 
-    // Update profile to ensure subscription is active
-    await supabase
-      .from('profiles')
-      .update({ 
-        has_active_subscription: true,
-        billing_failures: 0,
-      })
-      .eq('id', subscription.user_id);
+    if (subscription) {
+      // Update subscription status and next billing date
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({ 
+          status: 'active',
+          next_billing_date: data.subscription?.next_payment_date,
+        })
+        .eq('id', subscription.id);
+
+      if (error) {
+        console.error('Error updating subscription on payment success:', error);
+      }
+
+      // Update profile to ensure subscription is active
+      await supabase
+        .from('profiles')
+        .update({ 
+          has_active_subscription: true,
+          billing_failures: 0,
+        })
+        .eq('id', subscription.user_id);
+
+      console.log('Updated subscription and profile for payment success');
+    }
+  } catch (error) {
+    console.error('Error in handlePaymentSuccess:', error);
   }
 }
 

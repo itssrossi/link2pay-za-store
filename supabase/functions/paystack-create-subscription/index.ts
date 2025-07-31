@@ -159,7 +159,8 @@ Deno.serve(async (req) => {
       console.log('Created new plan:', planCode);
     }
 
-    // Step 3: Initialize payment to get authorization first
+    // Step 3: Initialize payment for subscription setup
+    const origin = req.headers.get('origin') || 'http://localhost:8080';
     const initializeResponse = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: {
@@ -170,11 +171,14 @@ Deno.serve(async (req) => {
         email,
         amount: finalPrice,
         currency: 'ZAR',
-        plan: planCode,
-        callback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/paystack-webhooks`,
+        callback_url: `${origin}/billing-setup?trial=success`,
         metadata: {
           user_id: user.id,
+          plan_code: planCode,
+          customer_code: customerCode,
           subscription_setup: true,
+          promo_applied: promoApplied,
+          final_price: finalPrice,
         },
       }),
     });
@@ -186,68 +190,13 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to initialize payment: ${initializeData.message}`);
     }
 
-    // Step 4: Create subscription with 7-day trial (after payment initialization)
-    const trialEndDate = new Date();
-    trialEndDate.setDate(trialEndDate.getDate() + 7);
-
-    const subscriptionResponse = await fetch('https://api.paystack.co/subscription', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${paystackSecretKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        customer: customerCode,
-        plan: planCode,
-        start_date: trialEndDate.toISOString(),
-        authorization: initializeData.data.reference,
-      }),
-    });
-
-    const subscriptionData = await subscriptionResponse.json();
-    console.log('Subscription creation response:', subscriptionData);
-
-    if (!subscriptionResponse.ok) {
-      throw new Error(`Failed to create subscription: ${subscriptionData.message}`);
-    }
-
-    // Step 4: Save subscription to database
-    const { error: subscriptionError } = await supabase
-      .from('subscriptions')
-      .insert({
-        user_id: user.id,
-        paystack_subscription_code: subscriptionData.data.subscription_code,
-        paystack_plan_code: planCode,
-        status: 'active',
-        start_date: trialEndDate.toISOString(),
-        trial_end_date: trialEndDate.toISOString(),
-        promo_applied: promoApplied,
-        amount: finalPrice / 100, // Convert kobo to rand
-        currency: 'ZAR',
-      });
-
-    if (subscriptionError) {
-      console.error('Database error:', subscriptionError);
-      throw new Error('Failed to save subscription to database');
-    }
-
-    // Step 5: Mark trial as used
-    await supabase
-      .from('profiles')
-      .update({ 
-        trial_used: true,
-        trial_ends_at: trialEndDate.toISOString(),
-        has_active_subscription: true,
-      })
-      .eq('id', user.id);
-
+    // Return the checkout URL for frontend redirect
     return new Response(
       JSON.stringify({
         success: true,
-        subscription_code: subscriptionData.data.subscription_code,
-        trial_end_date: trialEndDate.toISOString(),
-        amount: finalPrice / 100,
-        promo_applied: promoApplied,
+        checkout_url: initializeData.data.authorization_url,
+        access_code: initializeData.data.access_code,
+        reference: initializeData.data.reference
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
