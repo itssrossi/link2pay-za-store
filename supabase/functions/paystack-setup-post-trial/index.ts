@@ -8,6 +8,8 @@ const corsHeaders = {
 interface PaymentRequest {
   email: string;
   fullName: string;
+  promoCode?: string;
+  finalAmount?: number;
 }
 
 Deno.serve(async (req) => {
@@ -33,7 +35,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, fullName }: PaymentRequest = await req.json();
+    const { email, fullName, promoCode, finalAmount }: PaymentRequest = await req.json();
 
     // Get user profile with trial and subscription info
     const { data: profile } = await supabase
@@ -74,9 +76,9 @@ Deno.serve(async (req) => {
       throw new Error('Customer not found in Paystack');
     }
 
-    // Get subscription price from profile (set during trial)
-    const finalPrice = (profile.subscription_price || 95) * 100; // Convert to kobo
-    const planName = profile.discount_applied ? 'Link2Pay Beta Plan' : 'Link2Pay Standard Plan';
+    // Use final amount from frontend (already considers promo codes)
+    const finalPrice = (finalAmount || 95) * 100; // Convert to kobo
+    const planName = finalPrice === 5000 ? 'Link2Pay Beta Plan' : 'Link2Pay Standard Plan';
 
     // Find or create plan
     const listPlansResponse = await fetch('https://api.paystack.co/plan', {

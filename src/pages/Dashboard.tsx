@@ -162,28 +162,6 @@ const Dashboard = () => {
     toast.success('Store link copied to clipboard!');
   };
 
-  const simulateTrialEnd = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('simulate-trial-end');
-      
-      if (error) {
-        console.error('Error simulating trial end:', error);
-        toast.error('Failed to simulate trial end');
-        return;
-      }
-
-      if (data.success) {
-        toast.success('Trial end date updated successfully!');
-        // Refresh the page to see the subscription guard
-        window.location.reload();
-      } else {
-        toast.error(data.error || 'Failed to update trial end date');
-      }
-    } catch (error) {
-      console.error('Error calling simulate-trial-end function:', error);
-      toast.error('Failed to call function');
-    }
-  };
 
   const handleCloseOnboarding = () => {
     setShowOnboarding(false);
@@ -328,25 +306,6 @@ const Dashboard = () => {
         {/* Quick Invoice with WhatsApp */}
         <QuickInvoiceWhatsApp />
 
-        {/* Trial End Simulation Button - Development Only */}
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="text-red-700">🚨 Development Testing</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-red-600 mb-3">
-              This will simulate your trial ending by setting the trial_ends_at date to yesterday. 
-              Use this to test the subscription guard functionality.
-            </p>
-            <Button 
-              onClick={simulateTrialEnd} 
-              variant="destructive" 
-              size="sm"
-            >
-              Simulate Trial End
-            </Button>
-          </CardContent>
-        </Card>
 
         {/* Recent Activity */}
         <div className="grid gap-4 md:grid-cols-1">

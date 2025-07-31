@@ -106,6 +106,29 @@ const SubscriptionPayment = () => {
 
     setProcessingPayment(true);
     try {
+      // Check for DEVJOHN code - bypass payment entirely
+      if (promoApplied && promoCode === 'DEVJOHN') {
+        // Grant unlimited access directly
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            has_active_subscription: true,
+            trial_ends_at: null,
+            subscription_price: 0,
+            discount_applied: true
+          })
+          .eq('id', user.id);
+
+        if (updateError) {
+          toast.error('Failed to activate subscription');
+          return;
+        }
+
+        toast.success('Developer access granted! Welcome to unlimited access.');
+        navigate('/dashboard');
+        return;
+      }
+
       // Call Paystack setup function with promo code if applied
       const { data, error } = await supabase.functions.invoke('paystack-setup-post-trial', {
         body: {
