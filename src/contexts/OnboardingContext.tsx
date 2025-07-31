@@ -67,20 +67,27 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               console.log('User has subscription but onboarding not completed');
               setShowOnboarding(true);
             }
-          } else if (!profile.onboarding_completed) {
-            // User needs billing setup (first time login without subscription)
-            console.log('User needs billing setup');
-            setNeedsBillingSetup(true);
-            setShowOnboarding(false);
           } else {
             // Check if trial is still active
             const trialEnd = new Date(profile.trial_ends_at);
             const now = new Date();
             const isTrialActive = trialEnd > now;
             
-            if (!isTrialActive) {
+            if (!profile.onboarding_completed) {
+              // User needs to complete onboarding during active trial
+              console.log('User needs to complete onboarding during trial');
+              setShowOnboarding(true);
+              setNeedsBillingSetup(false);
+            } else if (!isTrialActive) {
+              // Trial has expired, user needs billing setup
               console.log('Trial expired, user needs billing setup');
               setNeedsBillingSetup(true);
+              setShowOnboarding(false);
+            } else {
+              // Trial is active and onboarding completed
+              console.log('Trial active, onboarding completed');
+              setNeedsBillingSetup(false);
+              setShowOnboarding(false);
             }
           }
         }

@@ -241,6 +241,17 @@ const SectionManager = ({ sections, setSections, loading, onUpdate }: SectionMan
                     onCheckedChange={(checked) => toggleSection(section.id, checked)}
                   />
                   
+                  {section.section_type === 'booking_calendar' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open('/settings#booking', '_blank')}
+                      title="Configure Availability"
+                    >
+                      ⚙️
+                    </Button>
+                  )}
+                  
                   <Button
                     variant="ghost"
                     size="sm"

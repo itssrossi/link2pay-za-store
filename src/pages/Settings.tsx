@@ -9,10 +9,14 @@ import PaymentSettingsTab from '@/components/settings/PaymentSettingsTab';
 import SubscriptionTab from '@/components/settings/SubscriptionTab';
 import StoreDesignTab from '@/components/settings/StoreDesignTab';
 import StorefrontCustomizationTab from '@/components/settings/StorefrontCustomizationTab';
+import AvailabilitySettings from '@/components/booking/AvailabilitySettings';
 
 const Settings = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('business');
+  const [activeTab, setActiveTab] = useState(() => {
+    const hash = window.location.hash.replace('#', '');
+    return hash || 'business';
+  });
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -116,10 +120,11 @@ const Settings = () => {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 gap-1">
             <TabsTrigger value="business" className="text-xs sm:text-sm">Business</TabsTrigger>
             <TabsTrigger value="design" className="text-xs sm:text-sm">Design</TabsTrigger>
             <TabsTrigger value="storefront" className="text-xs sm:text-sm">Storefront</TabsTrigger>
+            <TabsTrigger value="booking" className="text-xs sm:text-sm">Booking</TabsTrigger>
             <TabsTrigger value="subscription" className="text-xs sm:text-sm">Subscription</TabsTrigger>
             <TabsTrigger value="payment" className="text-xs sm:text-sm">Payment</TabsTrigger>
           </TabsList>
@@ -149,6 +154,10 @@ const Settings = () => {
               onSave={handleSaveProfile}
               loading={loading}
             />
+          </TabsContent>
+
+          <TabsContent value="booking">
+            <AvailabilitySettings />
           </TabsContent>
 
           <TabsContent value="subscription">
