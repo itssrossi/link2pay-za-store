@@ -159,7 +159,34 @@ Deno.serve(async (req) => {
       console.log('Created new plan:', planCode);
     }
 
-    // Step 3: Create subscription with 7-day trial
+    // Step 3: Initialize payment to get authorization first
+    const initializeResponse = await fetch('https://api.paystack.co/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${paystackSecretKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        amount: finalPrice,
+        currency: 'ZAR',
+        plan: planCode,
+        callback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/paystack-webhooks`,
+        metadata: {
+          user_id: user.id,
+          subscription_setup: true,
+        },
+      }),
+    });
+
+    const initializeData = await initializeResponse.json();
+    console.log('Payment initialization response:', initializeData);
+
+    if (!initializeResponse.ok) {
+      throw new Error(`Failed to initialize payment: ${initializeData.message}`);
+    }
+
+    // Step 4: Create subscription with 7-day trial (after payment initialization)
     const trialEndDate = new Date();
     trialEndDate.setDate(trialEndDate.getDate() + 7);
 
@@ -173,6 +200,7 @@ Deno.serve(async (req) => {
         customer: customerCode,
         plan: planCode,
         start_date: trialEndDate.toISOString(),
+        authorization: initializeData.data.reference,
       }),
     });
 
