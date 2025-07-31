@@ -120,7 +120,7 @@ const Settings = () => {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 gap-1">
+          <TabsList className="flex w-full overflow-x-auto whitespace-nowrap scrollbar-hide sm:grid sm:grid-cols-6 gap-1">
             <TabsTrigger value="business" className="text-xs sm:text-sm">Business</TabsTrigger>
             <TabsTrigger value="design" className="text-xs sm:text-sm">Design</TabsTrigger>
             <TabsTrigger value="storefront" className="text-xs sm:text-sm">Storefront</TabsTrigger>
