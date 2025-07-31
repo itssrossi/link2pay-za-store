@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
         email,
         amount: finalPrice,
         currency: 'ZAR',
-        callback_url: `${origin}/billing-setup?trial=success`,
+        callback_url: `${origin}/dashboard?payment=success`,
         metadata: {
           user_id: user.id,
           plan_code: planCode,
