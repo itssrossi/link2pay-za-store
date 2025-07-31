@@ -79,7 +79,7 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
     setLoading(true);
 
     try {
-      // Call our Supabase function to initialize Paystack payment
+      // Call our Supabase function to start the free trial (no payment)
       const { data, error } = await supabase.functions.invoke('paystack-create-subscription', {
         body: {
           email: billingDetails.email,
@@ -89,7 +89,7 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
       });
 
       if (error) {
-        console.error('Subscription setup error:', error);
+        console.error('Trial setup error:', error);
         
         // Provide specific error messages for common issues
         if (error.message?.includes('Paystack secret key not configured')) {
@@ -98,18 +98,16 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
           toast.error('Authentication error. Please try logging out and back in.');
         } else if (error.message?.includes('Trial has already been used')) {
           toast.error('You have already used your free trial. Please contact support if you need assistance.');
-        } else if (error.message?.includes('Failed to create customer')) {
-          toast.error('Unable to create customer account. Please check your email address and try again.');
-        } else if (error.message?.includes('Failed to create plan') || error.message?.includes('Failed to initialize payment')) {
-          toast.error('Payment setup failed. Please try again or contact support.');
+        } else if (error.message?.includes('active subscription')) {
+          toast.error('You already have an active subscription.');
         } else {
-          toast.error(error.message || 'Failed to setup subscription. Please try again.');
+          toast.error(error.message || 'Failed to start trial. Please try again.');
         }
         return;
       }
 
       if (!data?.success) {
-        console.error('Subscription creation failed:', data);
+        console.error('Trial creation failed:', data);
         
         // Handle specific errors from the response
         if (data?.error?.includes('Paystack secret key not configured')) {
@@ -117,21 +115,25 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
         } else if (data?.error?.includes('Trial has already been used')) {
           toast.error('You have already used your free trial. Please contact support if you need assistance.');
         } else {
-          toast.error(data?.error || 'Failed to setup subscription. Please try again.');
+          toast.error(data?.error || 'Failed to start trial. Please try again.');
         }
         return;
       }
 
-      // Redirect to Paystack checkout
-      if (data.checkout_url) {
-        toast.success('Redirecting to payment...');
-        window.location.href = data.checkout_url;
+      // Trial started successfully - no payment required
+      if (data.trial_started) {
+        toast.success(data.message || 'Your 7-day free trial has started! Enjoy full access to all features.');
+        
+        // Navigate to dashboard after short delay
+        setTimeout(() => {
+          onComplete();
+        }, 2000);
       } else {
-        toast.error('Failed to get payment URL. Please try again.');
+        toast.error('Failed to start trial. Please try again.');
       }
 
     } catch (error) {
-      console.error('Subscription setup error:', error);
+      console.error('Trial setup error:', error);
       
       // Handle network or other unexpected errors
       if (error instanceof Error) {

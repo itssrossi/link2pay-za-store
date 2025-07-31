@@ -43,7 +43,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('has_active_subscription, trial_ends_at, paystack_customer_code')
+        .select('has_active_subscription, trial_ends_at, trial_started_at, trial_used, paystack_customer_code')
         .eq('id', user.id)
         .single();
 
@@ -61,24 +61,37 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       } else if (data) {
         console.log('Subscription data:', data);
         
-        const trialEnd = new Date(data.trial_ends_at);
-        const now = new Date();
-        const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        setHasActiveSubscription(data.has_active_subscription || false);
+        
+        // Check trial status based on trial_started_at and trial_ends_at
+        if (data.trial_started_at && data.trial_ends_at) {
+          const trialEnd = new Date(data.trial_ends_at);
+          const now = new Date();
+          const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Check if user has customer code (trial setup complete) but no active subscription
-        const hasTrialSetup = data.paystack_customer_code && !data.has_active_subscription;
-        const trialActive = trialEnd > now && (hasTrialSetup || !data.has_active_subscription);
-
-        setHasActiveSubscription(data.has_active_subscription);
-        setTrialEndsAt(data.trial_ends_at);
-        setIsTrialActive(trialActive);
-        setTrialDaysLeft(Math.max(0, daysLeft));
+          setTrialEndsAt(data.trial_ends_at);
+          setTrialDaysLeft(Math.max(0, daysLeft));
+          // Trial is active if started, hasn't ended, and user doesn't have paid subscription
+          setIsTrialActive(daysLeft > 0 && !data.has_active_subscription);
+        } else if (data.trial_ends_at && !data.trial_started_at) {
+          // Legacy trial (pre-migration) - check if still active
+          const trialEnd = new Date(data.trial_ends_at);
+          const now = new Date();
+          const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          
+          setTrialEndsAt(data.trial_ends_at);
+          setTrialDaysLeft(Math.max(0, daysLeft));
+          setIsTrialActive(daysLeft > 0 && !data.has_active_subscription);
+        } else {
+          setTrialEndsAt(null);
+          setTrialDaysLeft(0);
+          setIsTrialActive(false);
+        }
         
         console.log('Subscription status updated:', {
           hasActiveSubscription: data.has_active_subscription,
-          hasTrialSetup,
-          isTrialActive: trialActive,
-          trialDaysLeft: Math.max(0, daysLeft),
+          isTrialActive,
+          trialDaysLeft,
           customerCode: data.paystack_customer_code ? 'Present' : 'Missing'
         });
       }

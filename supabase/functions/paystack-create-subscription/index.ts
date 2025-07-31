@@ -39,30 +39,16 @@ Deno.serve(async (req) => {
     // Check if user has already used their trial
     const { data: profile } = await supabase
       .from('profiles')
-      .select('trial_used, paystack_customer_code')
+      .select('trial_used, trial_started_at, has_active_subscription, paystack_customer_code')
       .eq('id', user.id)
       .single();
 
-    if (profile?.trial_used) {
-      throw new Error('Trial has already been used for this account');
+    if (profile?.has_active_subscription) {
+      throw new Error('User already has an active subscription');
     }
 
-    // Validate promo code and calculate price
-    let finalPrice = 9500; // R95.00 in kobo (Paystack uses kobo for ZAR)
-    let promoApplied = false;
-
-    if (promoCode === 'BETA50') {
-      const { data: promo } = await supabase
-        .from('promo_codes')
-        .select('*')
-        .eq('code', 'BETA50')
-        .eq('is_active', true)
-        .single();
-
-      if (promo) {
-        finalPrice = 5000; // R50.00 in kobo
-        promoApplied = true;
-      }
+    if (profile?.trial_used || profile?.trial_started_at) {
+      throw new Error('Trial has already been used for this account');
     }
 
     const paystackSecretKey = Deno.env.get('PAYSTACK_SECRET_KEY');
@@ -70,9 +56,9 @@ Deno.serve(async (req) => {
       throw new Error('Paystack secret key not configured');
     }
 
-    console.log(`Creating subscription for user ${user.id} with email ${email}`);
+    console.log(`Starting free trial for user ${user.id} with email ${email}`);
 
-    // Step 1: Create or retrieve customer
+    // Step 1: Create or retrieve customer (for future payment)
     let customerCode = profile?.paystack_customer_code;
     
     if (!customerCode) {
@@ -100,103 +86,53 @@ Deno.serve(async (req) => {
       }
 
       customerCode = customerData.data.customer_code;
-
-      // Update profile with customer code
-      await supabase
-        .from('profiles')
-        .update({ paystack_customer_code: customerCode })
-        .eq('id', user.id);
     }
 
-    // Step 2: Create plan (or use existing)
-    const planName = promoApplied ? 'Link2Pay Beta Plan' : 'Link2Pay Standard Plan';
-    let planCode: string;
+    // Step 2: Start the trial (no payment required)
+    const trialStartsAt = new Date();
+    const trialEndsAt = new Date(trialStartsAt.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
 
-    // First, try to fetch existing plans to see if our plan already exists
-    const listPlansResponse = await fetch('https://api.paystack.co/plan', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${paystackSecretKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    // Store promo code preference for later subscription
+    let subscriptionPrice = 9500; // Default R95
+    let discountApplied = false;
 
-    const listPlansData = await listPlansResponse.json();
-    console.log('List plans response:', listPlansData);
+    if (promoCode === 'BETA50') {
+      const { data: promo } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .eq('code', 'BETA50')
+        .eq('is_active', true)
+        .single();
 
-    // Check if plan with this name and amount already exists
-    const existingPlan = listPlansData.data?.find((plan: any) => 
-      plan.name === planName && plan.amount === finalPrice
-    );
-
-    if (existingPlan) {
-      planCode = existingPlan.plan_code;
-      console.log('Using existing plan:', planCode);
-    } else {
-      // Create new plan without plan_code parameter
-      const planResponse = await fetch('https://api.paystack.co/plan', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${paystackSecretKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: planName,
-          interval: 'monthly',
-          amount: finalPrice,
-          currency: 'ZAR',
-        }),
-      });
-
-      const planData = await planResponse.json();
-      console.log('Plan creation response:', planData);
-
-      if (!planResponse.ok) {
-        throw new Error(`Failed to create plan: ${planData.message}`);
+      if (promo) {
+        subscriptionPrice = 5000; // R50
+        discountApplied = true;
       }
-
-      planCode = planData.data.plan_code;
-      console.log('Created new plan:', planCode);
     }
 
-    // Step 3: Initialize payment for subscription setup
-    const origin = req.headers.get('origin') || 'http://localhost:8080';
-    const initializeResponse = await fetch('https://api.paystack.co/transaction/initialize', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${paystackSecretKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-        amount: finalPrice,
-        currency: 'ZAR',
-        callback_url: `${origin}/billing-setup?trial=success`,
-        metadata: {
-          user_id: user.id,
-          plan_code: planCode,
-          customer_code: customerCode,
-          subscription_setup: true,
-          promo_applied: promoApplied,
-          final_price: finalPrice,
-        },
-      }),
-    });
+    // Update profile to start trial
+    await supabase
+      .from('profiles')
+      .update({
+        trial_started_at: trialStartsAt.toISOString(),
+        trial_ends_at: trialEndsAt.toISOString(),
+        trial_used: true,
+        paystack_customer_code: customerCode,
+        subscription_price: subscriptionPrice / 100, // Store as rands
+        discount_applied: discountApplied,
+        // Keep has_active_subscription as false during trial
+      })
+      .eq('id', user.id);
 
-    const initializeData = await initializeResponse.json();
-    console.log('Payment initialization response:', initializeData);
+    console.log('Free trial started successfully for user:', user.id);
 
-    if (!initializeResponse.ok) {
-      throw new Error(`Failed to initialize payment: ${initializeData.message}`);
-    }
-
-    // Return the checkout URL for frontend redirect
+    // Return trial confirmation (no checkout URL)
     return new Response(
       JSON.stringify({
         success: true,
-        checkout_url: initializeData.data.authorization_url,
-        access_code: initializeData.data.access_code,
-        reference: initializeData.data.reference
+        trial_started: true,
+        trial_ends_at: trialEndsAt.toISOString(),
+        message: 'Your 7-day free trial has started! Enjoy full access to all features.',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

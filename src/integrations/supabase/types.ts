@@ -308,6 +308,7 @@ export type Database = {
           subscription_price: number | null
           theme_preset: string | null
           trial_ends_at: string | null
+          trial_started_at: string | null
           trial_used: boolean | null
           updated_at: string
           whatsapp_number: string | null
@@ -355,6 +356,7 @@ export type Database = {
           subscription_price?: number | null
           theme_preset?: string | null
           trial_ends_at?: string | null
+          trial_started_at?: string | null
           trial_used?: boolean | null
           updated_at?: string
           whatsapp_number?: string | null
@@ -402,6 +404,7 @@ export type Database = {
           subscription_price?: number | null
           theme_preset?: string | null
           trial_ends_at?: string | null
+          trial_started_at?: string | null
           trial_used?: boolean | null
           updated_at?: string
           whatsapp_number?: string | null
