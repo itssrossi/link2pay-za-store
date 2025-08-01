@@ -17,6 +17,7 @@ const BookingSection: React.FC<BookingSectionProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleTimeSlotSelect = (date: Date, time: string) => {
     setSelectedDate(date);
@@ -28,6 +29,8 @@ const BookingSection: React.FC<BookingSectionProps> = ({
     setShowBookingForm(false);
     setSelectedDate(undefined);
     setSelectedTime(undefined);
+    // Trigger calendar refresh to show the newly booked slot as unavailable
+    setRefreshKey(prev => prev + 1);
   };
 
   const handleCancel = () => {
@@ -72,6 +75,7 @@ const BookingSection: React.FC<BookingSectionProps> = ({
           onTimeSlotSelect={handleTimeSlotSelect}
           selectedDate={selectedDate}
           selectedTime={selectedTime}
+          key={refreshKey}
         />
       ) : (
         selectedDate && selectedTime && (

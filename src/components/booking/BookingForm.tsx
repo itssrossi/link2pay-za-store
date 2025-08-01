@@ -118,7 +118,19 @@ const BookingForm: React.FC<BookingFormProps> = ({
         .eq('id', userId)
         .single();
 
+      console.log('Profile data:', profile); // Debug log
+
       if (profile?.whatsapp_number) {
+        // Format phone number for WhatsApp (remove non-digits and ensure it starts with country code)
+        let phoneNumber = profile.whatsapp_number.replace(/\D/g, '');
+        
+        // Add South African country code if not present
+        if (phoneNumber.startsWith('0')) {
+          phoneNumber = '27' + phoneNumber.substring(1);
+        } else if (!phoneNumber.startsWith('27')) {
+          phoneNumber = '27' + phoneNumber;
+        }
+
         // Generate WhatsApp message
         const message = `🗓️ NEW BOOKING CONFIRMED!\n\n` +
           `👤 Customer: ${booking.customer_name}\n` +
@@ -130,8 +142,20 @@ const BookingForm: React.FC<BookingFormProps> = ({
           `Please confirm this booking by replying to this message.`;
 
         // Open WhatsApp with the message
-        const whatsappUrl = `https://wa.me/${profile.whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+        console.log('Opening WhatsApp URL:', whatsappUrl); // Debug log
+        
+        const whatsappWindow = window.open(whatsappUrl, '_blank');
+        
+        // Check if popup was blocked
+        if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed === 'undefined') {
+          toast.error('Please allow popups to open WhatsApp automatically, or copy the booking details manually.');
+        } else {
+          toast.success('WhatsApp opened with booking details!');
+        }
+      } else {
+        console.log('No WhatsApp number found for store owner'); // Debug log
+        toast.error('Store owner has not configured WhatsApp number');
       }
 
       // Send edge function notifications (keeping existing functionality)

@@ -83,6 +83,8 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
 
         if (bookingsError) throw bookingsError;
 
+        console.log('Fetched bookings for date:', format(date, 'yyyy-MM-dd'), bookings); // Debug log
+
         const slots: TimeSlot[] = [];
         
         dayAvailability.forEach(avail => {
@@ -102,6 +104,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
           }
         });
 
+        console.log('Generated slots:', slots); // Debug log
         setAvailableSlots(slots);
       } catch (error) {
         console.error('Error generating time slots:', error);
