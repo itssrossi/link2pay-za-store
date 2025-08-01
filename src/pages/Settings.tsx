@@ -120,14 +120,28 @@ const Settings = () => {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 gap-2 sm:grid-cols-6 sm:gap-1 px-2 py-2 ">
-            <TabsTrigger value="business" className="text-xs sm:text-sm">Business</TabsTrigger>
-            <TabsTrigger value="design" className="text-xs sm:text-sm">Design</TabsTrigger>
-            <TabsTrigger value="storefront" className="text-xs sm:text-sm">Storefront</TabsTrigger>
-            <TabsTrigger value="booking" className="text-xs sm:text-sm">Booking</TabsTrigger>
-            <TabsTrigger value="subscription" className="text-xs sm:text-sm">Subscription</TabsTrigger>
-            <TabsTrigger value="payment" className="text-xs sm:text-sm">Payment</TabsTrigger>
-          </TabsList>
+          <div className="mb-6">
+            <TabsList className="grid w-full grid-cols-2 gap-1 md:grid-cols-3 lg:grid-cols-6 bg-muted/50 p-1 h-auto">
+              <TabsTrigger value="business" className="text-xs sm:text-sm py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Business
+              </TabsTrigger>
+              <TabsTrigger value="design" className="text-xs sm:text-sm py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Design
+              </TabsTrigger>
+              <TabsTrigger value="storefront" className="text-xs sm:text-sm py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Storefront
+              </TabsTrigger>
+              <TabsTrigger value="booking" className="text-xs sm:text-sm py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Booking
+              </TabsTrigger>
+              <TabsTrigger value="subscription" className="text-xs sm:text-sm py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Subscription
+              </TabsTrigger>
+              <TabsTrigger value="payment" className="text-xs sm:text-sm py-2 px-3 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Payment
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="business">
             <BusinessProfileTab

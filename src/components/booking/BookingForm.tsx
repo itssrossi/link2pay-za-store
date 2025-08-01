@@ -111,7 +111,30 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const sendNotifications = async (booking: any) => {
     try {
-      // Send WhatsApp notification to store owner
+      // Get business profile to get WhatsApp number and business name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('whatsapp_number, business_name')
+        .eq('id', userId)
+        .single();
+
+      if (profile?.whatsapp_number) {
+        // Generate WhatsApp message
+        const message = `🗓️ NEW BOOKING CONFIRMED!\n\n` +
+          `👤 Customer: ${booking.customer_name}\n` +
+          `📧 Email: ${booking.customer_email}\n` +
+          `📱 Phone: ${booking.customer_phone || 'Not provided'}\n` +
+          `📅 Date: ${format(selectedDate, 'EEEE, MMMM do, yyyy')}\n` +
+          `⏰ Time: ${booking.booking_time}\n` +
+          `📝 Notes: ${booking.notes || 'None'}\n\n` +
+          `Please confirm this booking by replying to this message.`;
+
+        // Open WhatsApp with the message
+        const whatsappUrl = `https://wa.me/${profile.whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+      }
+
+      // Send edge function notifications (keeping existing functionality)
       const { error: whatsappError } = await supabase.functions.invoke('send-booking-notification', {
         body: {
           userId,
@@ -138,7 +161,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             customerName: booking.customer_name,
             bookingDate: booking.booking_date,
             bookingTime: booking.booking_time,
-            businessName: 'Your Business' // This should come from the user's profile
+            businessName: profile?.business_name || 'Your Business'
           }
         }
       });
