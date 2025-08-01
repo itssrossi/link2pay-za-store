@@ -131,15 +131,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
           phoneNumber = '27' + phoneNumber;
         }
 
-        // Generate WhatsApp message
-        const message = `🗓️ NEW BOOKING CONFIRMED!\n\n` +
-          `👤 Customer: ${booking.customer_name}\n` +
-          `📧 Email: ${booking.customer_email}\n` +
-          `📱 Phone: ${booking.customer_phone || 'Not provided'}\n` +
-          `📅 Date: ${format(selectedDate, 'EEEE, MMMM do, yyyy')}\n` +
-          `⏰ Time: ${booking.booking_time}\n` +
-          `📝 Notes: ${booking.notes || 'None'}\n\n` +
-          `Please confirm this booking by replying to this message.`;
+        // Generate WhatsApp message from customer's perspective
+        const message = `Hi my name is ${booking.customer_name} I'd like to book for ${format(selectedDate, 'EEEE, MMMM do, yyyy')} at ${booking.booking_time}. My email is ${booking.customer_email}${booking.customer_phone ? ` and my phone number is ${booking.customer_phone}` : ''}${booking.notes ? `. Additional notes: ${booking.notes}` : ''}.`;
 
         // Open WhatsApp with the message
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
