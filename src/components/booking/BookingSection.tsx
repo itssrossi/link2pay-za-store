@@ -75,7 +75,7 @@ const BookingSection: React.FC<BookingSectionProps> = ({
           onTimeSlotSelect={handleTimeSlotSelect}
           selectedDate={selectedDate}
           selectedTime={selectedTime}
-          key={refreshKey}
+          key={`calendar-${refreshKey}`}
         />
       ) : (
         selectedDate && selectedTime && (
