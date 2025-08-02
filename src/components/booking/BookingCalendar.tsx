@@ -58,7 +58,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
     fetchAvailability();
   }, [userId]);
 
-  // Generate time slots for selected date
+  // Generate time slots for selected date - add refreshKey as dependency to force re-fetch
   useEffect(() => {
     if (!date || availability.length === 0) return;
 

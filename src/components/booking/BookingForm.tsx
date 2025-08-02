@@ -99,7 +99,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       // Send notifications
       await sendNotifications(booking);
 
-      toast.success('Booking confirmed! You will receive a confirmation email shortly.');
+      // Let the WhatsApp opening handle the success message
       onBookingComplete();
     } catch (error) {
       console.error('Error creating booking:', error);
@@ -134,18 +134,20 @@ const BookingForm: React.FC<BookingFormProps> = ({
         // Generate WhatsApp message from customer's perspective
         const message = `Hi my name is ${booking.customer_name} I'd like to book for ${format(selectedDate, 'EEEE, MMMM do, yyyy')} at ${booking.booking_time}. My email is ${booking.customer_email}${booking.customer_phone ? ` and my phone number is ${booking.customer_phone}` : ''}${booking.notes ? `. Additional notes: ${booking.notes}` : ''}.`;
 
-        // Open WhatsApp with the message
+        // Open WhatsApp with the message - use window.location.href for better mobile compatibility
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
         console.log('Opening WhatsApp URL:', whatsappUrl); // Debug log
         
-        const whatsappWindow = window.open(whatsappUrl, '_blank');
-        
-        // Check if popup was blocked
-        if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed === 'undefined') {
-          toast.error('Please allow popups to open WhatsApp automatically, or copy the booking details manually.');
-        } else {
-          toast.success('WhatsApp opened with booking details!');
-        }
+        // Small delay to ensure booking is saved, then redirect to WhatsApp
+        setTimeout(() => {
+          try {
+            window.location.href = whatsappUrl;
+            toast.success('Booking confirmed! Opening WhatsApp to contact the business...');
+          } catch (error) {
+            console.error('Error opening WhatsApp:', error);
+            toast.error(`Booking confirmed! Please manually contact: ${phoneNumber}`);
+          }
+        }, 1000);
       } else {
         console.log('No WhatsApp number found for store owner'); // Debug log
         toast.error('Store owner has not configured WhatsApp number');
