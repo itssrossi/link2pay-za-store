@@ -150,20 +150,17 @@ const BookingForm: React.FC<BookingFormProps> = ({
         // Generate WhatsApp message from customer's perspective
         const message = `Hi my name is ${booking.customer_name} I'd like to book for ${format(selectedDate, 'EEEE, MMMM do, yyyy')} at ${booking.booking_time}. My email is ${booking.customer_email}${booking.customer_phone ? ` and my phone number is ${booking.customer_phone}` : ''}${booking.notes ? `. Additional notes: ${booking.notes}` : ''}.`;
 
-        // Open WhatsApp with the message - use window.location.href for better mobile compatibility
+        // Open WhatsApp with the message - use window.open like the working product order forms
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
         console.log('Opening WhatsApp URL:', whatsappUrl); // Debug log
         
-        // Delay WhatsApp redirect to allow booking completion callback to execute
-        setTimeout(() => {
-          try {
-            window.location.href = whatsappUrl;
-            toast.success('Opening WhatsApp to contact the business...');
-          } catch (error) {
-            console.error('Error opening WhatsApp:', error);
-            toast.error(`Booking confirmed! Please manually contact: ${phoneNumber}`);
-          }
-        }, 1500);
+        try {
+          window.open(whatsappUrl, '_blank');
+          toast.success('Opening WhatsApp to contact the business...');
+        } catch (error) {
+          console.error('Error opening WhatsApp:', error);
+          toast.error(`Booking confirmed! Please manually contact: ${phoneNumber}`);
+        }
       } else {
         console.log('No WhatsApp number found for store owner'); // Debug log
         toast.error('Store owner has not configured WhatsApp number');

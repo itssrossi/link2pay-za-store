@@ -60,14 +60,14 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
     fetchAvailability();
   }, [userId]);
 
-  // Generate time slots for selected date - refreshKey not needed as prop, using userId and date changes
+  // Generate time slots for selected date - refreshKey triggers refresh after booking
   useEffect(() => {
     if (!date || availability.length === 0) return;
 
     const generateTimeSlots = async () => {
       setLoading(true);
       try {
-        console.log('Generating time slots for date:', format(date, 'yyyy-MM-dd'));
+        console.log('BookingCalendar: Generating time slots for date:', format(date, 'yyyy-MM-dd'), 'refreshKey:', refreshKey);
         
         const dayOfWeek = date.getDay();
         const dayAvailability = availability.filter(a => a.day_of_week === dayOfWeek);
