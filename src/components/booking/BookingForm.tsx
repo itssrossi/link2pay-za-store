@@ -65,6 +65,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
     setLoading(true);
     try {
+      console.log('Starting booking creation...');
+      
       // Create the booking
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
@@ -81,7 +83,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
         .select()
         .single();
 
-      if (bookingError) throw bookingError;
+      if (bookingError) {
+        console.error('Booking creation error:', bookingError);
+        throw bookingError;
+      }
+
+      console.log('Booking created successfully:', booking);
 
       // Create or update the time slot
       const { error: slotError } = await supabase
@@ -94,13 +101,22 @@ const BookingForm: React.FC<BookingFormProps> = ({
           booking_id: booking.id
         });
 
-      if (slotError) throw slotError;
+      if (slotError) {
+        console.error('Time slot update error:', slotError);
+        throw slotError;
+      }
 
-      // Send notifications
+      console.log('Time slot updated successfully');
+
+      // Show success message immediately
+      toast.success('Booking confirmed successfully!');
+      
+      // Execute booking completion callback FIRST
+      onBookingComplete();
+      
+      // THEN send notifications (including WhatsApp)
       await sendNotifications(booking);
 
-      // Let the WhatsApp opening handle the success message
-      onBookingComplete();
     } catch (error) {
       console.error('Error creating booking:', error);
       toast.error('Failed to create booking. Please try again.');
@@ -138,16 +154,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
         console.log('Opening WhatsApp URL:', whatsappUrl); // Debug log
         
-        // Small delay to ensure booking is saved, then redirect to WhatsApp
+        // Delay WhatsApp redirect to allow booking completion callback to execute
         setTimeout(() => {
           try {
             window.location.href = whatsappUrl;
-            toast.success('Booking confirmed! Opening WhatsApp to contact the business...');
+            toast.success('Opening WhatsApp to contact the business...');
           } catch (error) {
             console.error('Error opening WhatsApp:', error);
             toast.error(`Booking confirmed! Please manually contact: ${phoneNumber}`);
           }
-        }, 1000);
+        }, 1500);
       } else {
         console.log('No WhatsApp number found for store owner'); // Debug log
         toast.error('Store owner has not configured WhatsApp number');

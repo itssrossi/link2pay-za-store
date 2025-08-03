@@ -12,6 +12,7 @@ interface BookingCalendarProps {
   onTimeSlotSelect: (date: Date, time: string) => void;
   selectedDate?: Date;
   selectedTime?: string;
+  refreshKey?: number;
 }
 
 interface TimeSlot {
@@ -31,7 +32,8 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
   userId,
   onTimeSlotSelect,
   selectedDate,
-  selectedTime
+  selectedTime,
+  refreshKey
 }) => {
   const [date, setDate] = useState<Date | undefined>(selectedDate || new Date());
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
@@ -58,17 +60,20 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
     fetchAvailability();
   }, [userId]);
 
-  // Generate time slots for selected date - add refreshKey as dependency to force re-fetch
+  // Generate time slots for selected date - refreshKey not needed as prop, using userId and date changes
   useEffect(() => {
     if (!date || availability.length === 0) return;
 
     const generateTimeSlots = async () => {
       setLoading(true);
       try {
+        console.log('Generating time slots for date:', format(date, 'yyyy-MM-dd'));
+        
         const dayOfWeek = date.getDay();
         const dayAvailability = availability.filter(a => a.day_of_week === dayOfWeek);
 
         if (dayAvailability.length === 0) {
+          console.log('No availability for day:', dayOfWeek);
           setAvailableSlots([]);
           setLoading(false);
           return;
@@ -81,9 +86,12 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
           .eq('user_id', userId)
           .eq('date', format(date, 'yyyy-MM-dd'));
 
-        if (bookingsError) throw bookingsError;
+        if (bookingsError) {
+          console.error('Error fetching bookings:', bookingsError);
+          throw bookingsError;
+        }
 
-        console.log('Fetched bookings for date:', format(date, 'yyyy-MM-dd'), bookings); // Debug log
+        console.log('Fetched bookings for date:', format(date, 'yyyy-MM-dd'), bookings);
 
         const slots: TimeSlot[] = [];
         
@@ -104,7 +112,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
           }
         });
 
-        console.log('Generated slots:', slots); // Debug log
+        console.log('Generated slots for display:', slots);
         setAvailableSlots(slots);
       } catch (error) {
         console.error('Error generating time slots:', error);
@@ -115,7 +123,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
     };
 
     generateTimeSlots();
-  }, [date, availability, userId]);
+  }, [date, availability, userId, refreshKey]);
 
   const handleTimeSlotClick = (timeSlot: TimeSlot) => {
     if (timeSlot.isBooked || !date) return;
