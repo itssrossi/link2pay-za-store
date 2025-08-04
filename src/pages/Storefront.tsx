@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, ShoppingCart, MapPin, Phone, Mail } from 'lucide-react';
-import DeliveryForm from '@/components/DeliveryForm';
-import BookingSection from '@/components/booking/BookingSection';
+import OptimizedImage from '@/components/ui/optimized-image';
+import { createWhatsAppLink } from '@/utils/phoneFormatter';
+
+// Lazy load components for better performance
+const DeliveryForm = lazy(() => import('@/components/DeliveryForm'));
+const BookingSection = lazy(() => import('@/components/booking/BookingSection'));
 
 interface Product {
   id: string;
@@ -167,11 +171,13 @@ const Storefront = () => {
                   >
                     ×
                   </Button>
-                  <DeliveryForm
-                    productTitle={selectedProduct.title}
-                    whatsappNumber={profile.whatsapp_number}
-                    onSubmit={() => setSelectedProduct(null)}
-                  />
+                  <Suspense fallback={<div className="w-full max-w-lg h-96 bg-white rounded-lg animate-pulse" />}>
+                    <DeliveryForm
+                      productTitle={selectedProduct.title}
+                      whatsappNumber={profile.whatsapp_number}
+                      onSubmit={() => setSelectedProduct(null)}
+                    />
+                  </Suspense>
                 </div>
               </div>
             )}
@@ -182,10 +188,11 @@ const Storefront = () => {
                   <CardHeader className="pb-3 sm:pb-4 p-3 sm:p-6">
                     {product.image_url && (
                       <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-3 sm:mb-4">
-                        <img
+                        <OptimizedImage
                           src={product.image_url}
                           alt={product.title}
                           className="w-full h-full object-cover"
+                          loading="lazy"
                         />
                       </div>
                     )}
@@ -254,15 +261,7 @@ const Storefront = () => {
                     <Button
                       onClick={() => {
                         const message = `Hi! I found your store online and would like to know more about your products.`;
-                        // Format phone number: remove leading zeros and add +27 if South African number
-                        let formattedNumber = profile.whatsapp_number?.replace(/\D/g, '') || '';
-                        if (formattedNumber.startsWith('0')) {
-                          formattedNumber = '27' + formattedNumber.substring(1);
-                        }
-                        if (!formattedNumber.startsWith('27') && formattedNumber.length === 9) {
-                          formattedNumber = '27' + formattedNumber;
-                        }
-                        const whatsappLink = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`;
+                        const whatsappLink = createWhatsAppLink(profile.whatsapp_number || '', message);
                         window.open(whatsappLink, '_blank');
                       }}
                       className="w-full text-white hover:opacity-90 text-sm sm:text-base"
@@ -326,11 +325,13 @@ const Storefront = () => {
             <Card>
               <CardContent className="pt-4 sm:pt-6 p-4 sm:p-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">{section.section_title}</h2>
-                <BookingSection
-                  userId={profile.id}
-                  businessName={profile.business_name}
-                  isOwner={false}
-                />
+                <Suspense fallback={<div className="w-full h-64 bg-gray-100 rounded-lg animate-pulse" />}>
+                  <BookingSection
+                    userId={profile.id}
+                    businessName={profile.business_name}
+                    isOwner={false}
+                  />
+                </Suspense>
               </CardContent>
             </Card>
           </div>
@@ -377,14 +378,29 @@ const Storefront = () => {
       className={`min-h-screen ${getFontClass(profile.store_font)}`}
       style={{ backgroundColor }}
     >
+      {/* Header Banner */}
+      {profile.header_banner_url && (
+        <div className="w-full h-24 sm:h-32 md:h-40 overflow-hidden">
+          <OptimizedImage
+            src={profile.header_banner_url}
+            alt="Store header banner"
+            className="w-full h-full object-cover"
+            loading="eager"
+          />
+        </div>
+      )}
+
       {/* Hero Section */}
       {(profile.hero_image_url || profile.hero_headline) && (
         <div className="relative">
           {profile.hero_image_url && (
-            <div 
-              className="w-full h-48 sm:h-64 md:h-96 bg-cover bg-center relative"
-              style={{ backgroundImage: `url(${profile.hero_image_url})` }}
-            >
+            <div className="relative w-full h-48 sm:h-64 md:h-96 overflow-hidden">
+              <OptimizedImage
+                src={profile.hero_image_url}
+                alt="Hero background"
+                className="w-full h-full object-cover"
+                loading="eager"
+              />
               <div className="absolute inset-0 bg-black bg-opacity-40" />
             </div>
           )}
@@ -420,11 +436,12 @@ const Storefront = () => {
         <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8">
           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
             {profile.logo_url && (
-              <img
+              <OptimizedImage
                 src={profile.logo_url}
                 alt={profile.business_name}
                 className="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-full border-4"
                 style={{ borderColor: primaryColor }}
+                loading="eager"
               />
             )}
             <div className="text-center sm:text-left">

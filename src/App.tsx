@@ -1,21 +1,31 @@
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Index from '@/pages/Index';
-import Auth from '@/pages/Auth';
-import Dashboard from '@/pages/Dashboard';
-import Products from '@/pages/Products';
-import AddProduct from '@/pages/AddProduct';
-import InvoiceBuilder from '@/pages/InvoiceBuilder';
-import InvoicePreview from '@/pages/InvoicePreview';
-import BillingSetup from '@/pages/BillingSetup';
-import SubscriptionPayment from '@/pages/SubscriptionPayment';
-import Settings from '@/pages/Settings';
-import Storefront from '@/pages/Storefront';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { lazy, Suspense } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { OnboardingProvider } from '@/contexts/OnboardingContext';
+
+// Lazy load pages for better performance
+const Index = lazy(() => import('@/pages/Index'));
+const Auth = lazy(() => import('@/pages/Auth'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Products = lazy(() => import('@/pages/Products'));
+const AddProduct = lazy(() => import('@/pages/AddProduct'));
+const InvoiceBuilder = lazy(() => import('@/pages/InvoiceBuilder'));
+const InvoicePreview = lazy(() => import('@/pages/InvoicePreview'));
+const BillingSetup = lazy(() => import('@/pages/BillingSetup'));
+const SubscriptionPayment = lazy(() => import('@/pages/SubscriptionPayment'));
+const Settings = lazy(() => import('@/pages/Settings'));
+const Storefront = lazy(() => import('@/pages/Storefront'));
+const ProtectedRoute = lazy(() => import('@/components/ProtectedRoute'));
+
+// Loading component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4C9F70]"></div>
+  </div>
+);
 
 function App() {
   return (
@@ -24,68 +34,84 @@ function App() {
         <OnboardingProvider>
           <SubscriptionProvider>
             <div className="min-h-screen bg-background">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/store/:username" element={<Storefront />} />
-                <Route path="/invoice/:invoiceId" element={<InvoicePreview />} />
-                <Route
-                  path="/billing-setup"
-                  element={
-                    <ProtectedRoute>
-                      <BillingSetup />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/products"
-                  element={
-                    <ProtectedRoute>
-                      <Products />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/products/add"
-                  element={
-                    <ProtectedRoute>
-                      <AddProduct />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/invoice-builder"
-                  element={
-                    <ProtectedRoute>
-                      <InvoiceBuilder />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/subscription-payment"
-                  element={
-                    <ProtectedRoute>
-                      <SubscriptionPayment />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <ProtectedRoute>
-                      <Settings />
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/store/:username" element={<Storefront />} />
+                  <Route path="/invoice/:invoiceId" element={<InvoicePreview />} />
+                  <Route
+                    path="/billing-setup"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <ProtectedRoute>
+                          <BillingSetup />
+                        </ProtectedRoute>
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <ProtectedRoute>
+                          <Dashboard />
+                        </ProtectedRoute>
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/products"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <ProtectedRoute>
+                          <Products />
+                        </ProtectedRoute>
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/products/add"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <ProtectedRoute>
+                          <AddProduct />
+                        </ProtectedRoute>
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/invoice-builder"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <ProtectedRoute>
+                          <InvoiceBuilder />
+                        </ProtectedRoute>
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/subscription-payment"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <ProtectedRoute>
+                          <SubscriptionPayment />
+                        </ProtectedRoute>
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <ProtectedRoute>
+                          <Settings />
+                        </ProtectedRoute>
+                      </Suspense>
+                    }
+                  />
+                </Routes>
+              </Suspense>
               <Toaster />
             </div>
           </SubscriptionProvider>

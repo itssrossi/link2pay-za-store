@@ -409,10 +409,14 @@ export type Database = {
           logo_url: string | null
           onboarding_completed: boolean | null
           payfast_link: string | null
+          payfast_merchant_id: string | null
+          payfast_merchant_key: string | null
+          payfast_passphrase: string | null
           payment_method: string | null
           paystack_customer_code: string | null
           primary_color: string | null
           show_capitec: boolean | null
+          show_payfast_auto: boolean | null
           snapscan_link: string | null
           store_address: string | null
           store_bio: string | null
@@ -457,10 +461,14 @@ export type Database = {
           logo_url?: string | null
           onboarding_completed?: boolean | null
           payfast_link?: string | null
+          payfast_merchant_id?: string | null
+          payfast_merchant_key?: string | null
+          payfast_passphrase?: string | null
           payment_method?: string | null
           paystack_customer_code?: string | null
           primary_color?: string | null
           show_capitec?: boolean | null
+          show_payfast_auto?: boolean | null
           snapscan_link?: string | null
           store_address?: string | null
           store_bio?: string | null
@@ -505,10 +513,14 @@ export type Database = {
           logo_url?: string | null
           onboarding_completed?: boolean | null
           payfast_link?: string | null
+          payfast_merchant_id?: string | null
+          payfast_merchant_key?: string | null
+          payfast_passphrase?: string | null
           payment_method?: string | null
           paystack_customer_code?: string | null
           primary_color?: string | null
           show_capitec?: boolean | null
+          show_payfast_auto?: boolean | null
           snapscan_link?: string | null
           store_address?: string | null
           store_bio?: string | null

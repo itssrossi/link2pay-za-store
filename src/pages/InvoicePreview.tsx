@@ -281,6 +281,7 @@ const InvoicePreview = () => {
                   src={profile.logo_url}
                   alt={profile.business_name}
                   className="h-16 w-auto mb-4"
+                  loading="eager"
                 />
               )}
               <h1 className="text-2xl font-bold text-gray-900">
