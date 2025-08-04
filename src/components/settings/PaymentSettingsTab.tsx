@@ -35,6 +35,10 @@ interface Profile {
   delivery_note: string;
   capitec_paylink: string;
   show_capitec: boolean;
+  payfast_merchant_id: string;
+  payfast_merchant_key: string;
+  payfast_passphrase: string;
+  show_payfast_auto: boolean;
   [key: string]: any;
 }
 
@@ -90,8 +94,62 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
               placeholder="https://www.payfast.co.za/eng/process/..."
             />
             <p className="text-sm text-gray-500 mt-1">
-              Note: For automated PayFast payments, configure your credentials in the PayFast Integration tab.
+              For manual PayFast links. Use automated PayFast below for better integration.
             </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="show_payfast_auto" className="text-base">PayFast Automated Integration</Label>
+                <p className="text-sm text-gray-500">
+                  Enable automated PayFast payments with your merchant credentials
+                </p>
+              </div>
+              <Switch
+                id="show_payfast_auto"
+                checked={profile.show_payfast_auto || false}
+                onCheckedChange={(checked) => handleChange('show_payfast_auto', checked)}
+              />
+            </div>
+            
+            {profile.show_payfast_auto && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="payfast_merchant_id">PayFast Merchant ID</Label>
+                  <Input
+                    id="payfast_merchant_id"
+                    type="text"
+                    value={profile.payfast_merchant_id || ''}
+                    onChange={(e) => handleChange('payfast_merchant_id', e.target.value)}
+                    placeholder="10000100"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="payfast_merchant_key">PayFast Merchant Key</Label>
+                  <Input
+                    id="payfast_merchant_key"
+                    type="text"
+                    value={profile.payfast_merchant_key || ''}
+                    onChange={(e) => handleChange('payfast_merchant_key', e.target.value)}
+                    placeholder="46f0cd694581a"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="payfast_passphrase">PayFast Passphrase (Optional)</Label>
+                  <Input
+                    id="payfast_passphrase"
+                    type="text"
+                    value={profile.payfast_passphrase || ''}
+                    onChange={(e) => handleChange('payfast_passphrase', e.target.value)}
+                    placeholder="Your secure passphrase"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Required for enhanced security. Found in your PayFast account settings.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
