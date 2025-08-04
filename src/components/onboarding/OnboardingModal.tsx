@@ -92,23 +92,18 @@ const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
           </div>
         ) : (
           <div className="text-center space-y-6">
-            {/* Tutorial Icon */}
-            <div className="flex justify-center">
-              <Play className="w-12 h-12 text-green-600" />
-            </div>
-
             {/* Tutorial Content */}
             <div>
-              <h2 className="text-2xl font-bold mb-3">Onboarding Tutorial</h2>
-              <p className="text-gray-600 mb-6">Watch this quick tutorial to get the most out of Link2Pay</p>
+              <h2 className="text-2xl font-bold mb-3">Welcome to Link2Pay!</h2>
             </div>
 
             {/* Video */}
             <div className="w-full">
               <video 
                 controls 
-                className="w-full rounded-lg"
+                className="w-full rounded-lg shadow-lg"
                 preload="metadata"
+                poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIyNSIgdmlld0JveD0iMCAwIDQwMCAyMjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjI1IiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjIwMCIgeT0iMTEyLjUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzZCNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TGluazJQYXkgT25ib2FyZGluZzwvdGV4dD4KPHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeD0iMTY4IiB5PSI4MCI+CjxwYXRoIGQ9Im04IDIgOC4wOTgtLjA4IDEuOTcyIDEuOTdBMSAxIDAgMCAxIDIwIDVsLS4wMzEgOC4wNjYtMS45MDQgMS45MDRhMSAxIDAgMCAxLTEuNDE0IDBMMTMgMTFoLTFhMSAxIDAgMCAxIDAtMmgxem0wIDQuIDUtNXY4eiIgZmlsbD0iIzZCNzI4MCIvPgo8L3N2Zz4KPC9zdmc+"
               >
                 <source src="https://mpzqlidtvlbijloeusuj.supabase.co/storage/v1/object/public/onboarding-content/Link2pay%20onboarding%20.mov" type="video/mp4" />
                 Your browser does not support the video tag.
@@ -118,12 +113,12 @@ const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
             {/* Actions */}
             <div className="space-y-3">
               <Button onClick={handleGetStarted} className="w-full bg-green-600 hover:bg-green-700">
-                Get Started
+                Done
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
               
               <Button variant="outline" onClick={handleSkip} className="w-full">
-                Skip for now
+                Skip
               </Button>
             </div>
           </div>

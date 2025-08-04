@@ -118,12 +118,7 @@ const Storefront = () => {
 
   const handleHeroCTA = () => {
     if (!profile?.hero_cta_link) return;
-    
-    if (profile.hero_cta_link.includes('wa.me') || profile.hero_cta_link.includes('whatsapp')) {
-      window.open(profile.hero_cta_link, '_blank');
-    } else {
-      window.location.href = profile.hero_cta_link;
-    }
+    window.open(profile.hero_cta_link, '_blank');
   };
 
   const getFontClass = (font: string) => {
@@ -259,7 +254,15 @@ const Storefront = () => {
                     <Button
                       onClick={() => {
                         const message = `Hi! I found your store online and would like to know more about your products.`;
-                        const whatsappLink = `https://wa.me/${profile.whatsapp_number?.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+                        // Format phone number: remove leading zeros and add +27 if South African number
+                        let formattedNumber = profile.whatsapp_number?.replace(/\D/g, '') || '';
+                        if (formattedNumber.startsWith('0')) {
+                          formattedNumber = '27' + formattedNumber.substring(1);
+                        }
+                        if (!formattedNumber.startsWith('27') && formattedNumber.length === 9) {
+                          formattedNumber = '27' + formattedNumber;
+                        }
+                        const whatsappLink = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`;
                         window.open(whatsappLink, '_blank');
                       }}
                       className="w-full text-white hover:opacity-90 text-sm sm:text-base"

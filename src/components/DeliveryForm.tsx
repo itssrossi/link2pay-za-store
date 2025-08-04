@@ -45,7 +45,16 @@ ${deliveryAddress ? `Address: ${deliveryAddress}` : ''}
 
 ${invoiceLink ? `Here's my invoice: ${invoiceLink}` : ''}`;
 
-    const whatsappLink = `https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    // Format phone number: remove leading zeros and add +27 if South African number
+    let formattedNumber = whatsappNumber.replace(/\D/g, '');
+    if (formattedNumber.startsWith('0')) {
+      formattedNumber = '27' + formattedNumber.substring(1);
+    }
+    if (!formattedNumber.startsWith('27') && formattedNumber.length === 9) {
+      formattedNumber = '27' + formattedNumber;
+    }
+    
+    const whatsappLink = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappLink, '_blank');
     
     if (onSubmit) {

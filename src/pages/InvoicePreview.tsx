@@ -57,6 +57,10 @@ interface Profile {
   store_address: string;
   capitec_paylink: string;
   show_capitec: boolean;
+  payfast_merchant_id: string;
+  payfast_merchant_key: string;
+  payfast_passphrase: string;
+  show_payfast_auto: boolean;
 }
 
 const InvoicePreview = () => {
@@ -97,7 +101,7 @@ const InvoicePreview = () => {
       // Fetch business profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('business_name, logo_url, snapscan_link, eft_details, whatsapp_number, store_address, capitec_paylink, show_capitec')
+        .select('business_name, logo_url, snapscan_link, eft_details, whatsapp_number, store_address, capitec_paylink, show_capitec, payfast_merchant_id, payfast_merchant_key, payfast_passphrase, show_payfast_auto')
         .eq('id', invoiceData.user_id)
         .single();
 
@@ -113,6 +117,35 @@ const InvoicePreview = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const generatePayfastCheckoutUrl = (merchantId: string, merchantKey: string, passphrase: string) => {
+    if (!invoice || !profile) return '';
+    
+    const data = {
+      merchant_id: merchantId,
+      merchant_key: merchantKey,
+      return_url: `${window.location.origin}/invoice/${invoice.id}?payment=success`,
+      cancel_url: `${window.location.origin}/invoice/${invoice.id}?payment=cancelled`,
+      notify_url: `${window.location.origin}/api/payfast/notify`,
+      amount: invoice.total_amount.toFixed(2),
+      item_name: `Invoice ${invoice.invoice_number}`,
+      item_description: `Payment for Invoice ${invoice.invoice_number}`,
+      email_address: invoice.client_email || 'customer@example.com',
+      name_first: invoice.client_name.split(' ')[0] || 'Customer',
+      name_last: invoice.client_name.split(' ').slice(1).join(' ') || 'Name',
+    };
+
+    // Generate signature if passphrase is provided
+    let queryString = Object.entries(data)
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+      .join('&');
+    
+    if (passphrase) {
+      queryString += `&passphrase=${encodeURIComponent(passphrase)}`;
+    }
+
+    return `https://www.payfast.co.za/eng/process?${queryString}`;
   };
 
   const handlePayment = (method: 'snapscan' | 'payfast' | 'capitec') => {
@@ -139,8 +172,22 @@ const InvoicePreview = () => {
       }
       window.open(link, '_blank');
     } else if (method === 'payfast') {
-      // PayFast integration removed - migrated to Paystack
-      toast.error('PayFast payment method is no longer supported. Please use alternative payment methods.');
+      if (!profile.show_payfast_auto || !profile.payfast_merchant_id || !profile.payfast_merchant_key) {
+        toast.error('PayFast credentials not configured');
+        return;
+      }
+      
+      const checkoutUrl = generatePayfastCheckoutUrl(
+        profile.payfast_merchant_id,
+        profile.payfast_merchant_key,
+        profile.payfast_passphrase || ''
+      );
+      
+      if (checkoutUrl) {
+        window.open(checkoutUrl, '_blank');
+      } else {
+        toast.error('Failed to generate PayFast checkout URL');
+      }
     }
   };
 
@@ -399,7 +446,7 @@ const InvoicePreview = () => {
           </Card>
 
           {/* Payment Buttons */}
-          {(invoice.show_snapscan || invoice.show_payfast || profile?.show_capitec) && (
+          {(invoice.show_snapscan || invoice.show_payfast || profile?.show_capitec || profile?.show_payfast_auto) && (
             <Card className="mb-6 sm:mb-8">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -430,7 +477,7 @@ const InvoicePreview = () => {
                       </Button>
                     )}
 
-                    {false && ( // PayFast removed - migrated to Paystack
+                    {profile?.show_payfast_auto && profile?.payfast_merchant_id && profile?.payfast_merchant_key && (
                       <Button
                         size="lg"
                         onClick={() => handlePayment('payfast')}
