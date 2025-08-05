@@ -109,33 +109,14 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
       console.log('Time slot updated successfully');
 
-      // Show success message immediately
-      toast.success('Booking confirmed successfully!');
-      
-      // Execute booking completion callback FIRST
-      onBookingComplete();
-      
-      // THEN send notifications (including WhatsApp)
-      await sendNotifications(booking);
-
-    } catch (error) {
-      console.error('Error creating booking:', error);
-      toast.error('Failed to create booking. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const sendNotifications = async (booking: any) => {
-    try {
-      // Get business profile to get WhatsApp number and business name
+      // Get business profile to get WhatsApp number
       const { data: profile } = await supabase
         .from('profiles')
         .select('whatsapp_number, business_name')
         .eq('id', userId)
         .single();
 
-      console.log('Profile data:', profile); // Debug log
+      console.log('Profile data:', profile);
 
       if (profile?.whatsapp_number) {
         // Generate WhatsApp message from customer's perspective
@@ -147,55 +128,27 @@ const BookingForm: React.FC<BookingFormProps> = ({
         
         try {
           window.open(whatsappUrl, '_blank');
-          toast.success('Opening WhatsApp to contact the business...');
+          toast.success('Booking confirmed! Opening WhatsApp...');
         } catch (error) {
           console.error('Error opening WhatsApp:', error);
-          toast.error('Booking confirmed! Please manually contact the business.');
+          toast.success('Booking confirmed! Please contact the business via WhatsApp.');
         }
       } else {
-        console.log('No WhatsApp number found for store owner'); // Debug log
-        toast.error('Store owner has not configured WhatsApp number');
+        console.log('No WhatsApp number found for store owner');
+        toast.success('Booking confirmed! The business will contact you soon.');
       }
 
-      // Send edge function notifications (keeping existing functionality)
-      const { error: whatsappError } = await supabase.functions.invoke('send-booking-notification', {
-        body: {
-          userId,
-          bookingData: {
-            customerName: booking.customer_name,
-            customerEmail: booking.customer_email,
-            customerPhone: booking.customer_phone,
-            bookingDate: booking.booking_date,
-            bookingTime: booking.booking_time,
-            notes: booking.notes
-          }
-        }
-      });
+      // Execute booking completion callback
+      onBookingComplete();
 
-      if (whatsappError) {
-        console.error('WhatsApp notification error:', whatsappError);
-      }
-
-      // Send email confirmation to customer
-      const { error: emailError } = await supabase.functions.invoke('send-booking-confirmation', {
-        body: {
-          customerEmail: booking.customer_email,
-          bookingData: {
-            customerName: booking.customer_name,
-            bookingDate: booking.booking_date,
-            bookingTime: booking.booking_time,
-            businessName: profile?.business_name || 'Your Business'
-          }
-        }
-      });
-
-      if (emailError) {
-        console.error('Email confirmation error:', emailError);
-      }
     } catch (error) {
-      console.error('Error sending notifications:', error);
+      console.error('Error creating booking:', error);
+      toast.error('Failed to create booking. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
+
 
   return (
     <Card>
