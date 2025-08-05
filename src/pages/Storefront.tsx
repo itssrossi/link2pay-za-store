@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, ShoppingCart, MapPin, Phone, Mail } from 'lucide-react';
 import OptimizedImage from '@/components/ui/optimized-image';
-import { createWhatsAppLink } from '@/utils/phoneFormatter';
+import { createWhatsAppLink, formatPhoneForWhatsApp } from '@/utils/phoneFormatter';
 
 // Lazy load components for better performance
 const DeliveryForm = lazy(() => import('@/components/DeliveryForm'));
@@ -15,6 +15,7 @@ const BookingSection = lazy(() => import('@/components/booking/BookingSection'))
 interface Product {
   id: string;
   title: string;
+  name: string;
   description: string;
   price: number;
   image_url: string;
@@ -95,8 +96,14 @@ const Storefront = () => {
         .eq('user_id', profileData.id)
         .eq('is_active', true);
 
+      // Map title to name for consistency
+      const mappedProducts = productsData?.map(product => ({
+        ...product,
+        name: product.title
+      })) || [];
+
       if (productsError) throw productsError;
-      setProducts(productsData || []);
+      setProducts(mappedProducts);
 
       // Fetch store sections
       const { data: sectionsData, error: sectionsError } = await supabase
@@ -122,7 +129,14 @@ const Storefront = () => {
 
   const handleHeroCTA = () => {
     if (!profile?.hero_cta_link) return;
-    window.open(profile.hero_cta_link, '_blank');
+    
+    let url = profile.hero_cta_link;
+    // Ensure proper URL format
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+    
+    window.open(url, '_blank');
   };
 
   const getFontClass = (font: string) => {
@@ -174,7 +188,7 @@ const Storefront = () => {
                   <Suspense fallback={<div className="w-full max-w-lg h-96 bg-white rounded-lg animate-pulse" />}>
                     <DeliveryForm
                       productTitle={selectedProduct.title}
-                      whatsappNumber={profile.whatsapp_number}
+                      whatsappNumber={formatPhoneForWhatsApp(profile.whatsapp_number || '')}
                       onSubmit={() => setSelectedProduct(null)}
                     />
                   </Suspense>
@@ -483,6 +497,25 @@ const Storefront = () => {
           </p>
         </div>
       </div>
+
+      {/* Order Form Modal */}
+      {selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="relative">
+            <button
+              onClick={() => setSelectedProduct(null)}
+              className="absolute -top-2 -right-2 bg-white rounded-full p-2 shadow-lg z-10"
+            >
+              ✕
+            </button>
+            <DeliveryForm
+              productTitle={selectedProduct.name}
+              whatsappNumber={formatPhoneForWhatsApp(profile.whatsapp_number || '')}
+              onSubmit={() => setSelectedProduct(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
