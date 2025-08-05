@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { createWhatsAppLink } from '@/utils/phoneFormatter';
 
 interface BookingFormProps {
   userId: string;
@@ -137,29 +138,19 @@ const BookingForm: React.FC<BookingFormProps> = ({
       console.log('Profile data:', profile); // Debug log
 
       if (profile?.whatsapp_number) {
-        // Format phone number for WhatsApp (remove non-digits and ensure it starts with country code)
-        let phoneNumber = profile.whatsapp_number.replace(/\D/g, '');
-        
-        // Add South African country code if not present
-        if (phoneNumber.startsWith('0')) {
-          phoneNumber = '27' + phoneNumber.substring(1);
-        } else if (!phoneNumber.startsWith('27')) {
-          phoneNumber = '27' + phoneNumber;
-        }
-
         // Generate WhatsApp message from customer's perspective
-        const message = `Hi my name is ${booking.customer_name} I'd like to book for ${format(selectedDate, 'EEEE, MMMM do, yyyy')} at ${booking.booking_time}. My email is ${booking.customer_email}${booking.customer_phone ? ` and my phone number is ${booking.customer_phone}` : ''}${booking.notes ? `. Additional notes: ${booking.notes}` : ''}.`;
+        const message = `Hi, my name is ${booking.customer_name}. I'd like to book an appointment for ${format(selectedDate, 'EEEE, MMMM do, yyyy')} at ${booking.booking_time}. My email is ${booking.customer_email}${booking.customer_phone ? ` and my phone number is ${booking.customer_phone}` : ''}${booking.notes ? `. Additional notes: ${booking.notes}` : ''}.`;
 
-        // Open WhatsApp with the message - use window.open like the working product order forms
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-        console.log('Opening WhatsApp URL:', whatsappUrl); // Debug log
+        // Use the proper WhatsApp link utility
+        const whatsappUrl = createWhatsAppLink(profile.whatsapp_number, message);
+        console.log('Opening WhatsApp URL:', whatsappUrl);
         
         try {
           window.open(whatsappUrl, '_blank');
           toast.success('Opening WhatsApp to contact the business...');
         } catch (error) {
           console.error('Error opening WhatsApp:', error);
-          toast.error(`Booking confirmed! Please manually contact: ${phoneNumber}`);
+          toast.error('Booking confirmed! Please manually contact the business.');
         }
       } else {
         console.log('No WhatsApp number found for store owner'); // Debug log
