@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import md5 from 'blueimp-md5';
+
 
 const generatePayFastSubscriptionLink = ({
   name,
@@ -21,10 +23,9 @@ const generatePayFastSubscriptionLink = ({
   promo?: string;
 }) => {
   const billingAmount = promo?.toUpperCase() === 'BETA50' ? 50 : 95;
+  const billingDate = new Date().toISOString().split('T')[0];
 
-  const url = new URL('https://www.payfast.co.za/eng/process');
-
-  const data = {
+  const data: Record<string, string> = {
     merchant_id: '18305104',
     merchant_key: 'kse495ugy7ekz',
     return_url: `${window.location.origin}/billing/success`,
@@ -37,18 +38,32 @@ const generatePayFastSubscriptionLink = ({
     amount: billingAmount.toFixed(2),
     item_name: `Link2Pay Subscription`,
     subscription_type: '1',
-    billing_date: new Date().toISOString().split('T')[0],
+    billing_date: billingDate,
     recurring_amount: billingAmount.toFixed(2),
-    frequency: '3', // monthly
-    cycles: '0' // never ends
+    frequency: '3',
+    cycles: '0'
   };
 
-  Object.entries(data).forEach(([key, value]) =>
-    url.searchParams.append(key, value.toString())
-  );
+  // Generate signature string (alphabetically sorted + passphrase)
+  const passphrase = 'Bonbon123123';
+  const sortedKeys = Object.keys(data).sort();
+  const signatureStr = sortedKeys
+    .map((key) => `${key}=${encodeURIComponent(data[key])}`)
+    .join('&') + `&passphrase=${encodeURIComponent(passphrase)}`;
+
+  // MD5 hash
+  const signature = md5(signatureStr);
+
+  // Build final URL
+  const url = new URL('https://www.payfast.co.za/eng/process');
+  for (const [key, value] of Object.entries(data)) {
+    url.searchParams.append(key, value);
+  }
+  url.searchParams.append('signature', signature);
 
   return url.toString();
 };
+
 
 const BillingSetup = () => {
   const { user } = useAuth();
