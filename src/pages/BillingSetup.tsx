@@ -15,54 +15,51 @@ const generatePayFastSubscriptionLink = ({
   email,
   invoiceId,
   promo
-}: {
-  name: string;
-  email: string;
-  invoiceId: string;
-  promo?: string;
-}) => {
-  const billingAmount = promo?.toUpperCase() === 'BETA50' ? 50 : 95;
-
-  const return_url = `${window.location.origin}/billing/success`;
-  const cancel_url = `${window.location.origin}/billing/cancelled`;
-  const notify_url = `${window.location.origin.replace('http:', 'https:')}/api/payfast/webhook`;
+}: { name: string; email: string; invoiceId: string; promo?: string; }) => {
+  const billingAmount = promo?.toUpperCase() === 'BETA50' ? '50.00' : '95.00';
+  const billingDate = new Date().toISOString().split('T')[0];
 
   const data: Record<string, string> = {
     merchant_id: '18305104',
     merchant_key: 'kse495ugy7ekz',
-    return_url,
-    cancel_url,
-    notify_url,
-    name_first: name,
-    email_address: email,
+    return_url: `${window.location.origin}/billing/success`,
+    cancel_url: `${window.location.origin}/billing/cancelled`,
+    notify_url: `${window.location.origin.replace('http:', 'https:')}/api/payfast/webhook`,
+    name_first: name.trim(),
+    email_address: email.trim(),
     m_payment_id: invoiceId,
-    amount: billingAmount.toFixed(2),
+    amount: billingAmount,
     item_name: 'Link2Pay Subscription',
     subscription_type: '1',
-    billing_date: new Date().toISOString().split('T')[0],
-    recurring_amount: billingAmount.toFixed(2),
-    frequency: '3', // monthly
-    cycles: '0'     // never ends
+    billing_date: billingDate,
+    recurring_amount: billingAmount,
+    frequency: '3',
+    cycles: '0'
   };
 
-  // Generate signature string
-  const sortedKeys = Object.keys(data).sort();
-  const signatureString = sortedKeys
-    .map((key) => `${key}=${decodeURIComponent(data[key])}`)
-    .join('&') + '&passphrase=Bonbon123123';
+  const fieldOrder = [
+    'merchant_id','merchant_key','return_url','cancel_url','notify_url',
+    'name_first','email_address','m_payment_id','amount','item_name',
+    'subscription_type','billing_date','recurring_amount','frequency','cycles'
+  ];
 
-  const signature = md5(signatureString);
+  let signatureString = '';
+  for (const key of fieldOrder) {
+    if (data[key]) {
+      signatureString += `${key}=${encodeURIComponent(data[key]).replace(/%20/g, '+')}&`;
+    }
+  }
+  signatureString += `passphrase=${encodeURIComponent('Bonbon123123').replace(/%20/g, '+')}`;
+
+  const signature = md5(signatureString).toLowerCase();
 
   const url = new URL('https://www.payfast.co.za/eng/process');
-
-  Object.entries(data).forEach(([key, value]) => {
-    url.searchParams.append(key, value);
-  });
-
+  Object.entries(data).forEach(([k, v]) => url.searchParams.append(k, v));
   url.searchParams.append('signature', signature);
 
   return url.toString();
 };
+
 
 
 
