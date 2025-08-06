@@ -15,7 +15,8 @@ const AddProduct = lazy(() => import('@/pages/AddProduct'));
 const InvoiceBuilder = lazy(() => import('@/pages/InvoiceBuilder'));
 const InvoicePreview = lazy(() => import('@/pages/InvoicePreview'));
 const BillingSetup = lazy(() => import('@/pages/BillingSetup'));
-const SubscriptionPayment = lazy(() => import('@/pages/SubscriptionPayment'));
+const BillingSuccess = lazy(() => import('@/pages/BillingSuccess'));
+const BillingCancelled = lazy(() => import('@/pages/BillingCancelled'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Storefront = lazy(() => import('@/pages/Storefront'));
 const ProtectedRoute = lazy(() => import('@/components/ProtectedRoute'));
@@ -41,12 +42,28 @@ function App() {
                   <Route path="/store/:username" element={<Storefront />} />
                   <Route path="/invoice/:invoiceId" element={<InvoicePreview />} />
                   <Route
-                    path="/billing-setup"
+                    path="/billing/setup"
                     element={
                       <Suspense fallback={<PageLoader />}>
                         <ProtectedRoute>
                           <BillingSetup />
                         </ProtectedRoute>
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/billing/success"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <BillingSuccess />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/billing/cancelled"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <BillingCancelled />
                       </Suspense>
                     }
                   />
@@ -86,16 +103,6 @@ function App() {
                       <Suspense fallback={<PageLoader />}>
                         <ProtectedRoute>
                           <InvoiceBuilder />
-                        </ProtectedRoute>
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/subscription-payment"
-                    element={
-                      <Suspense fallback={<PageLoader />}>
-                        <ProtectedRoute>
-                          <SubscriptionPayment />
                         </ProtectedRoute>
                       </Suspense>
                     }

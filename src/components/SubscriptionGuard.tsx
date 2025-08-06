@@ -1,10 +1,8 @@
-
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import SubscriptionSetup from './onboarding/SubscriptionSetup';
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
@@ -12,7 +10,7 @@ interface SubscriptionGuardProps {
 }
 
 const SubscriptionGuard = ({ children, feature }: SubscriptionGuardProps) => {
-  const { hasActiveSubscription, isTrialActive, trialDaysLeft, loading } = useSubscription();
+  const { hasActiveSubscription, isTrialActive, trialDaysLeft, trialExpired, loading } = useSubscription();
 
   if (loading) {
     return (
@@ -23,11 +21,11 @@ const SubscriptionGuard = ({ children, feature }: SubscriptionGuardProps) => {
   }
 
   // Allow access if subscription is active or trial is still active
-  if (hasActiveSubscription || isTrialActive) {
+  if (hasActiveSubscription || (isTrialActive && !trialExpired)) {
     return <>{children}</>;
   }
 
-  // Show upgrade prompt if neither subscription nor trial is active
+  // Show upgrade prompt if trial has expired and no active subscription
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -48,7 +46,8 @@ const SubscriptionGuard = ({ children, feature }: SubscriptionGuardProps) => {
               <li>• Unlimited products & invoices</li>
               <li>• WhatsApp automation</li>
               <li>• Custom store design</li>
-              <li>• Paystack payment processing</li>
+              <li>• PayFast payment processing</li>
+              <li>• Booking management</li>
             </ul>
             <div className="mt-3 font-bold text-lg">
               Only R95/month
@@ -59,7 +58,7 @@ const SubscriptionGuard = ({ children, feature }: SubscriptionGuardProps) => {
           </div>
 
           <Button asChild className="w-full bg-green-600 hover:bg-green-700">
-            <Link to="/subscription-payment">
+            <Link to="/billing/setup">
               <CreditCard className="w-4 h-4 mr-2" />
               Activate Subscription
             </Link>

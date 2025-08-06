@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -8,6 +7,8 @@ interface SubscriptionContextType {
   isTrialActive: boolean;
   trialEndsAt: string | null;
   trialDaysLeft: number;
+  trialExpired: boolean;
+  subscriptionStatus: string;
   loading: boolean;
   refreshSubscription: () => Promise<void>;
 }
@@ -16,113 +17,96 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 export const useSubscription = () => {
   const context = useContext(SubscriptionContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useSubscription must be used within a SubscriptionProvider');
   }
   return context;
 };
 
-export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, session, loading: authLoading } = useAuth();
+export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [isTrialActive, setIsTrialActive] = useState(false);
   const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
   const [trialDaysLeft, setTrialDaysLeft] = useState(0);
+  const [trialExpired, setTrialExpired] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState('trial');
   const [loading, setLoading] = useState(true);
 
   const refreshSubscription = async () => {
-    // Don't try to refresh if auth is still loading or user is not available
-    if (authLoading || !user || !session) {
-      console.log('Skipping subscription refresh - auth not ready or user not available');
+    if (!user) {
       setLoading(false);
       return;
     }
 
     try {
-      console.log('Fetching subscription status for user:', user.id);
+      setLoading(true);
       
-      const { data, error } = await supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
-        .select('has_active_subscription, trial_ends_at, trial_started_at, trial_used, paystack_customer_code')
+        .select('trial_ends_at, has_active_subscription, subscription_status, trial_expired')
         .eq('id', user.id)
         .single();
 
       if (error) {
-        console.error('Error fetching subscription status:', error);
-        
-        // If profile doesn't exist yet, set defaults and wait
-        if (error.code === 'PGRST116') {
-          console.log('Profile not found - user may be newly created');
-          setHasActiveSubscription(false);
-          setIsTrialActive(true);
-          setTrialEndsAt(null);
-          setTrialDaysLeft(7);
-        }
-      } else if (data) {
-        console.log('Subscription data:', data);
-        
-        setHasActiveSubscription(data.has_active_subscription || false);
-        
-        // Check trial status based on trial_started_at and trial_ends_at
-        if (data.trial_started_at && data.trial_ends_at) {
-          const trialEnd = new Date(data.trial_ends_at);
-          const now = new Date();
-          const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        console.error('Error fetching subscription data:', error);
+        return;
+      }
 
-          setTrialEndsAt(data.trial_ends_at);
-          setTrialDaysLeft(Math.max(0, daysLeft));
-          // Trial is active if started, hasn't ended, and user doesn't have paid subscription
-          setIsTrialActive(daysLeft > 0 && !data.has_active_subscription);
-        } else if (data.trial_ends_at && !data.trial_started_at) {
-          // Legacy trial (pre-migration) - check if still active
-          const trialEnd = new Date(data.trial_ends_at);
-          const now = new Date();
-          const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          
-          setTrialEndsAt(data.trial_ends_at);
-          setTrialDaysLeft(Math.max(0, daysLeft));
-          setIsTrialActive(daysLeft > 0 && !data.has_active_subscription);
-        } else {
-          setTrialEndsAt(null);
-          setTrialDaysLeft(0);
-          setIsTrialActive(false);
-        }
+      if (profile) {
+        const now = new Date();
+        const trialEnd = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null;
         
+        // Calculate trial status
+        const isTrialStillActive = trialEnd ? trialEnd > now : false;
+        const daysLeft = trialEnd ? Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+        const isExpired = trialEnd ? trialEnd <= now : false;
+
+        setHasActiveSubscription(profile.has_active_subscription || false);
+        setIsTrialActive(isTrialStillActive);
+        setTrialEndsAt(profile.trial_ends_at);
+        setTrialDaysLeft(daysLeft);
+        setTrialExpired(profile.trial_expired || isExpired);
+        setSubscriptionStatus(profile.subscription_status || 'trial');
+
         console.log('Subscription status updated:', {
-          hasActiveSubscription: data.has_active_subscription,
-          isTrialActive,
-          trialDaysLeft,
-          customerCode: data.paystack_customer_code ? 'Present' : 'Missing'
+          hasActiveSubscription: profile.has_active_subscription,
+          isTrialActive: isTrialStillActive,
+          trialExpired: profile.trial_expired || isExpired,
+          subscriptionStatus: profile.subscription_status,
+          daysLeft
         });
       }
     } catch (error) {
-      console.error('Unexpected error fetching subscription status:', error);
+      console.error('Error in refreshSubscription:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Only refresh subscription when auth is ready and user is available
-    if (!authLoading && user && session) {
+    if (user) {
       refreshSubscription();
-    } else if (!authLoading && !user) {
-      // User is not authenticated, reset subscription state
-      console.log('User not authenticated, resetting subscription state');
+    } else {
+      // Reset state when user logs out
       setHasActiveSubscription(false);
       setIsTrialActive(false);
       setTrialEndsAt(null);
       setTrialDaysLeft(0);
+      setTrialExpired(false);
+      setSubscriptionStatus('trial');
       setLoading(false);
     }
-  }, [user, session, authLoading]);
+  }, [user]);
 
-  const value = {
+  const value: SubscriptionContextType = {
     hasActiveSubscription,
     isTrialActive,
     trialEndsAt,
     trialDaysLeft,
-    loading: loading || authLoading,
+    trialExpired,
+    subscriptionStatus,
+    loading,
     refreshSubscription,
   };
 

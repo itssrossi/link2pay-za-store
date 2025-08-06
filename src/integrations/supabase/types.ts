@@ -287,6 +287,45 @@ export type Database = {
         }
         Relationships: []
       }
+      payfast_subscriptions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          email: string
+          id: string
+          invoice_id: string
+          pf_subscription_id: string | null
+          raw_data: Json | null
+          status: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          email: string
+          id?: string
+          invoice_id: string
+          pf_subscription_id?: string | null
+          raw_data?: Json | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          email?: string
+          id?: string
+          invoice_id?: string
+          pf_subscription_id?: string | null
+          raw_data?: Json | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           created_at: string | null
@@ -414,6 +453,7 @@ export type Database = {
           payfast_passphrase: string | null
           payment_method: string | null
           paystack_customer_code: string | null
+          pf_subscription_id: string | null
           primary_color: string | null
           show_capitec: boolean | null
           show_payfast_auto: boolean | null
@@ -425,9 +465,12 @@ export type Database = {
           store_layout: string | null
           store_location: string | null
           store_visibility: boolean | null
+          subscription_amount: number | null
           subscription_price: number | null
+          subscription_status: string | null
           theme_preset: string | null
           trial_ends_at: string | null
+          trial_expired: boolean | null
           trial_started_at: string | null
           trial_used: boolean | null
           updated_at: string
@@ -466,6 +509,7 @@ export type Database = {
           payfast_passphrase?: string | null
           payment_method?: string | null
           paystack_customer_code?: string | null
+          pf_subscription_id?: string | null
           primary_color?: string | null
           show_capitec?: boolean | null
           show_payfast_auto?: boolean | null
@@ -477,9 +521,12 @@ export type Database = {
           store_layout?: string | null
           store_location?: string | null
           store_visibility?: boolean | null
+          subscription_amount?: number | null
           subscription_price?: number | null
+          subscription_status?: string | null
           theme_preset?: string | null
           trial_ends_at?: string | null
+          trial_expired?: boolean | null
           trial_started_at?: string | null
           trial_used?: boolean | null
           updated_at?: string
@@ -518,6 +565,7 @@ export type Database = {
           payfast_passphrase?: string | null
           payment_method?: string | null
           paystack_customer_code?: string | null
+          pf_subscription_id?: string | null
           primary_color?: string | null
           show_capitec?: boolean | null
           show_payfast_auto?: boolean | null
@@ -529,9 +577,12 @@ export type Database = {
           store_layout?: string | null
           store_location?: string | null
           store_visibility?: boolean | null
+          subscription_amount?: number | null
           subscription_price?: number | null
+          subscription_status?: string | null
           theme_preset?: string | null
           trial_ends_at?: string | null
+          trial_expired?: boolean | null
           trial_started_at?: string | null
           trial_used?: boolean | null
           updated_at?: string
@@ -707,6 +758,10 @@ export type Database = {
       generate_product_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      is_trial_expired: {
+        Args: { profile_id: string }
+        Returns: boolean
       }
     }
     Enums: {

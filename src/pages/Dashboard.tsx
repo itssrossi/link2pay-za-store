@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { supabase } from '@/integrations/supabase/client';
+import TestTrialEndButton from '@/components/TestTrialEndButton';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -306,6 +307,16 @@ const Dashboard = () => {
         {/* Quick Invoice with WhatsApp */}
         <QuickInvoiceWhatsApp />
 
+
+        {/* Development Testing Section */}
+        <Card className="border-dashed border-orange-300 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="text-orange-700">Development Testing</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TestTrialEndButton />
+          </CardContent>
+        </Card>
 
         {/* Recent Activity */}
         <div className="grid gap-4 md:grid-cols-1">

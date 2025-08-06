@@ -1,85 +1,162 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
-import SubscriptionSetup from '@/components/onboarding/SubscriptionSetup';
+import { supabase } from '@/integrations/supabase/client';
+
+const generatePayFastSubscriptionLink = ({
+  name,
+  email,
+  invoiceId,
+  promo
+}: {
+  name: string;
+  email: string;
+  invoiceId: string;
+  promo?: string;
+}) => {
+  const billingAmount = promo?.toUpperCase() === 'BETA50' ? 50 : 95;
+
+  const url = new URL('https://www.payfast.co.za/eng/process');
+
+  const data = {
+    merchant_id: '18305104',
+    merchant_key: 'kse495ugy7ekz',
+    return_url: `${window.location.origin}/billing/success`,
+    cancel_url: `${window.location.origin}/billing/cancelled`,
+    notify_url: `${window.location.origin.replace('http:', 'https:')}/api/payfast/webhook`,
+
+    name_first: name,
+    email_address: email,
+    m_payment_id: invoiceId,
+    amount: billingAmount.toFixed(2),
+    item_name: `Link2Pay Subscription`,
+    subscription_type: '1',
+    billing_date: new Date().toISOString().split('T')[0],
+    recurring_amount: billingAmount.toFixed(2),
+    frequency: '3', // monthly
+    cycles: '0' // never ends
+  };
+
+  Object.entries(data).forEach(([key, value]) =>
+    url.searchParams.append(key, value.toString())
+  );
+
+  return url.toString();
+};
 
 const BillingSetup = () => {
   const { user } = useAuth();
-  const { setNeedsBillingSetup, setShowOnboarding } = useOnboarding();
-  const { refreshSubscription } = useSubscription();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-
-  // Check for trial success/cancellation on page load
-  useEffect(() => {
-    const trialStatus = searchParams.get('trial');
-    
-    if (trialStatus === 'success') {
-      console.log('Trial setup successful, refreshing subscription status...');
-      setShowSuccessMessage(true);
-      
-      // Refresh subscription status after a short delay to allow webhook processing
-      setTimeout(async () => {
-        await refreshSubscription();
-        toast.success('Trial billing setup complete! Your 7-day trial is now active.');
-        
-        // Navigate to dashboard after showing success
-        setTimeout(() => {
-          handleBillingComplete();
-        }, 2000);
-      }, 1000);
-      
-    } else if (trialStatus === 'cancelled') {
-      toast.error('Trial setup was cancelled. You can try again or skip for now.');
-    }
-  }, [searchParams, refreshSubscription]);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    business_name: '',
+    promo: ''
+  });
 
   useEffect(() => {
     if (!user) {
       navigate('/auth');
+      return;
     }
+
+    // Pre-fill form with user data
+    const loadUserData = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, business_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setFormData(prev => ({
+          ...prev,
+          name: profile.full_name || '',
+          email: user.email || '',
+          business_name: profile.business_name || ''
+        }));
+      }
+    };
+
+    loadUserData();
   }, [user, navigate]);
 
-  const handleBillingComplete = () => {
-    // Update context state
-    setNeedsBillingSetup(false);
-    setShowOnboarding(true);
+  // Handle success/cancellation from PayFast
+  useEffect(() => {
+    const status = searchParams.get('status');
+    if (status === 'success') {
+      toast.success('Subscription activated successfully!');
+      navigate('/dashboard');
+    } else if (status === 'cancelled') {
+      toast.error('Subscription setup was cancelled.');
+    }
+  }, [searchParams, navigate]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    // Navigate to dashboard
-    navigate('/dashboard');
+    if (!formData.name || !formData.email || !formData.business_name) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Generate unique invoice ID
+      const invoiceId = `sub-${Date.now()}-${user?.id}`;
+
+      // Generate PayFast URL
+      const payFastUrl = generatePayFastSubscriptionLink({
+        name: formData.name,
+        email: formData.email,
+        invoiceId,
+        promo: formData.promo
+      });
+
+      // Update user profile with billing info
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: formData.name,
+          business_name: formData.business_name,
+          subscription_amount: formData.promo?.toUpperCase() === 'BETA50' ? 50 : 95,
+          discount_applied: formData.promo?.toUpperCase() === 'BETA50'
+        })
+        .eq('id', user?.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Redirect to PayFast
+      window.location.href = payFastUrl;
+
+    } catch (error) {
+      console.error('Error setting up billing:', error);
+      toast.error('Failed to setup billing. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSkip = () => {
     navigate('/dashboard');
   };
 
-  // Show success message if returning from Paystack
-  if (showSuccessMessage) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
-        <Card className="w-full max-w-md mx-auto">
-          <CardContent className="p-8 text-center">
-            <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Trial Setup Complete!</h2>
-            <p className="text-gray-600 mb-4">
-              Your billing information has been securely saved and your 7-day free trial is now active.
-            </p>
-            <p className="text-sm text-gray-500">
-              Redirecting to your dashboard...
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const billingAmount = formData.promo?.toUpperCase() === 'BETA50' ? 50 : 95;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
@@ -95,10 +172,96 @@ const BillingSetup = () => {
           </Button>
         </div>
         
-        <SubscriptionSetup 
-          trialEndsAt={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()} 
-          onComplete={handleBillingComplete} 
-        />
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Setup Billing</CardTitle>
+            <p className="text-gray-600">
+              Continue using Link2Pay with a monthly subscription
+            </p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="email">Email Address *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="business_name">Business Name *</Label>
+                <Input
+                  id="business_name"
+                  type="text"
+                  value={formData.business_name}
+                  onChange={(e) => handleInputChange('business_name', e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="promo">Promo Code (optional)</Label>
+                <Input
+                  id="promo"
+                  type="text"
+                  value={formData.promo}
+                  onChange={(e) => handleInputChange('promo', e.target.value)}
+                  placeholder="Enter BETA50 for 50% off"
+                />
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Subscription Details:</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Monthly subscription:</span>
+                    <span className={formData.promo?.toUpperCase() === 'BETA50' ? 'line-through text-gray-500' : ''}>
+                      R95.00
+                    </span>
+                  </div>
+                  {formData.promo?.toUpperCase() === 'BETA50' && (
+                    <div className="flex justify-between text-green-600 font-medium">
+                      <span>BETA50 discount:</span>
+                      <span>R50.00</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-lg border-t pt-2">
+                    <span>Total:</span>
+                    <span>R{billingAmount}.00/month</span>
+                  </div>
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={loading}
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                {loading ? 'Setting up...' : `Subscribe for R${billingAmount}/month`}
+              </Button>
+            </form>
+
+            <p className="text-xs text-gray-500 text-center mt-4">
+              Secure payment processing via PayFast
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

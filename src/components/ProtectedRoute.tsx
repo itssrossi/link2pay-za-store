@@ -1,15 +1,15 @@
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Navigate, useLocation } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, session, loading } = useAuth();
-  const { needsBillingSetup, needsSubscriptionPayment } = useOnboarding();
+  const { user, session, loading: authLoading } = useAuth();
+  const { trialExpired, hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
   const location = useLocation();
 
-  // Show loading spinner while authentication is being determined
-  if (loading) {
+  // Show loading spinner while authentication and subscription are being determined
+  if (authLoading || subscriptionLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4C9F70]"></div>
@@ -23,16 +23,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Redirect to billing setup if needed (except if already on billing setup page)
-  if (needsBillingSetup && location.pathname !== '/billing-setup') {
-    console.log('User needs billing setup, redirecting');
-    return <Navigate to="/billing-setup" replace />;
-  }
-
-  // Redirect to subscription payment if trial expired (except if already on subscription payment page)
-  if (needsSubscriptionPayment && location.pathname !== '/subscription-payment') {
-    console.log('User needs subscription payment, redirecting');
-    return <Navigate to="/subscription-payment" replace />;
+  // Redirect to billing setup if trial expired and no active subscription
+  if (trialExpired && !hasActiveSubscription && location.pathname !== '/billing/setup') {
+    console.log('Trial expired and no subscription, redirecting to billing setup');
+    return <Navigate to="/billing/setup" replace />;
   }
 
   return <>{children}</>;
