@@ -155,7 +155,8 @@ const BillingSetup = () => {
       }
 
       // Redirect to PayFast
-      window.location.href = payFastUrl;
+      window.open(payFastUrl, '_blank', 'noopener,noreferrer');
+
 
     } catch (error) {
       console.error('Error setting up billing:', error);
