@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import md5 from 'blueimp-md5';
 
-
 const generatePayFastSubscriptionLink = ({
   name,
   email,
@@ -23,46 +22,48 @@ const generatePayFastSubscriptionLink = ({
   promo?: string;
 }) => {
   const billingAmount = promo?.toUpperCase() === 'BETA50' ? 50 : 95;
-  const billingDate = new Date().toISOString().split('T')[0];
+
+  const return_url = `${window.location.origin}/billing/success`;
+  const cancel_url = `${window.location.origin}/billing/cancelled`;
+  const notify_url = `${window.location.origin.replace('http:', 'https:')}/api/payfast/webhook`;
 
   const data: Record<string, string> = {
     merchant_id: '18305104',
     merchant_key: 'kse495ugy7ekz',
-    return_url: `${window.location.origin}/billing/success`,
-    cancel_url: `${window.location.origin}/billing/cancelled`,
-    notify_url: `${window.location.origin.replace('http:', 'https:')}/api/payfast/webhook`,
-
+    return_url,
+    cancel_url,
+    notify_url,
     name_first: name,
     email_address: email,
     m_payment_id: invoiceId,
     amount: billingAmount.toFixed(2),
-    item_name: `Link2Pay Subscription`,
+    item_name: 'Link2Pay Subscription',
     subscription_type: '1',
-    billing_date: billingDate,
+    billing_date: new Date().toISOString().split('T')[0],
     recurring_amount: billingAmount.toFixed(2),
-    frequency: '3',
-    cycles: '0'
+    frequency: '3', // monthly
+    cycles: '0'     // never ends
   };
 
-  // Generate signature string (alphabetically sorted + passphrase)
-  const passphrase = 'Bonbon123123';
+  // Generate signature string
   const sortedKeys = Object.keys(data).sort();
-  const signatureStr = sortedKeys
-    .map((key) => `${key}=${encodeURIComponent(data[key])}`)
-    .join('&') + `&passphrase=${encodeURIComponent(passphrase)}`;
+  const signatureString = sortedKeys
+    .map((key) => `${key}=${decodeURIComponent(data[key])}`)
+    .join('&') + '&passphrase=Bonbon123123';
 
-  // MD5 hash
-  const signature = md5(signatureStr);
+  const signature = md5(signatureString);
 
-  // Build final URL
   const url = new URL('https://www.payfast.co.za/eng/process');
-  for (const [key, value] of Object.entries(data)) {
+
+  Object.entries(data).forEach(([key, value]) => {
     url.searchParams.append(key, value);
-  }
+  });
+
   url.searchParams.append('signature', signature);
 
   return url.toString();
 };
+
 
 
 const BillingSetup = () => {
