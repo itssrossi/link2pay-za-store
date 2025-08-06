@@ -139,7 +139,10 @@ const BillingSetup = () => {
         promo: formData.promo
       });
 
+// Redirect to PayFast
+      window.open(payFastUrl, '_blank', 'noopener,noreferrer');
       // Update user profile with billing info
+      
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -154,8 +157,7 @@ const BillingSetup = () => {
         throw updateError;
       }
 
-      // Redirect to PayFast
-      window.open(payFastUrl, '_blank', 'noopener,noreferrer');
+      
 
 
     } catch (error) {
