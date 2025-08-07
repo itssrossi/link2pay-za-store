@@ -293,9 +293,11 @@ const Products = () => {
                         </>
                       )}
                     </Button>
-                    <Button size="sm" variant="outline" className="text-xs p-2">
-                      <Edit className="w-3 h-3" />
-                    </Button>
+                     <Link to={`/products/edit/${product.id}`}>
+                      <Button size="sm" variant="outline" className="text-xs p-2">
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                    </Link>
                     <Button 
                       size="sm" 
                       variant="outline"

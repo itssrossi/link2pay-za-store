@@ -12,6 +12,7 @@ const Auth = lazy(() => import('@/pages/Auth'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Products = lazy(() => import('@/pages/Products'));
 const AddProduct = lazy(() => import('@/pages/AddProduct'));
+const EditProduct = lazy(() => import('@/pages/EditProduct'));
 const InvoiceBuilder = lazy(() => import('@/pages/InvoiceBuilder'));
 const InvoicePreview = lazy(() => import('@/pages/InvoicePreview'));
 const BillingSetup = lazy(() => import('@/pages/BillingSetup'));
@@ -93,6 +94,16 @@ function App() {
                       <Suspense fallback={<PageLoader />}>
                         <ProtectedRoute>
                           <AddProduct />
+                        </ProtectedRoute>
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/products/edit/:id"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <ProtectedRoute>
+                          <EditProduct />
                         </ProtectedRoute>
                       </Suspense>
                     }
