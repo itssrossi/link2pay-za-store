@@ -128,6 +128,31 @@ const BillingSetup = () => {
     setLoading(true);
 
     try {
+      // Handle DEVJOHN promo code - activate unlimited trial
+      if (formData.promo?.toUpperCase() === 'DEVJOHN') {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            full_name: formData.name,
+            business_name: formData.business_name,
+            subscription_status: 'active',
+            has_active_subscription: true,
+            trial_expired: false,
+            trial_ends_at: null, // No expiry date for unlimited trial
+            subscription_amount: 0,
+            discount_applied: true
+          })
+          .eq('id', user?.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        toast.success('Unlimited trial activated! Welcome to Link2Pay.');
+        navigate('/dashboard');
+        return;
+      }
+
       // Generate unique invoice ID
       const invoiceId = `sub-${Date.now()}-${user?.id}`;
 
@@ -139,10 +164,10 @@ const BillingSetup = () => {
         promo: formData.promo
       });
 
-// Redirect to PayFast
+      // Redirect to PayFast
       window.open(payFastUrl, '_blank', 'noopener,noreferrer');
-      // Update user profile with billing info
       
+      // Update user profile with billing info
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -156,8 +181,6 @@ const BillingSetup = () => {
       if (updateError) {
         throw updateError;
       }
-
-      
 
 
     } catch (error) {
@@ -237,7 +260,7 @@ const BillingSetup = () => {
                   type="text"
                   value={formData.promo}
                   onChange={(e) => handleInputChange('promo', e.target.value)}
-                  placeholder="Enter BETA50 for 50% off"
+                  placeholder="Enter promo code"
                 />
               </div>
 

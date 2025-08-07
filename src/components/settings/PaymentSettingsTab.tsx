@@ -145,7 +145,7 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
                     placeholder="Your secure passphrase"
                   />
                   <p className="text-sm text-gray-500 mt-1">
-                    Required for enhanced security. Found in your PayFast account settings.
+                    Leave the salt phrase empty and ensure it is turned off in your PayFast account settings for the integration to work correctly.
                   </p>
                 </div>
               </div>

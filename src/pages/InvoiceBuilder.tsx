@@ -90,15 +90,12 @@ const InvoiceBuilder = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('snapscan_link')
+        .select('snapscan_link, show_payfast_auto, payfast_merchant_id, show_capitec, capitec_paylink')
         .eq('id', user.id)
         .single();
 
       if (error) throw error;
       setProfile(data);
-
-      // PayFast credentials removed - migrated to Paystack
-      // Payment integration now handled by Paystack subscription system
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
@@ -486,38 +483,55 @@ const InvoiceBuilder = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="showSnapScan"
-                    checked={showSnapScan}
-                    onCheckedChange={(checked) => setShowSnapScan(!!checked)}
-                    disabled={!profile?.snapscan_link}
-                  />
-                  <Label htmlFor="showSnapScan">Show SnapScan Payment Button</Label>
-                  {!profile?.snapscan_link && (
-                    <Badge variant="outline" className="text-xs text-orange-600">
-                      Link Missing
+                {/* Auto-populate payment options from settings */}
+                {profile?.snapscan_link && (
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="showSnapScan"
+                      checked={showSnapScan}
+                      onCheckedChange={(checked) => setShowSnapScan(!!checked)}
+                    />
+                    <Label htmlFor="showSnapScan">Show SnapScan Payment Button</Label>
+                    <Badge variant="outline" className="text-xs text-green-600">
+                      Configured
                     </Badge>
-                  )}
-                </div>
+                  </div>
+                )}
                 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="showPayFast"
-                    checked={showPayFast}
-                    onCheckedChange={(checked) => setShowPayFast(!!checked)}
-                    disabled={true} // PayFast removed - migrated to Paystack
-                  />
-                  <Label htmlFor="showPayFast">Show PayFast Payment Button</Label>
-                  <Badge variant="outline" className="text-xs text-gray-600">
-                    Deprecated
-                  </Badge>
-                </div>
+                {profile?.show_payfast_auto && profile?.payfast_merchant_id && (
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="showPayFast"
+                      checked={showPayFast}
+                      onCheckedChange={(checked) => setShowPayFast(!!checked)}
+                    />
+                    <Label htmlFor="showPayFast">Show PayFast Payment Button</Label>
+                    <Badge variant="outline" className="text-xs text-green-600">
+                      Configured
+                    </Badge>
+                  </div>
+                )}
 
-                {!profile?.snapscan_link && (
-                  <p className="text-xs text-gray-500">
-                    💡 Configure payment methods in Settings → Payment Settings
-                  </p>
+                {profile?.show_capitec && profile?.capitec_paylink && (
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="showCapitec"
+                      checked={false}
+                      onCheckedChange={() => {}}
+                    />
+                    <Label htmlFor="showCapitec">Show Capitec Pay Me Button</Label>
+                    <Badge variant="outline" className="text-xs text-green-600">
+                      Configured
+                    </Badge>
+                  </div>
+                )}
+
+                {!profile?.snapscan_link && !profile?.show_payfast_auto && !profile?.show_capitec && (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      To show payment options on invoices, please set them up in Settings → Payment Settings.
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>
