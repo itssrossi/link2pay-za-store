@@ -24,7 +24,7 @@ const generatePayFastSubscriptionLink = ({
     merchant_key: 'kse495ugy7ekz',
     return_url: `${window.location.origin}/billing/success`,
     cancel_url: `${window.location.origin}/billing/cancelled`,
-    notify_url: `${window.location.origin.replace('http:', 'https:')}/api/payfast/webhook`,
+    notify_url: 'https://link2pay.co.za/api/payfast/webhook',
     name_first: name.trim(),
     email_address: email.trim(),
     m_payment_id: invoiceId,
