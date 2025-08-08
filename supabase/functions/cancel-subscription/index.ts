@@ -27,26 +27,36 @@ serve(async (req) => {
       throw new Error("User not authenticated");
     }
 
-    // Get user's billing token
+    // Get user's billing token or subscription ID
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('payfast_billing_token')
+      .select('payfast_billing_token, pf_subscription_id')
       .eq('id', user.id)
       .single();
 
-    if (!profile?.payfast_billing_token) {
+    // Check if user has either billing token or subscription ID
+    const billingToken = profile?.payfast_billing_token;
+    const subscriptionId = profile?.pf_subscription_id;
+    
+    if (!billingToken && !subscriptionId) {
       throw new Error("No active subscription found");
     }
 
-    // Call PayFast API to cancel token
+    // Call PayFast API to cancel subscription
     const merchantId = "18305104";
     const merchantKey = "kse495ugy7ekz";
     const passphrase = "Bonbon123123";
 
-    const cancelData = {
+    // Use billing token if available, otherwise use subscription ID
+    const cancelData = billingToken ? {
       merchant_id: merchantId,
       merchant_key: merchantKey,
-      token: profile.payfast_billing_token,
+      token: billingToken,
+      passphrase: passphrase
+    } : {
+      merchant_id: merchantId,
+      merchant_key: merchantKey,
+      subscription_id: subscriptionId,
       passphrase: passphrase
     };
 
@@ -73,7 +83,11 @@ serve(async (req) => {
     const signature = await createSignature(cancelData);
 
     // Make request to PayFast to cancel subscription
-    const response = await fetch("https://api.payfast.co.za/subscriptions/cancel", {
+    const cancelUrl = billingToken 
+      ? "https://api.payfast.co.za/subscriptions/cancel"
+      : "https://api.payfast.co.za/subscriptions/cancel";
+      
+    const response = await fetch(cancelUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",

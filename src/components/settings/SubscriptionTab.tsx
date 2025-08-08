@@ -104,6 +104,7 @@ const SubscriptionTab = () => {
     } catch (error) {
       console.error('Error cancelling subscription:', error);
       toast.error('Failed to cancel subscription. Please try again.');
+    } finally {
       setCancelling(false);
     }
   };

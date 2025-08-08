@@ -447,6 +447,7 @@ export type Database = {
           last_customized_at: string | null
           logo_url: string | null
           onboarding_completed: boolean | null
+          payfast_billing_token: string | null
           payfast_link: string | null
           payfast_merchant_id: string | null
           payfast_merchant_key: string | null
@@ -503,6 +504,7 @@ export type Database = {
           last_customized_at?: string | null
           logo_url?: string | null
           onboarding_completed?: boolean | null
+          payfast_billing_token?: string | null
           payfast_link?: string | null
           payfast_merchant_id?: string | null
           payfast_merchant_key?: string | null
@@ -559,6 +561,7 @@ export type Database = {
           last_customized_at?: string | null
           logo_url?: string | null
           onboarding_completed?: boolean | null
+          payfast_billing_token?: string | null
           payfast_link?: string | null
           payfast_merchant_id?: string | null
           payfast_merchant_key?: string | null

@@ -57,16 +57,38 @@ serve(async (req) => {
       payment_status,
       subscription_id,
       amount_gross,
-      email_address
+      email_address,
+      token,
+      billing_date
     } = ipnData;
 
     console.log('Processing payment for:', email_address, 'Status:', payment_status);
 
-    // Find user by email
+    // Find user by email - need to get from auth.users since profiles doesn't have email
+    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+    
+    if (authError) {
+      console.error('Error fetching auth users:', authError);
+      return new Response('Auth error', { 
+        status: 500,
+        headers: corsHeaders
+      });
+    }
+    
+    const authUser = authUsers.users.find(u => u.email === email_address);
+    if (!authUser) {
+      console.error('User not found with email:', email_address);
+      return new Response('User not found', { 
+        status: 404,
+        headers: corsHeaders
+      });
+    }
+    
+    // Get user profile
     const { data: user, error: userError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('email', email_address)
+      .eq('id', authUser.id)
       .single();
 
     if (userError || !user) {
@@ -86,9 +108,11 @@ serve(async (req) => {
         .update({
           subscription_status: 'active',
           pf_subscription_id: subscription_id,
+          payfast_billing_token: token, // Store the billing token for future cancellations
           subscription_amount: parseFloat(amount_gross),
           has_active_subscription: true,
-          trial_expired: false
+          trial_expired: false,
+          billing_start_date: billing_date ? new Date(billing_date).toISOString() : new Date().toISOString()
         })
         .eq('id', user.id);
 
