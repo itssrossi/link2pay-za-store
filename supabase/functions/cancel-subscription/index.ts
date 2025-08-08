@@ -41,7 +41,7 @@ serve(async (req) => {
     // Call PayFast API to cancel token
     const merchantId = "18305104";
     const merchantKey = "kse495ugy7ekz";
-    const passphrase = Deno.env.get("PAYFAST_SECRET_KEY") || "";
+    const passphrase = "Bonbon123123";
 
     const cancelData = {
       merchant_id: merchantId,
@@ -96,7 +96,9 @@ serve(async (req) => {
         .update({
           has_active_subscription: false,
           cancelled_at: new Date().toISOString(),
-          payfast_billing_token: null
+          payfast_billing_token: null,
+          trial_expired: true,
+          subscription_status: 'cancelled'
         })
         .eq('id', user.id);
 

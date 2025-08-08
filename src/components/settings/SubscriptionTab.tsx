@@ -93,12 +93,17 @@ const SubscriptionTab = () => {
       
       if (error) throw error;
 
-      toast.success('Subscription cancelled successfully');
-      fetchSubscriptionInfo();
+      toast.success('Subscription cancelled successfully. You will be logged out.');
+      
+      // Log out user after successful cancellation
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        window.location.href = '/auth';
+      }, 2000);
+      
     } catch (error) {
       console.error('Error cancelling subscription:', error);
       toast.error('Failed to cancel subscription. Please try again.');
-    } finally {
       setCancelling(false);
     }
   };

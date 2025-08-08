@@ -40,6 +40,17 @@ const DeleteAccountDialog = () => {
     try {
       setIsDeleting(true);
 
+      // First, cancel any active PayFast subscription
+      try {
+        const { error: cancelError } = await supabase.functions.invoke('cancel-subscription');
+        if (cancelError) {
+          console.log('No active subscription to cancel or cancellation failed:', cancelError);
+        }
+      } catch (error) {
+        console.log('Subscription cancellation attempt failed:', error);
+        // Continue with account deletion even if cancellation fails
+      }
+
       // Call the RPC function to delete user and all related data
       const { error } = await supabase.rpc('delete_user_completely', {
         p_uid: user.id
