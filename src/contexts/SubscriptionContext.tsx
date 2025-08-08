@@ -51,7 +51,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
       if (error || !profile) {
         console.warn('Failed to fetch updated subscription. Retrying...');
-        await new Promise((r) => setTimeout(r, 1500)); // wait 1.5s
+        await new Promise((r) => setTimeout(r, 3000)); // wait 3s
         return refreshSubscription(); // recursive retry (1 level deep)
       }
 
