@@ -85,6 +85,20 @@ const SubscriptionTab = () => {
     }
   };
 
+  const simulateTrialEnd = async () => {
+    try {
+      const { error } = await supabase.functions.invoke('simulate-trial-end');
+      
+      if (error) throw error;
+      
+      toast.success('Trial end simulated successfully');
+      fetchSubscriptionInfo(); // Refresh the data
+    } catch (error) {
+      console.error('Error simulating trial end:', error);
+      toast.error('Failed to simulate trial end');
+    }
+  };
+
   const cancelSubscription = async () => {
     setCancelling(true);
 
@@ -167,10 +181,18 @@ const SubscriptionTab = () => {
               </div>
               <p className="text-sm text-gray-600 mt-1">
                 Your free trial ends on {new Date(subscriptionInfo.trial_ends_at).toLocaleDateString()}
-                {trialDaysLeft <= 2 && (
+              {trialDaysLeft <= 2 && (
                   <span className="text-orange-600 font-medium"> - Setup billing soon!</span>
                 )}
               </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={simulateTrialEnd}
+                className="mt-2"
+              >
+                Simulate Trial End
+              </Button>
             </div>
           )}
 
