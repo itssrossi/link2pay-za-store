@@ -63,15 +63,16 @@ serve(async (req) => {
     // Generate signature for cancellation
     const createSignature = (data: any) => {
       const crypto = globalThis.crypto;
-      let pfOutput = "";
       
-      for (const key in data) {
+      const keys = Object.keys(data).sort();
+      let pfOutput = "";
+      for (const key of keys) {
         if (data[key] !== "") {
           pfOutput += `${key}=${encodeURIComponent(data[key].toString().trim()).replace(/%20/g, "+")}&`;
         }
       }
-      
       pfOutput = pfOutput.slice(0, -1);
+
       
       return crypto.subtle.digest("SHA-1", new TextEncoder().encode(pfOutput))
         .then(hashBuffer => {
