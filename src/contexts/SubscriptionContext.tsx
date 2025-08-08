@@ -36,6 +36,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const refreshSubscription = async () => {
     if (!user) {
       setLoading(false);
+      console.log('[refreshSubscription] Profile fetched from Supabase:', profile);
       return;
     }
 
@@ -43,14 +44,15 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       
       const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('trial_ends_at, has_active_subscription, subscription_status, trial_expired')
-        .eq('id', user.id)
-        .single();
+        from('profiles')
+          select('trial_ends_at, has_active_subscription, subscription_status, trial_expired')
+            eq('id', user.id)
+              maybeSingle();
 
-      if (error) {
-        console.error('Error fetching subscription data:', error);
-        return;
+      if (error || !profile) {
+        console.warn('Failed to fetch updated subscription. Retrying...');
+        await new Promise((r) => setTimeout(r, 1500)); // wait 1.5s
+        return refreshSubscription(); // recursive retry (1 level deep)
       }
 
       if (profile) {
