@@ -4,21 +4,38 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const BillingSuccess = () => {
   const navigate = useNavigate();
   const { refreshSubscription } = useSubscription();
 
   useEffect(() => {
-    // Refresh subscription status after successful payment
+    // Activate subscription and refresh status after payment
     const handleSuccess = async () => {
-      toast.success('Subscription activated successfully!');
-      
-      // Wait a moment for webhooks to process
-      setTimeout(async () => {
-        await refreshSubscription();
-        navigate('/dashboard');
-      }, 2000);
+      try {
+        // Manually activate subscription since webhook might not have fired
+        console.log('Activating subscription...');
+        const { error } = await supabase.functions.invoke('activate-subscription');
+        
+        if (error) {
+          console.error('Error activating subscription:', error);
+          toast.error('Failed to activate subscription. Please contact support.');
+          return;
+        }
+        
+        toast.success('Subscription activated successfully!');
+        
+        // Wait a moment and refresh subscription status
+        setTimeout(async () => {
+          await refreshSubscription();
+          navigate('/dashboard');
+        }, 1000);
+        
+      } catch (error) {
+        console.error('Error in handleSuccess:', error);
+        toast.error('Failed to activate subscription. Please contact support.');
+      }
     };
 
     handleSuccess();

@@ -66,14 +66,24 @@ serve(async (req) => {
     console.log('Payment ID format:', m_payment_id);
     console.log('Token received:', token);
 
-    // Extract user ID from m_payment_id format: sub-{timestamp}-{uuid}
+    // Extract user ID from m_payment_id
+    console.log('🔍 Processing m_payment_id:', m_payment_id);
     let userId = null;
-    if (m_payment_id && m_payment_id.startsWith('sub-')) {
-      const parts = m_payment_id.split('-');
-      if (parts.length >= 3) {
-        // Reconstruct UUID from the last parts
-        userId = parts.slice(2).join('-');
-        console.log('Extracted user ID from payment ID:', userId);
+    
+    if (m_payment_id) {
+      // Check if m_payment_id is a direct UUID (for testing)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      if (uuidRegex.test(m_payment_id)) {
+        userId = m_payment_id;
+        console.log('✅ m_payment_id is direct UUID:', userId);
+      } else if (m_payment_id.startsWith('sub-')) {
+        const parts = m_payment_id.split('-');
+        if (parts.length >= 3) {
+          // Reconstruct UUID from the last parts (sub-{timestamp}-{uuid})
+          userId = parts.slice(2).join('-');
+          console.log('✅ Extracted user ID from sub- format:', userId);
+        }
       }
     }
 
