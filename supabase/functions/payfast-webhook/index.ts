@@ -63,79 +63,145 @@ serve(async (req) => {
     } = ipnData;
 
     console.log('Processing payment for:', email_address, 'Status:', payment_status);
+    console.log('Payment ID format:', m_payment_id);
+    console.log('Token received:', token);
 
-    // Find user by email - need to get from auth.users since profiles doesn't have email
-    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+    // Extract user ID from m_payment_id format: sub-{timestamp}-{uuid}
+    let userId = null;
+    if (m_payment_id && m_payment_id.startsWith('sub-')) {
+      const parts = m_payment_id.split('-');
+      if (parts.length >= 3) {
+        // Reconstruct UUID from the last parts
+        userId = parts.slice(2).join('-');
+        console.log('Extracted user ID from payment ID:', userId);
+      }
+    }
+
+    // If we couldn't extract UUID from payment ID, find user by email
+    if (!userId) {
+      console.log('Could not extract user ID from payment ID, falling back to email lookup');
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('Error fetching auth users:', authError);
+        return new Response('Auth error', { 
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+      
+      const authUser = authUsers.users.find(u => u.email === email_address);
+      if (!authUser) {
+        console.error('User not found with email:', email_address);
+        return new Response('User not found', { 
+          status: 404,
+          headers: corsHeaders
+        });
+      }
+      userId = authUser.id;
+    }
+
+    console.log('Final user ID for processing:', userId);
     
-    if (authError) {
-      console.error('Error fetching auth users:', authError);
-      return new Response('Auth error', { 
+    // Get user profile and log current state
+    const { data: userBefore, error: userError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userError) {
+      console.error('Error fetching user profile:', userError);
+      return new Response('Database error', { 
         status: 500,
         headers: corsHeaders
       });
     }
-    
-    const authUser = authUsers.users.find(u => u.email === email_address);
-    if (!authUser) {
-      console.error('User not found with email:', email_address);
-      return new Response('User not found', { 
-        status: 404,
-        headers: corsHeaders
-      });
-    }
-    
-    // Get user profile
-    const { data: user, error: userError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', authUser.id)
-      .single();
 
-    if (userError || !user) {
-      console.error('User not found:', userError);
-      return new Response('User not found', { 
+    if (!userBefore) {
+      console.error('User profile not found for ID:', userId);
+      return new Response('User profile not found', { 
         status: 404,
         headers: corsHeaders
       });
     }
+
+    console.log('User profile before update:', {
+      id: userBefore.id,
+      has_active_subscription: userBefore.has_active_subscription,
+      subscription_status: userBefore.subscription_status,
+      trial_expired: userBefore.trial_expired
+    });
 
     // Update user subscription status
     if (payment_status === 'COMPLETE') {
-      console.log('Updating user subscription status to active');
+      console.log('Updating user subscription status to active for user:', userId);
       
-      const { error: updateError } = await supabase
+      const updateData = {
+        subscription_status: 'active',
+        pf_subscription_id: subscription_id || m_payment_id, // Use subscription_id if available, fallback to m_payment_id
+        payfast_billing_token: token,
+        subscription_amount: parseFloat(amount_gross),
+        has_active_subscription: true,
+        trial_expired: false,
+        billing_start_date: billing_date ? new Date(billing_date).toISOString() : new Date().toISOString()
+      };
+
+      console.log('Update data being applied:', updateData);
+      
+      const { data: updateResult, error: updateError } = await supabase
         .from('profiles')
-        .update({
-          subscription_status: 'active',
-          pf_subscription_id: subscription_id,
-          payfast_billing_token: token, // Store the billing token for future cancellations
-          subscription_amount: parseFloat(amount_gross),
-          has_active_subscription: true,
-          trial_expired: false,
-          billing_start_date: billing_date ? new Date(billing_date).toISOString() : new Date().toISOString()
-        })
-        .eq('id', user.id);
+        .update(updateData)
+        .eq('id', userId)
+        .select();
 
       if (updateError) {
         console.error('Error updating user profile:', updateError);
+        return new Response('Profile update failed', { 
+          status: 500,
+          headers: corsHeaders
+        });
       }
+
+      console.log('Profile update result:', updateResult);
+      console.log('Number of rows updated:', updateResult?.length || 0);
+
+      if (!updateResult || updateResult.length === 0) {
+        console.error('No rows were updated - user ID may not exist:', userId);
+        return new Response('No rows updated', { 
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+
+      // Log the updated profile
+      console.log('User profile after update:', {
+        id: updateResult[0].id,
+        has_active_subscription: updateResult[0].has_active_subscription,
+        subscription_status: updateResult[0].subscription_status,
+        trial_expired: updateResult[0].trial_expired,
+        payfast_billing_token: updateResult[0].payfast_billing_token
+      });
     }
 
     // Insert subscription record
-    const { error: subError } = await supabase
+    const { data: subResult, error: subError } = await supabase
       .from('payfast_subscriptions')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         email: email_address,
         invoice_id: m_payment_id,
-        pf_subscription_id: subscription_id,
+        pf_subscription_id: subscription_id || m_payment_id,
         status: payment_status,
         amount: parseFloat(amount_gross),
         raw_data: ipnData
-      });
+      })
+      .select();
 
     if (subError) {
-      console.error('Error inserting subscription:', subError);
+      console.error('Error inserting subscription record:', subError);
+    } else {
+      console.log('Subscription record inserted:', subResult);
     }
 
     console.log('PayFast webhook processed successfully');
