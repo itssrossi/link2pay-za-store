@@ -24,7 +24,7 @@ const generatePayFastSubscriptionLink = ({
     merchant_key: 'kse495ugy7ekz',
     return_url: `${window.location.origin}/billing/success`,
     cancel_url: `${window.location.origin}/billing/cancelled`,
-    notify_url: 'https://mpzqlidtvlbijloeusuj.supabase.co/functions/v1/payfast-webhook',
+    notify_url: 'https://mpzqlidtvlbijloeusuj.supabase.co/functions/v1/payfast-notify',
     name_first: name.trim(),
     email_address: email.trim(),
     m_payment_id: invoiceId,
