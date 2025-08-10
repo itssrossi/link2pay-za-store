@@ -13,6 +13,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Starting subscription cancellation process...");
+    
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
@@ -24,89 +26,95 @@ serve(async (req) => {
     const user = data.user;
 
     if (!user) {
+      console.error("User not authenticated");
       throw new Error("User not authenticated");
     }
 
-    // Get user's billing token or subscription ID
+    console.log(`Processing cancellation for user: ${user.id}`);
+
+    // Get user's billing token
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('payfast_billing_token, pf_subscription_id')
+      .select('payfast_billing_token, pf_subscription_id, payfast_merchant_id, payfast_merchant_key, payfast_passphrase')
       .eq('id', user.id)
       .single();
 
-    // Check if user has either billing token or subscription ID
-    const billingToken = profile?.payfast_billing_token;
-    const subscriptionId = profile?.pf_subscription_id;
-    
-    if (!billingToken && !subscriptionId) {
-      throw new Error("No active subscription found");
-    }
-
-    // Call PayFast API to cancel subscription
-    const merchantId = "18305104";
-    const merchantKey = "kse495ugy7ekz";
-    const passphrase = "Bonbon123123";
-
-    // Use billing token if available, otherwise use subscription ID
-    const cancelData = billingToken ? {
-      merchant_id: merchantId,
-      merchant_key: merchantKey,
-      token: billingToken,
-      passphrase: passphrase
-    } : {
-      merchant_id: merchantId,
-      merchant_key: merchantKey,
-      subscription_id: subscriptionId,
-      passphrase: passphrase
-    };
-
-    // Generate signature for cancellation
-    const createSignature = (data: any) => {
-      const crypto = globalThis.crypto;
-      
-      const keys = Object.keys(data).sort();
-      let pfOutput = "";
-      for (const key of keys) {
-        if (data[key] !== "") {
-          pfOutput += `${key}=${encodeURIComponent(data[key].toString().trim()).replace(/%20/g, "+")}&`;
-        }
-      }
-      pfOutput = pfOutput.slice(0, -1);
-
-      
-      return crypto.subtle.digest("SHA-1", new TextEncoder().encode(pfOutput))
-        .then(hashBuffer => {
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        });
-    };
-
-    const signature = await createSignature(cancelData);
-
-    // Make request to PayFast to cancel subscription
-    const cancelUrl = billingToken 
-      ? "https://api.payfast.co.za/subscriptions/cancel"
-      : "https://api.payfast.co.za/subscriptions/cancel";
-      
-    const response = await fetch(cancelUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        ...cancelData,
-        signature: signature
-      }),
+    console.log("Profile data retrieved:", { 
+      hasToken: !!profile?.payfast_billing_token,
+      hasSubscriptionId: !!profile?.pf_subscription_id,
+      hasMerchantId: !!profile?.payfast_merchant_id
     });
 
-    if (response.ok) {
+    // Check if user has billing token
+    const billingToken = profile?.payfast_billing_token;
+    
+    if (!billingToken) {
+      console.error("No billing token found for user");
+      throw new Error("No active subscription token found");
+    }
+
+    // Get PayFast credentials from environment or profile
+    const merchantId = profile?.payfast_merchant_id || Deno.env.get("PAYFAST_MERCHANT_ID") || "18305104";
+    const merchantKey = profile?.payfast_merchant_key || Deno.env.get("PAYFAST_MERCHANT_KEY") || "kse495ugy7ekz";
+    const passphrase = profile?.payfast_passphrase || Deno.env.get("PAYFAST_PASSPHRASE") || "Bonbon123123";
+
+    // Create timestamp in ISO 8601 format
+    const timestamp = new Date().toISOString();
+    
+    // Prepare cancellation data in JSON format (PayFast API v1 format)
+    const cancelData = {
+      "version": "v1",
+      "timestamp": timestamp,
+      "passphrase": passphrase,
+      "merchant-id": merchantId
+    };
+
+    console.log("Cancellation data prepared:", { 
+      version: cancelData.version,
+      timestamp: cancelData.timestamp,
+      merchantId: cancelData["merchant-id"],
+      token: billingToken
+    });
+
+    // PayFast API endpoint for cancellation
+    const cancelUrl = `https://api.payfast.co.za/subscriptions/${billingToken}/cancel`;
+    
+    console.log(`Making PUT request to: ${cancelUrl}`);
+    
+    const response = await fetch(cancelUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "merchant-id": merchantId,
+        "merchant-key": merchantKey,
+        "timestamp": timestamp,
+        "version": "v1"
+      },
+      body: JSON.stringify(cancelData),
+    });
+
+    console.log("PayFast response status:", response.status);
+    const responseText = await response.text();
+    console.log("PayFast response body:", responseText);
+
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Failed to parse PayFast response as JSON:", responseText);
+      responseData = { response: responseText };
+    }
+
+    if (response.ok && (responseData.response === true || response.status === 200)) {
+      console.log("PayFast cancellation successful, updating database...");
+      
       // Update user profile
       const supabaseService = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
       );
 
-      await supabaseService
+      const { error: updateError } = await supabaseService
         .from('profiles')
         .update({
           has_active_subscription: false,
@@ -117,27 +125,53 @@ serve(async (req) => {
         })
         .eq('id', user.id);
 
+      if (updateError) {
+        console.error("Error updating profile:", updateError);
+        throw new Error("Failed to update subscription status");
+      }
+
       // Record cancellation transaction
-      await supabaseService
+      const { error: transactionError } = await supabaseService
         .from('subscription_transactions')
         .insert({
           user_id: user.id,
           transaction_type: 'cancellation',
           status: 'completed',
-          reference: 'Subscription cancelled by user'
+          reference: 'Subscription cancelled by user',
+          payfast_payment_id: billingToken
         });
 
-      return new Response(JSON.stringify({ success: true }), {
+      if (transactionError) {
+        console.error("Error creating transaction record:", transactionError);
+        // Don't throw here, cancellation was successful
+      }
+
+      console.log("Subscription cancellation completed successfully");
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: "Subscription cancelled successfully",
+        payfast_response: responseData 
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     } else {
-      throw new Error("Failed to cancel subscription with PayFast");
+      console.error("PayFast cancellation failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        response: responseData
+      });
+      
+      throw new Error(`PayFast cancellation failed: ${response.status} - ${responseData.message || responseText}`);
     }
 
   } catch (error) {
     console.error("Error in cancel-subscription:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: "Please contact support if this issue persists" 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

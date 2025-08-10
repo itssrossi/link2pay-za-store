@@ -103,11 +103,25 @@ const SubscriptionTab = () => {
     setCancelling(true);
 
     try {
-      const { error } = await supabase.functions.invoke('cancel-subscription');
+      console.log('Attempting to cancel subscription...');
       
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke('cancel-subscription');
+      
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
 
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
+        throw new Error(data.error);
+      }
+
+      console.log('Cancellation successful:', data);
       toast.success('Subscription cancelled successfully. You will be logged out.');
+      
+      // Refresh subscription info to show updated status
+      await fetchSubscriptionInfo();
       
       // Log out user after successful cancellation
       setTimeout(async () => {
@@ -117,7 +131,8 @@ const SubscriptionTab = () => {
       
     } catch (error) {
       console.error('Error cancelling subscription:', error);
-      toast.error('Failed to cancel subscription. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to cancel subscription';
+      toast.error(`Cancellation failed: ${errorMessage}`);
     } finally {
       setCancelling(false);
     }
