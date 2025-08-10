@@ -10,7 +10,7 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-const PAYFAST_PASSPHRASE = 'Bonbon123123'; // You can move this to secrets later
+const PAYFAST_PASSPHRASE = Deno.env.get('PAYFAST_PASSPHRASE') || 'Bonbon123123'; // Prefer secret, fallback for dev
 
 const validateSignature = (data: any) => {
   const sorted = Object.keys(data)
@@ -39,7 +39,20 @@ serve(async (req) => {
   try {
     console.log('PayFast webhook received');
     
-    const ipnData = await req.json();
+    let ipnData: any;
+    const contentType = req.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      ipnData = await req.json();
+    } else {
+      const text = await req.text();
+      try {
+        const params = new URLSearchParams(text);
+        ipnData = Object.fromEntries(params.entries());
+      } catch (_) {
+        // Fallback: attempt to parse as JSON anyway
+        ipnData = JSON.parse(text);
+      }
+    }
     console.log('IPN Data:', ipnData);
 
     // Validate signature

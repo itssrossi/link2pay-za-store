@@ -34,6 +34,7 @@ interface SubscriptionInfo {
   cancelled_at: string | null;
   billing_failures: number;
   paystack_customer_code: string | null;
+  payfast_billing_token: string | null;
 }
 
 const SubscriptionTab = () => {
@@ -54,7 +55,7 @@ const SubscriptionTab = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('has_active_subscription, trial_ends_at, subscription_price, discount_applied, cancelled_at, billing_failures, paystack_customer_code')
+        .select('has_active_subscription, trial_ends_at, subscription_price, discount_applied, cancelled_at, billing_failures, paystack_customer_code, payfast_billing_token')
         .eq('id', user.id)
         .single();
 
@@ -262,7 +263,7 @@ const SubscriptionTab = () => {
                   <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={cancelSubscription}
-                    disabled={cancelling}
+                    disabled={cancelling || !subscriptionInfo.payfast_billing_token}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     {cancelling ? 'Cancelling...' : 'Yes, Cancel'}

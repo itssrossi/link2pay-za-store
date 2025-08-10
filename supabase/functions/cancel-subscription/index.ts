@@ -45,18 +45,52 @@ serve(async (req) => {
       hasMerchantId: !!profile?.payfast_merchant_id
     });
 
-    // Check if user has billing token
-    const billingToken = profile?.payfast_billing_token;
+    // Check if user has billing token; if missing, try to recover from latest PayFast record
+    let billingToken = profile?.payfast_billing_token as string | null | undefined;
+
+    if (!billingToken) {
+      console.warn("No billing token on profile. Attempting to recover from payfast_subscriptions...");
+      const { data: recentSubs, error: subsError } = await supabaseClient
+        .from('payfast_subscriptions')
+        .select('raw_data')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (subsError) {
+        console.error('Error fetching payfast_subscriptions:', subsError);
+      }
+
+      const raw = recentSubs?.[0]?.raw_data as any;
+      const recoveredToken = raw?.token || raw?.billing_token || raw?.subscription_token;
+      if (recoveredToken) {
+        console.log('Recovered billing token from payfast_subscriptions');
+        billingToken = recoveredToken;
+        // Persist recovered token for future use
+        const { error: persistError } = await supabaseClient
+          .from('profiles')
+          .update({ payfast_billing_token: billingToken })
+          .eq('id', user.id);
+        if (persistError) {
+          console.warn('Failed to persist recovered token:', persistError);
+        }
+      }
+    }
     
     if (!billingToken) {
       console.error("No billing token found for user");
       throw new Error("No active subscription token found");
     }
 
-    // Get PayFast credentials from environment or profile
-    const merchantId = profile?.payfast_merchant_id || Deno.env.get("PAYFAST_MERCHANT_ID") || "18305104";
-    const merchantKey = profile?.payfast_merchant_key || Deno.env.get("PAYFAST_MERCHANT_KEY") || "kse495ugy7ekz";
-    const passphrase = profile?.payfast_passphrase || Deno.env.get("PAYFAST_PASSPHRASE") || "Bonbon123123";
+    // Get PayFast credentials from environment or profile (prefer profile)
+    const merchantId = profile?.payfast_merchant_id || Deno.env.get("PAYFAST_MERCHANT_ID") || "";
+    const merchantKey = profile?.payfast_merchant_key || Deno.env.get("PAYFAST_MERCHANT_KEY") || "";
+    const passphrase = profile?.payfast_passphrase || Deno.env.get("PAYFAST_PASSPHRASE") || "";
+
+    if (!merchantId || !merchantKey || !passphrase) {
+      console.error('Missing PayFast merchant credentials');
+      throw new Error('Missing PayFast merchant credentials');
+    }
 
     // Create timestamp in ISO 8601 format
     const timestamp = new Date().toISOString();
