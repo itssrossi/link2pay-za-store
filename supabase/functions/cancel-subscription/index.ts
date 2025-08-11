@@ -7,6 +7,36 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// MD5 hash function for PayFast signature verification
+async function md5Hash(text: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await crypto.subtle.digest("MD5", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+// Generate PayFast signature for API requests
+async function generatePayFastSignature(params: Record<string, string>, passphrase: string): Promise<string> {
+  // Sort parameters alphabetically by key (excluding empty values)
+  const sortedKeys = Object.keys(params).filter(key => params[key] !== "").sort();
+  
+  // Build parameter string
+  const paramString = sortedKeys.map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
+  
+  // Add passphrase if provided
+  const stringToHash = passphrase ? `${paramString}&passphrase=${passphrase}` : paramString;
+  
+  console.log("Signature string:", stringToHash);
+  
+  // Generate MD5 hash
+  const signature = await md5Hash(stringToHash);
+  console.log("Signature calculated:", signature);
+  
+  return signature;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -95,36 +125,43 @@ serve(async (req) => {
     // Create timestamp in ISO 8601 format
     const timestamp = new Date().toISOString();
     
-    // Prepare cancellation data in JSON format (PayFast API v1 format)
-    const cancelData = {
+    // Prepare cancellation parameters for PayFast API
+    const cancelParams = {
+      "merchant-id": merchantId,
       "version": "v1",
-      "timestamp": timestamp,
-      "passphrase": passphrase,
-      "merchant-id": merchantId
+      "timestamp": timestamp
     };
 
     console.log("Cancellation data prepared:", { 
-      version: cancelData.version,
-      timestamp: cancelData.timestamp,
-      merchantId: cancelData["merchant-id"],
+      "merchant-id": cancelParams["merchant-id"],
+      timestamp: cancelParams.timestamp,
+      version: cancelParams.version,
       token: billingToken
     });
+
+    // Generate PayFast signature
+    const signature = await generatePayFastSignature(cancelParams, passphrase);
+    
+    // Add signature to parameters
+    const finalParams = {
+      ...cancelParams,
+      signature: signature
+    };
+
+    // Convert to URL-encoded format
+    const formData = new URLSearchParams(finalParams);
 
     // PayFast API endpoint for cancellation
     const cancelUrl = `https://api.payfast.co.za/subscriptions/${billingToken}/cancel`;
     
-    console.log(`Making PUT request to: ${cancelUrl}`);
+    console.log(`Making POST request to: ${cancelUrl}`);
     
     const response = await fetch(cancelUrl, {
-      method: "PUT",
+      method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "merchant-id": merchantId,
-        "merchant-key": merchantKey,
-        "timestamp": timestamp,
-        "version": "v1"
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: JSON.stringify(cancelData),
+      body: formData.toString(),
     });
 
     console.log("PayFast response status:", response.status);
