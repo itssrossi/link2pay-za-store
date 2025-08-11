@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { createHash } from "https://deno.land/std@0.190.0/hash/mod.ts";
+import md5 from "https://esm.sh/blueimp-md5@2.19.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +10,7 @@ const corsHeaders = {
 
 // MD5 hash function for PayFast signature verification
 function md5Hash(text: string): string {
-  return createHash("md5").update(text).toString();
+  return md5(text);
 }
 
 // Generate PayFast signature for API requests
