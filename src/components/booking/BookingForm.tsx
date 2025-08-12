@@ -134,7 +134,7 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
       if (profile?.whatsapp_number) {
         const bookingDate = format(selectedDate, 'dd MMMM yyyy');
         const phoneDisplay = formData.customerPhone ? `+${formatPhoneForWhatsApp(formData.customerPhone)}` : '';
-        const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${phoneDisplay}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}`;
+        const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${phoneDisplay}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}\n\nPlease send through the invoice.`;
         const whatsappLink = createWhatsAppLink(profile.whatsapp_number, message);
         const win = window.open(whatsappLink, '_blank');
         if (!win) {
@@ -173,7 +173,7 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
     if (!whatsappSent && businessProfile?.whatsapp_number) {
       const bookingDate = format(selectedDate, 'dd MMMM yyyy');
       const phoneDisplay = formData.customerPhone ? `+${formatPhoneForWhatsApp(formData.customerPhone)}` : '';
-      const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${phoneDisplay}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}`;
+      const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${phoneDisplay}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}\n\nPlease send through the invoice.`;
       const whatsappLink = createWhatsAppLink(businessProfile.whatsapp_number, message);
       const win = window.open(whatsappLink, '_blank');
       if (!win) {
