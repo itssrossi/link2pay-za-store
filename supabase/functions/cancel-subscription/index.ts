@@ -1,32 +1,30 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import md5 from "https://esm.sh/blueimp-md5@2.19.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Generate PayFast signature for API requests (using same method as notify function)
+// Generate PayFast signature for API requests (using same method as billing setup)
 async function generatePayFastSignature(params: Record<string, string>, passphrase: string): Promise<string> {
   // Sort parameters alphabetically by key (excluding empty values and signature)
   const sortedKeys = Object.keys(params)
     .filter(key => params[key] !== "" && key !== 'signature')
     .sort();
   
-  // Build parameter string
-  const paramString = sortedKeys.map(key => `${key}=${params[key]}`).join('&');
+  // Build parameter string (URL encoded like billing setup)
+  const paramString = sortedKeys.map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
   
   // Add passphrase
   const stringToHash = `${paramString}&passphrase=${passphrase}`;
   
   console.log("Signature string:", stringToHash);
   
-  // Generate MD5 hash using crypto.subtle like the notify function
-  const encoder = new TextEncoder();
-  const hashBuffer = await crypto.subtle.digest('MD5', encoder.encode(stringToHash));
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  // Generate MD5 hash using blueimp-md5 (same as billing setup)
+  const signature = md5(stringToHash);
   
   console.log("Signature calculated:", signature);
   
