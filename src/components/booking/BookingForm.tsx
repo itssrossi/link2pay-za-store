@@ -76,8 +76,8 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
     try {
       setLoading(true);
       
-      // Create the booking
-      const { data: bookingInsert, error: bookingError } = await supabase
+      // Create the booking (no select to avoid SELECT RLS)
+      const { error: bookingError } = await supabase
         .from('bookings')
         .insert({
           user_id: userId,
@@ -88,28 +88,24 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
           booking_time: selectedTime,
           notes: formData.notes,
           status: 'confirmed'
-        })
-        .select('id')
-        .single();
+        });
 
       if (bookingError) {
         console.error('Error creating booking:', bookingError);
         toast({
           title: "Error",
-          description: "Failed to create booking. Please try again.",
+          description: bookingError?.message ?? "Failed to create booking. Please try again.",
           variant: "destructive",
         });
         return;
       }
 
       // Update the time slot to mark it as booked via Edge Function (bypasses RLS)
-      const bookingId = bookingInsert?.id as string | undefined;
       const { error: markError } = await supabase.functions.invoke('mark-time-slot', {
         body: {
           userId,
           date: format(selectedDate, 'yyyy-MM-dd'),
           timeSlot: selectedTime,
-          bookingId,
         },
       });
 
