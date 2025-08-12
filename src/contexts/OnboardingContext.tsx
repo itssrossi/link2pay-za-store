@@ -49,19 +49,20 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           .from('profiles')
           .select('onboarding_completed, has_active_subscription, trial_ends_at')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error fetching profile:', error);
-          
-        if (error.code === 'PGRST116') {
-            console.log('Profile not found - setting up for billing');
-            // Profile doesn't exist yet, user needs billing setup
-            setNeedsBillingSetup(true);
-            setNeedsSubscriptionPayment(false);
-            setShowOnboarding(false);
-          }
-        } else if (profile) {
+          return; // Exit early on error
+        }
+
+        if (!profile) {
+          console.log('Profile not found - setting up for billing');
+          // Profile doesn't exist yet, user needs billing setup
+          setNeedsBillingSetup(true);
+          setNeedsSubscriptionPayment(false);
+          setShowOnboarding(false);
+        } else {
           console.log('Profile data:', profile);
           
           // If user has active subscription (including dev accounts), no billing setup needed
