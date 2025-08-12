@@ -99,7 +99,7 @@ const Dashboard = () => {
         .from('profiles')
         .select('store_handle')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       const totalRevenue = invoices?.reduce((sum, invoice) => sum + invoice.total_amount, 0) || 0;
       const pendingInvoices = invoices?.filter(inv => inv.status === 'pending').length || 0;

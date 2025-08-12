@@ -4,8 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { MapPin } from 'lucide-react';
+import { MapPin, Wand2 } from 'lucide-react';
 import ImageUpload from '@/components/ui/image-upload';
+import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 
 interface Profile {
@@ -47,9 +50,45 @@ interface BusinessProfileTabProps {
 }
 
 const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessProfileTabProps) => {
+  const [generatingHandle, setGeneratingHandle] = useState(false);
+
   const handleChange = (field: string, value: string) => {
     setProfile({ ...profile, [field]: value });
   };
+
+  const generateStoreHandle = async (businessName: string) => {
+    if (!businessName.trim()) {
+      toast.error('Please enter a business name first');
+      return;
+    }
+
+    setGeneratingHandle(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-unique-handle', {
+        body: { businessName: businessName.trim() }
+      });
+
+      if (error) {
+        console.error('Error generating handle:', error);
+        toast.error('Failed to generate store handle');
+      } else if (data?.uniqueHandle) {
+        setProfile({ ...profile, store_handle: data.uniqueHandle });
+        toast.success('Store handle generated successfully');
+      }
+    } catch (error) {
+      console.error('Error calling generate-unique-handle:', error);
+      toast.error('Failed to generate store handle');
+    } finally {
+      setGeneratingHandle(false);
+    }
+  };
+
+  // Auto-generate handle when business name changes
+  useEffect(() => {
+    if (profile?.business_name && !profile?.store_handle) {
+      generateStoreHandle(profile.business_name);
+    }
+  }, [profile?.business_name]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -104,15 +143,30 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
 
           <div>
             <Label htmlFor="store_handle">Store Handle</Label>
-            <Input
-              id="store_handle"
-              value={profile?.store_handle || ''}
-              onChange={(e) => handleChange('store_handle', e.target.value)}
-              placeholder="your-store-name"
-              className="mt-1"
-            />
+            <div className="flex gap-2 mt-1">
+              <Input
+                id="store_handle"
+                value={profile?.store_handle || ''}
+                onChange={(e) => handleChange('store_handle', e.target.value)}
+                placeholder="your-store-name"
+                className="flex-1"
+              />
+              <Button 
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => generateStoreHandle(profile?.business_name || '')}
+                disabled={generatingHandle || !profile?.business_name}
+                className="px-3"
+              >
+                <Wand2 className="w-4 h-4" />
+              </Button>
+            </div>
             <p className="text-sm text-gray-500 mt-1">
               Your store URL: link2pay.co.za/store/{profile?.store_handle || 'your-store-name'}
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              Click the magic wand to auto-generate from business name
             </p>
           </div>
         </CardContent>
