@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
 import ImageUpload from '@/components/ui/image-upload';
-import DeleteAccountDialog from './DeleteAccountDialog';
+
 
 interface Profile {
   business_name: string;
@@ -143,19 +143,6 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
         </CardContent>
       </Card>
 
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="text-destructive text-lg sm:text-xl">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-destructive/10 p-4 rounded-lg">
-            <p className="text-sm text-destructive mb-4">
-              Once you delete your account, there is no going back. Please be certain.
-            </p>
-            <DeleteAccountDialog />
-          </div>
-        </CardContent>
-      </Card>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Button 

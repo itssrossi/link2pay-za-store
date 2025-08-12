@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { toast } from 'sonner';
-import { createWhatsAppLink } from '@/utils/phoneFormatter';
+import { BookingConfirmationModal } from './BookingConfirmationModal';
 
 interface BookingFormProps {
   userId: string;
@@ -24,13 +24,8 @@ interface BookingData {
   notes: string;
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({
-  userId,
-  selectedDate,
-  selectedTime,
-  onBookingComplete,
-  onCancel
-}) => {
+const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, onCancel }: BookingFormProps) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState<BookingData>({
     customerName: '',
     customerEmail: '',
@@ -38,6 +33,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
     notes: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [businessProfile, setBusinessProfile] = useState<any>(null);
 
   const handleInputChange = (field: keyof BookingData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -45,15 +42,27 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const validateForm = (): boolean => {
     if (!formData.customerName.trim()) {
-      toast.error('Please enter your name');
+      toast({
+        title: "Error",
+        description: "Please enter your name",
+        variant: "destructive",
+      });
       return false;
     }
     if (!formData.customerEmail.trim()) {
-      toast.error('Please enter your email address');
+      toast({
+        title: "Error",
+        description: "Please enter your email address",
+        variant: "destructive",
+      });
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.customerEmail)) {
-      toast.error('Please enter a valid email address');
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
       return false;
     }
     return true;
@@ -64,168 +73,190 @@ const BookingForm: React.FC<BookingFormProps> = ({
     
     if (!validateForm()) return;
 
-    setLoading(true);
     try {
-      console.log('Starting booking creation...');
+      setLoading(true);
       
       // Create the booking
-      const { data: booking, error: bookingError } = await supabase
+      const { error: bookingError } = await supabase
         .from('bookings')
         .insert({
           user_id: userId,
           customer_name: formData.customerName,
           customer_email: formData.customerEmail,
-          customer_phone: formData.customerPhone || null,
+          customer_phone: formData.customerPhone,
           booking_date: format(selectedDate, 'yyyy-MM-dd'),
           booking_time: selectedTime,
-          notes: formData.notes || null,
+          notes: formData.notes,
           status: 'confirmed'
-        })
-        .select()
-        .single();
-
-      if (bookingError) {
-        console.error('Booking creation error:', bookingError);
-        throw bookingError;
-      }
-
-      console.log('Booking created successfully:', booking);
-
-      // Create or update the time slot
-      const { error: slotError } = await supabase
-        .from('booking_time_slots')
-        .upsert({
-          user_id: userId,
-          date: format(selectedDate, 'yyyy-MM-dd'),
-          time_slot: selectedTime,
-          is_booked: true,
-          booking_id: booking.id
         });
 
-      if (slotError) {
-        console.error('Time slot update error:', slotError);
-        throw slotError;
+      if (bookingError) {
+        console.error('Error creating booking:', bookingError);
+        toast({
+          title: "Error",
+          description: "Failed to create booking. Please try again.",
+          variant: "destructive",
+        });
+        return;
       }
 
-      console.log('Time slot updated successfully');
+      // Update the time slot to mark it as booked
+      const { error: slotError } = await supabase
+        .from('booking_time_slots')
+        .update({ is_booked: true })
+        .eq('user_id', userId)
+        .eq('date', format(selectedDate, 'yyyy-MM-dd'))
+        .eq('time_slot', selectedTime);
 
-      // Get business profile to get WhatsApp number
+      if (slotError) {
+        console.error('Error updating time slot:', slotError);
+        toast({
+          title: "Warning",
+          description: "Booking created but time slot may still appear available.",
+          variant: "destructive",
+        });
+      }
+
+      // Get business profile for WhatsApp message and modal
       const { data: profile } = await supabase
         .from('profiles')
-        .select('whatsapp_number, business_name')
+        .select('business_name, whatsapp_number, store_address')
         .eq('id', userId)
         .single();
 
-      console.log('Profile data:', profile);
+      setBusinessProfile(profile);
+      
+      // Show confirmation modal first
+      setShowConfirmationModal(true);
 
-      if (profile?.whatsapp_number) {
-        // Generate WhatsApp message from customer's perspective
-        const message = `Hi, my name is ${booking.customer_name}. I'd like to book an appointment for ${format(selectedDate, 'EEEE, MMMM do, yyyy')} at ${booking.booking_time}. My email is ${booking.customer_email}${booking.customer_phone ? ` and my phone number is ${booking.customer_phone}` : ''}${booking.notes ? `. Additional notes: ${booking.notes}` : ''}.`;
-
-        // Use the proper WhatsApp link utility
-        const whatsappUrl = createWhatsAppLink(profile.whatsapp_number, message);
-        console.log('Opening WhatsApp URL:', whatsappUrl);
-        
-        try {
-          window.open(whatsappUrl, '_blank');
-          toast.success('Booking confirmed! Opening WhatsApp...');
-        } catch (error) {
-          console.error('Error opening WhatsApp:', error);
-          toast.success('Booking confirmed! Please contact the business via WhatsApp.');
-        }
-      } else {
-        console.log('No WhatsApp number found for store owner');
-        toast.success('Booking confirmed! The business will contact you soon.');
-      }
-
-      // Execute booking completion callback
-      onBookingComplete();
+      toast({
+        title: "Success",
+        description: "Booking confirmed successfully!",
+      });
 
     } catch (error) {
-      console.error('Error creating booking:', error);
-      toast.error('Failed to create booking. Please try again.');
+      console.error('Error submitting booking:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const formattedDate = format(selectedDate, 'EEEE, MMMM d, yyyy');
+
+  const handleCloseModal = () => {
+    setShowConfirmationModal(false);
+    
+    // Send WhatsApp message after modal is closed
+    if (businessProfile?.whatsapp_number) {
+      const bookingDate = format(selectedDate, 'dd MMMM yyyy');
+      const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${formData.customerPhone}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}`;
+      
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/${businessProfile.whatsapp_number.replace(/[^\d]/g, '')}?text=${encodedMessage}`;
+      
+      window.open(whatsappUrl, '_blank');
+    }
+    
+    onBookingComplete();
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Book Appointment</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          {format(selectedDate, 'EEEE, MMMM do')} at {selectedTime}
-        </p>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="customerName">Full Name *</Label>
-            <Input
-              id="customerName"
-              value={formData.customerName}
-              onChange={(e) => handleInputChange('customerName', e.target.value)}
-              placeholder="Enter your full name"
-              required
-            />
-          </div>
+    <>
+      <BookingConfirmationModal
+        isOpen={showConfirmationModal}
+        onClose={handleCloseModal}
+        bookingData={{
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          bookingDate: selectedDate,
+          bookingTime: selectedTime,
+          notes: formData.notes
+        }}
+        storeLocation={businessProfile?.store_address}
+      />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Book Your Appointment</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {formattedDate} at {selectedTime}
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="customerName">Full Name *</Label>
+              <Input
+                id="customerName"
+                value={formData.customerName}
+                onChange={(e) => handleInputChange('customerName', e.target.value)}
+                placeholder="Enter your full name"
+                required
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="customerEmail">Email Address *</Label>
-            <Input
-              id="customerEmail"
-              type="email"
-              value={formData.customerEmail}
-              onChange={(e) => handleInputChange('customerEmail', e.target.value)}
-              placeholder="Enter your email address"
-              required
-            />
-          </div>
+            <div>
+              <Label htmlFor="customerEmail">Email Address *</Label>
+              <Input
+                id="customerEmail"
+                type="email"
+                value={formData.customerEmail}
+                onChange={(e) => handleInputChange('customerEmail', e.target.value)}
+                placeholder="Enter your email address"
+                required
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="customerPhone">Phone Number (Optional)</Label>
-            <Input
-              id="customerPhone"
-              type="tel"
-              value={formData.customerPhone}
-              onChange={(e) => handleInputChange('customerPhone', e.target.value)}
-              placeholder="Enter your phone number"
-            />
-          </div>
+            <div>
+              <Label htmlFor="customerPhone">Phone Number</Label>
+              <Input
+                id="customerPhone"
+                type="tel"
+                value={formData.customerPhone}
+                onChange={(e) => handleInputChange('customerPhone', e.target.value)}
+                placeholder="Enter your phone number"
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="notes">Additional Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Any special requests or information..."
-              rows={3}
-            />
-          </div>
+            <div>
+              <Label htmlFor="notes">Additional Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                placeholder="Any special requests or information..."
+                rows={3}
+              />
+            </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={loading}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="flex-1"
-            >
-              {loading ? 'Booking...' : 'Confirm Booking'}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={loading}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="flex-1"
+              >
+                {loading ? 'Booking...' : 'Confirm Booking'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </>
   );
 };
 
