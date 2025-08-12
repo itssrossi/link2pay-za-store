@@ -79,8 +79,12 @@ const Settings = () => {
   };
 
   const handleSaveProfile = async () => {
-    if (!profile || !user) return;
+    if (!profile || !user) {
+      console.log('Cannot save: missing profile or user', { profile: !!profile, user: !!user });
+      return;
+    }
     
+    console.log('Saving profile:', profile);
     setLoading(true);
     try {
       const payload = {
@@ -88,6 +92,8 @@ const Settings = () => {
         ...profile,
         updated_at: new Date().toISOString(),
       };
+
+      console.log('Save payload:', payload);
 
       const { error } = await supabase
         .from('profiles')
@@ -97,6 +103,7 @@ const Settings = () => {
         console.error('Error updating profile:', error);
         toast.error('Failed to save changes. Please try again.');
       } else {
+        console.log('Profile saved successfully');
         toast.success('Profile saved successfully');
       }
     } catch (error) {
