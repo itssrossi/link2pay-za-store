@@ -83,19 +83,46 @@ const Settings = () => {
     
     setLoading(true);
     try {
+      const payload = {
+        id: user.id,
+        ...profile,
+        updated_at: new Date().toISOString(),
+      };
+
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
-          ...profile,
-          updated_at: new Date().toISOString()
-        });
+        .upsert(payload);
 
       if (error) {
-        console.error('Error updating profile:', error);
+        // Handle unique store_handle constraint specifically so other fields can still save
+        if (error.code === '23505' && (error as any).message?.includes('unique_store_handle')) {
+          const { store_handle, ...rest } = profile || {};
+          const fallbackPayload = {
+            id: user.id,
+            ...rest,
+            updated_at: new Date().toISOString(),
+          };
+
+          const { error: retryError } = await supabase
+            .from('profiles')
+            .upsert(fallbackPayload);
+
+          if (retryError) {
+            console.error('Retry upsert without store_handle failed:', retryError);
+            toast.error('Could not save changes. Please try again.');
+          } else {
+            toast.warning('Store handle is already taken. Other changes were saved.');
+          }
+        } else {
+          console.error('Error updating profile:', error);
+          toast.error('Failed to save changes. Please try again.');
+        }
+      } else {
+        toast.success('Profile saved successfully');
       }
     } catch (error) {
       console.error('Error in handleSaveProfile:', error);
+      toast.error('Unexpected error while saving.');
     } finally {
       setLoading(false);
     }

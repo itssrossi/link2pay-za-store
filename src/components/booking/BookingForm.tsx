@@ -137,7 +137,11 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
         const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${phoneDisplay}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}`;
         const whatsappLink = createWhatsAppLink(profile.whatsapp_number, message);
         const win = window.open(whatsappLink, '_blank');
-        if (win) setWhatsappSent(true);
+        if (!win) {
+          // Popup blocked – ignore here; fallback will redirect on modal close
+        } else {
+          setWhatsappSent(true);
+        }
       }
 
       // Show confirmation modal
@@ -172,7 +176,13 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
       const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${phoneDisplay}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}`;
       const whatsappLink = createWhatsAppLink(businessProfile.whatsapp_number, message);
       const win = window.open(whatsappLink, '_blank');
-      if (win) setWhatsappSent(true);
+      if (!win) {
+        // Popup blocked – perform a full-page redirect as fallback
+        window.location.href = whatsappLink;
+        setWhatsappSent(true);
+      } else {
+        setWhatsappSent(true);
+      }
     }
     
     onBookingComplete();
