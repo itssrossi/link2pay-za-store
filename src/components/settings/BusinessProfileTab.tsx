@@ -56,22 +56,32 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
 
   const generateStoreHandle = async (businessName: string) => {
     if (!businessName.trim()) return;
+    
+    console.log('Generating store handle for:', businessName);
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-unique-handle', {
         body: { businessName: businessName.trim() }
       });
 
-      if (!error && data?.uniqueHandle) {
+      console.log('Store handle response:', { data, error });
+
+      if (error) {
+        console.error('Error generating handle:', error);
+        toast.error('Failed to generate store handle');
+      } else if (data?.uniqueHandle) {
         setProfile({ ...profile, store_handle: data.uniqueHandle });
+        toast.success('Store handle generated successfully');
       }
     } catch (error) {
-      console.error('Error generating handle:', error);
+      console.error('Error calling generate-unique-handle:', error);
+      toast.error('Failed to generate store handle');
     }
   };
 
   // Auto-generate handle when business name changes and no handle exists
   useEffect(() => {
+    console.log('useEffect triggered:', { businessName: profile?.business_name, storeHandle: profile?.store_handle });
     if (profile?.business_name && !profile?.store_handle) {
       generateStoreHandle(profile.business_name);
     }
