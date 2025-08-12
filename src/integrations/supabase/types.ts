@@ -435,6 +435,7 @@ export type Database = {
           delivery_note: string | null
           discount_applied: boolean | null
           eft_details: string | null
+          email: string | null
           full_name: string | null
           has_active_subscription: boolean | null
           header_banner_url: string | null
@@ -492,6 +493,7 @@ export type Database = {
           delivery_note?: string | null
           discount_applied?: boolean | null
           eft_details?: string | null
+          email?: string | null
           full_name?: string | null
           has_active_subscription?: boolean | null
           header_banner_url?: string | null
@@ -549,6 +551,7 @@ export type Database = {
           delivery_note?: string | null
           discount_applied?: boolean | null
           eft_details?: string | null
+          email?: string | null
           full_name?: string | null
           has_active_subscription?: boolean | null
           header_banner_url?: string | null
