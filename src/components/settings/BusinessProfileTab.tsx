@@ -9,6 +9,7 @@ import ImageUpload from '@/components/ui/image-upload';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import DeleteAccountDialog from '@/components/settings/DeleteAccountDialog';
 
 
 interface Profile {
@@ -179,6 +180,17 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
         </CardContent>
       </Card>
 
+      <Card className="border-destructive/20">
+        <CardHeader>
+          <CardTitle className="text-lg sm:text-xl text-destructive">Danger Zone</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Once you delete your account, there is no going back. Please be certain.
+          </p>
+          <DeleteAccountDialog />
+        </CardContent>
+      </Card>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Button 
