@@ -98,7 +98,7 @@ const Settings = () => {
           .select('id')
           .eq('store_handle', profile.store_handle)
           .neq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (existingProfile) {
           // Generate a unique handle
