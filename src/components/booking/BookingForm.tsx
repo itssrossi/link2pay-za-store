@@ -35,6 +35,8 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
   const [loading, setLoading] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [businessProfile, setBusinessProfile] = useState<any>(null);
+  const [whatsappSent, setWhatsappSent] = useState(false);
+  const [confirmationStoreLocation, setConfirmationStoreLocation] = useState<string | undefined>(undefined);
 
   const handleInputChange = (field: keyof BookingData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -123,11 +125,22 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
         .from('profiles')
         .select('business_name, whatsapp_number, store_address, store_location')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       setBusinessProfile(profile);
+      setConfirmationStoreLocation(profile?.store_address || profile?.store_location);
       
-      // Show confirmation modal first
+      // Attempt to open WhatsApp immediately (fallback on modal close if blocked)
+      if (profile?.whatsapp_number) {
+        const bookingDate = format(selectedDate, 'dd MMMM yyyy');
+        const phoneDisplay = formData.customerPhone ? `+${formatPhoneForWhatsApp(formData.customerPhone)}` : '';
+        const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${phoneDisplay}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}`;
+        const whatsappLink = createWhatsAppLink(profile.whatsapp_number, message);
+        const win = window.open(whatsappLink, '_blank');
+        if (win) setWhatsappSent(true);
+      }
+
+      // Show confirmation modal
       setShowConfirmationModal(true);
 
       toast({
@@ -152,13 +165,14 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
   const handleCloseModal = () => {
     setShowConfirmationModal(false);
     
-    // Send WhatsApp message after modal is closed
-    if (businessProfile?.whatsapp_number) {
+    // Send WhatsApp message after modal is closed (if it wasn't already opened)
+    if (!whatsappSent && businessProfile?.whatsapp_number) {
       const bookingDate = format(selectedDate, 'dd MMMM yyyy');
       const phoneDisplay = formData.customerPhone ? `+${formatPhoneForWhatsApp(formData.customerPhone)}` : '';
       const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${phoneDisplay}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}`;
       const whatsappLink = createWhatsAppLink(businessProfile.whatsapp_number, message);
-      window.open(whatsappLink, '_blank');
+      const win = window.open(whatsappLink, '_blank');
+      if (win) setWhatsappSent(true);
     }
     
     onBookingComplete();
@@ -177,7 +191,7 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
           bookingTime: selectedTime,
           notes: formData.notes
         }}
-        storeLocation={businessProfile?.store_address || businessProfile?.store_location}
+        storeLocation={confirmationStoreLocation}
       />
       
       <Card>

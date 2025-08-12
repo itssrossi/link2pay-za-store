@@ -102,7 +102,10 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
           // Generate 1-hour slots
           for (let time = new Date(startTime); time < endTime; time.setHours(time.getHours() + 1)) {
             const timeString = format(time, 'HH:mm');
-            const existingBooking = bookings?.find(b => b.time_slot === timeString);
+            const existingBooking = bookings?.find(b => {
+              const bTime = typeof b.time_slot === 'string' ? b.time_slot : '';
+              return bTime.startsWith(timeString); // handle 'HH:mm:00' from Postgres
+            });
             
             slots.push({
               time: timeString,
