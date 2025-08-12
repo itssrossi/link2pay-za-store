@@ -71,7 +71,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
         toast.error('Failed to generate store handle');
       } else if (data?.uniqueHandle) {
         setProfile({ ...profile, store_handle: data.uniqueHandle });
-        toast.success('Store handle generated successfully');
+        console.log('Store handle updated to:', data.uniqueHandle);
       }
     } catch (error) {
       console.error('Error calling generate-unique-handle:', error);

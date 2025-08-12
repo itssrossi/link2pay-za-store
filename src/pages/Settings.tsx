@@ -86,10 +86,42 @@ const Settings = () => {
     
     console.log('Saving profile:', profile);
     setLoading(true);
+    
     try {
+      // If there's a duplicate store handle issue, generate a new unique one
+      let finalProfile = { ...profile };
+      
+      if (profile.store_handle) {
+        // Check if the store handle is already taken by another user
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('store_handle', profile.store_handle)
+          .neq('id', user.id)
+          .single();
+        
+        if (existingProfile) {
+          // Generate a unique handle
+          try {
+            const { data: handleData, error: handleError } = await supabase.functions.invoke('generate-unique-handle', {
+              body: { businessName: profile.business_name || profile.store_handle }
+            });
+            
+            if (!handleError && handleData?.uniqueHandle) {
+              finalProfile.store_handle = handleData.uniqueHandle;
+              setProfile(finalProfile); // Update the form with the new handle
+              toast.info(`Store handle was updated to "${handleData.uniqueHandle}" to ensure uniqueness`);
+            }
+          } catch (handleGenError) {
+            console.error('Error generating unique handle:', handleGenError);
+            // Continue with original handle and let database handle it
+          }
+        }
+      }
+
       const payload = {
         id: user.id,
-        ...profile,
+        ...finalProfile,
         updated_at: new Date().toISOString(),
       };
 
@@ -101,14 +133,26 @@ const Settings = () => {
 
       if (error) {
         console.error('Error updating profile:', error);
-        toast.error('Failed to save changes. Please try again.');
+        
+        // Handle specific error cases
+        if (error.code === '23505' && error.message.includes('store_handle')) {
+          toast.error('Store handle is already taken. Please choose a different one.');
+        } else {
+          toast.error('Failed to save changes. Please try again.');
+        }
+        
+        // Don't reset the profile state so user input is preserved
       } else {
         console.log('Profile saved successfully');
         toast.success('Profile saved successfully');
+        
+        // Refresh the profile to ensure we have the latest data
+        await fetchProfile();
       }
     } catch (error) {
       console.error('Error in handleSaveProfile:', error);
       toast.error('Unexpected error while saving.');
+      // Don't reset the profile state so user input is preserved
     } finally {
       setLoading(false);
     }
