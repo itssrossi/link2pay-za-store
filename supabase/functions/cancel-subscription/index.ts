@@ -1,33 +1,33 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import md5 from "https://esm.sh/blueimp-md5@2.19.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// MD5 hash function for PayFast signature verification
-function md5Hash(text: string): string {
-  return md5(text);
-}
-
-// Generate PayFast signature for API requests
+// Generate PayFast signature for API requests (using same method as notify function)
 async function generatePayFastSignature(params: Record<string, string>, passphrase: string): Promise<string> {
-  // Sort parameters alphabetically by key (excluding empty values)
-  const sortedKeys = Object.keys(params).filter(key => params[key] !== "").sort();
+  // Sort parameters alphabetically by key (excluding empty values and signature)
+  const sortedKeys = Object.keys(params)
+    .filter(key => params[key] !== "" && key !== 'signature')
+    .sort();
   
   // Build parameter string
-  const paramString = sortedKeys.map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
+  const paramString = sortedKeys.map(key => `${key}=${params[key]}`).join('&');
   
-  // Add passphrase if provided
-  const stringToHash = passphrase ? `${paramString}&passphrase=${passphrase}` : paramString;
+  // Add passphrase
+  const stringToHash = `${paramString}&passphrase=${passphrase}`;
   
   console.log("Signature string:", stringToHash);
   
-  // Generate MD5 hash
-  const signature = await md5Hash(stringToHash);
+  // Generate MD5 hash using crypto.subtle like the notify function
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest('MD5', encoder.encode(stringToHash));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
   console.log("Signature calculated:", signature);
   
   return signature;
@@ -121,36 +121,40 @@ serve(async (req) => {
     // Create timestamp in ISO 8601 format
     const timestamp = new Date().toISOString();
     
-    // Prepare cancellation parameters for PayFast API
+    // Prepare cancellation parameters for PayFast API (using correct format)
     const cancelParams = {
-      "merchant-id": merchantId,
+      "merchant_id": merchantId,
       "version": "v1",
-      "timestamp": timestamp
+      "timestamp": timestamp,
+      "token": billingToken
     };
 
-    console.log("Cancellation data prepared:", { 
-      "merchant-id": cancelParams["merchant-id"],
-      timestamp: cancelParams.timestamp,
-      version: cancelParams.version,
-      token: billingToken
-    });
+    console.log("Cancellation data prepared:", cancelParams);
 
     // Generate PayFast signature
     const signature = await generatePayFastSignature(cancelParams, passphrase);
     
-    // PayFast API endpoint for cancellation
-    const cancelUrl = `https://api.payfast.co.za/subscriptions/${billingToken}/cancel`;
+    // PayFast API endpoint for cancellation - using POST with form data
+    const cancelUrl = "https://api.payfast.co.za/subscriptions/cancel";
     
-    console.log(`Making PUT request to: ${cancelUrl}`);
+    console.log(`Making POST request to: ${cancelUrl}`);
+    
+    // Create form data with all parameters including signature
+    const formData = new URLSearchParams();
+    formData.append('merchant_id', merchantId);
+    formData.append('version', 'v1');
+    formData.append('timestamp', timestamp);
+    formData.append('token', billingToken);
+    formData.append('signature', signature);
+    
+    console.log("Form data being sent:", Object.fromEntries(formData.entries()));
     
     const response = await fetch(cancelUrl, {
-      method: "PUT",
+      method: "POST",
       headers: {
-        "merchant-id": merchantId,
-        "version": "v1",
-        "timestamp": timestamp,
-        "signature": signature,
+        "Content-Type": "application/x-www-form-urlencoded",
       },
+      body: formData.toString(),
     });
 
     console.log("PayFast response status:", response.status);
