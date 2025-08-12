@@ -10,6 +10,7 @@ import SubscriptionTab from '@/components/settings/SubscriptionTab';
 import StoreDesignTab from '@/components/settings/StoreDesignTab';
 import StorefrontCustomizationTab from '@/components/settings/StorefrontCustomizationTab';
 import AvailabilitySettings from '@/components/booking/AvailabilitySettings';
+import { toast } from 'sonner';
 
 const Settings = () => {
   const { user } = useAuth();

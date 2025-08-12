@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { BookingConfirmationModal } from './BookingConfirmationModal';
-
+import { createWhatsAppLink, formatPhoneForWhatsApp } from '@/utils/phoneFormatter';
 interface BookingFormProps {
   userId: string;
   selectedDate: Date;
@@ -77,7 +77,7 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
       setLoading(true);
       
       // Create the booking
-      const { error: bookingError } = await supabase
+      const { data: bookingInsert, error: bookingError } = await supabase
         .from('bookings')
         .insert({
           user_id: userId,
@@ -88,7 +88,9 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
           booking_time: selectedTime,
           notes: formData.notes,
           status: 'confirmed'
-        });
+        })
+        .select('id')
+        .single();
 
       if (bookingError) {
         console.error('Error creating booking:', bookingError);
@@ -100,27 +102,30 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
         return;
       }
 
-      // Update the time slot to mark it as booked
-      const { error: slotError } = await supabase
-        .from('booking_time_slots')
-        .update({ is_booked: true })
-        .eq('user_id', userId)
-        .eq('date', format(selectedDate, 'yyyy-MM-dd'))
-        .eq('time_slot', selectedTime);
+      // Update the time slot to mark it as booked via Edge Function (bypasses RLS)
+      const bookingId = bookingInsert?.id as string | undefined;
+      const { error: markError } = await supabase.functions.invoke('mark-time-slot', {
+        body: {
+          userId,
+          date: format(selectedDate, 'yyyy-MM-dd'),
+          timeSlot: selectedTime,
+          bookingId,
+        },
+      });
 
-      if (slotError) {
-        console.error('Error updating time slot:', slotError);
+      if (markError) {
+        console.error('Error marking time slot:', markError);
         toast({
-          title: "Warning",
-          description: "Booking created but time slot may still appear available.",
-          variant: "destructive",
+          title: 'Warning',
+          description: 'Booking created but time slot may still appear available.',
+          variant: 'destructive',
         });
       }
 
       // Get business profile for WhatsApp message and modal
       const { data: profile } = await supabase
         .from('profiles')
-        .select('business_name, whatsapp_number, store_address')
+        .select('business_name, whatsapp_number, store_address, store_location')
         .eq('id', userId)
         .single();
 
@@ -154,12 +159,10 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
     // Send WhatsApp message after modal is closed
     if (businessProfile?.whatsapp_number) {
       const bookingDate = format(selectedDate, 'dd MMMM yyyy');
-      const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${formData.customerPhone}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}`;
-      
-      const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/${businessProfile.whatsapp_number.replace(/[^\d]/g, '')}?text=${encodedMessage}`;
-      
-      window.open(whatsappUrl, '_blank');
+      const phoneDisplay = formData.customerPhone ? `+${formatPhoneForWhatsApp(formData.customerPhone)}` : '';
+      const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${phoneDisplay}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}`;
+      const whatsappLink = createWhatsAppLink(businessProfile.whatsapp_number, message);
+      window.open(whatsappLink, '_blank');
     }
     
     onBookingComplete();
@@ -178,7 +181,7 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
           bookingTime: selectedTime,
           notes: formData.notes
         }}
-        storeLocation={businessProfile?.store_address}
+        storeLocation={businessProfile?.store_address || businessProfile?.store_location}
       />
       
       <Card>
