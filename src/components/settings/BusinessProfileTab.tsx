@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { MapPin } from 'lucide-react';
+import { MapPin, MessageCircle } from 'lucide-react';
 import ImageUpload from '@/components/ui/image-upload';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
@@ -151,6 +151,17 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
             <p className="text-sm text-gray-500 mt-1">
               Your store URL: link2pay.co.za/store/{profile?.store_handle || 'your-store-name'}
             </p>
+          </div>
+
+          <div>
+            <Button 
+              variant="outline" 
+              className="w-full sm:w-auto"
+              onClick={() => window.open('https://chat.whatsapp.com/KYXoVylp0K85kGxiqCSf5m?mode=ems_copy_t', '_blank')}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Contact Support
+            </Button>
           </div>
         </CardContent>
       </Card>

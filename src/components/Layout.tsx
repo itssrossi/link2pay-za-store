@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
-import { Home, Package, FileText, Settings, LogOut } from 'lucide-react';
+import { Home, Package, FileText, Settings, LogOut, MessageCircle } from 'lucide-react';
 import MobileStickyGrowthCTA from '@/components/MobileStickyGrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 
@@ -84,6 +84,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   <span className="text-sm text-gray-600 truncate">{user?.email}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => window.open('https://chat.whatsapp.com/KYXoVylp0K85kGxiqCSf5m?mode=ems_copy_t', '_blank')}>
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  <span>Contact Support</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
