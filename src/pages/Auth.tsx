@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Loader2, Building2, User, Mail, Lock, CheckCircle, AlertTriangle } from 'lucide-react';
 
@@ -24,7 +25,8 @@ const Auth = () => {
     email: '',
     password: '',
     businessName: '',
-    fullName: ''
+    fullName: '',
+    acceptTerms: false
   });
 
   // Redirect if already authenticated
@@ -66,6 +68,11 @@ const Auth = () => {
 
     if (isSignUp && (!formData.businessName || !formData.fullName)) {
       toast.error('Business name and full name are required for sign up');
+      return false;
+    }
+
+    if (isSignUp && !formData.acceptTerms) {
+      toast.error('You must accept the Terms & Conditions to create an account');
       return false;
     }
 
@@ -117,7 +124,7 @@ const Auth = () => {
         // Switch to sign in tab
         setTimeout(() => {
           setIsLogin(true);
-          setFormData(prev => ({ ...prev, businessName: '', fullName: '' }));
+          setFormData(prev => ({ ...prev, businessName: '', fullName: '', acceptTerms: false }));
         }, 3000);
       }
     } catch (error: any) {
@@ -340,6 +347,70 @@ const Auth = () => {
                       minLength={6}
                       disabled={loading}
                     />
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id="acceptTerms"
+                        checked={formData.acceptTerms}
+                        onCheckedChange={(checked) => 
+                          setFormData(prev => ({ ...prev, acceptTerms: !!checked }))
+                        }
+                        disabled={loading}
+                        className="mt-1"
+                      />
+                      <div className="text-sm text-gray-600 leading-relaxed">
+                        <Label htmlFor="acceptTerms" className="cursor-pointer">
+                          I agree to the{" "}
+                          <button
+                            type="button"
+                            className="text-[#4C9F70] hover:underline font-medium"
+                            onClick={() => {
+                              const modal = document.createElement('div');
+                              modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
+                              modal.innerHTML = `
+                                <div class="bg-white rounded-lg max-w-2xl max-h-96 overflow-y-auto p-6">
+                                  <h2 class="text-xl font-bold mb-4">Terms & Conditions</h2>
+                                  <div class="text-sm space-y-4">
+                                    <h3 class="font-semibold">1. Service Description</h3>
+                                    <p>Link2Pay provides small businesses with tools to set up an online store, send invoices, and receive bookings, all integrated with WhatsApp. We act as a facilitator between you (the merchant) and your customers.</p>
+                                    
+                                    <h3 class="font-semibold">2. Account Responsibility</h3>
+                                    <p>You are responsible for maintaining the accuracy of your business and payment information. You agree to use Link2Pay only for lawful purposes and in compliance with all applicable laws. You are solely responsible for all activity under your account.</p>
+                                    
+                                    <h3 class="font-semibold">3. Payments & Processing</h3>
+                                    <p>Link2Pay does not process payments directly. We integrate with third-party payment providers and banks of your choice. Settlement times for payments depend on your chosen payment processor or bank. Link2Pay is not responsible for delays, chargebacks, or disputes arising from your customers.</p>
+                                    
+                                    <h3 class="font-semibold">4. Refund Policy</h3>
+                                    <p>All payments made through Link2Pay are final and non-refundable. It is the merchant's responsibility to communicate their own refund or exchange policies directly with customers. Link2Pay will not issue refunds on behalf of merchants or customers under any circumstances.</p>
+                                    
+                                    <h3 class="font-semibold">5. Limitations of Use</h3>
+                                    <p>Link2Pay does not currently support subscription-based businesses or the sale of digital products. Attempting to use the platform for unsupported products or services may result in suspension or termination of your account.</p>
+                                    
+                                    <h3 class="font-semibold">6. Data & Privacy</h3>
+                                    <p>Link2Pay will not share or sell your business or personal information. We take reasonable steps to ensure your information is protected, but you acknowledge that no platform is 100% secure.</p>
+                                    
+                                    <h3 class="font-semibold">7. Limitation of Liability</h3>
+                                    <p>Link2Pay is provided "as is" without warranties of any kind. We are not liable for any direct, indirect, or consequential damages resulting from the use of our platform, including but not limited to payment disputes, service downtime, or data loss.</p>
+                                    
+                                    <h3 class="font-semibold">8. Changes to Terms</h3>
+                                    <p>We may update these Terms & Conditions from time to time. Continued use of Link2Pay after changes are made constitutes your acceptance of the revised terms.</p>
+                                    
+                                    <h3 class="font-semibold">9. Contact</h3>
+                                    <p>For any questions regarding these Terms & Conditions, please contact us at: 📧 support@link2pay.co.za</p>
+                                  </div>
+                                  <button class="mt-4 bg-[#4C9F70] text-white px-4 py-2 rounded hover:bg-[#3d7a59]" onclick="this.closest('.fixed').remove()">Close</button>
+                                </div>
+                              `;
+                              document.body.appendChild(modal);
+                            }}
+                          >
+                            Terms & Conditions
+                          </button>
+                        </Label>
+                      </div>
+                    </div>
                   </div>
                   
                   <Button 

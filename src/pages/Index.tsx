@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Check, MessageCircle, Smartphone, Zap, Shield } from 'lucide-react';
+import FAQSection from '@/components/FAQSection';
 
 const Index = () => {
   const features = [
@@ -77,16 +78,13 @@ const Index = () => {
             Create your online store, generate professional invoices, and get paid faster.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+          <div className="flex justify-center mb-12">
             <Link to="/auth">
               <Button size="lg" className="bg-[#4C9F70] hover:bg-[#3d8159] text-white px-8 py-4 text-lg rounded-xl">
                 Start Your Free Store
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="px-8 py-4 text-lg rounded-xl border-[#4C9F70] text-[#4C9F70] hover:bg-[#4C9F70] hover:text-white">
-              View Demo Store
-            </Button>
           </div>
 
           {/* Quick Demo */}
@@ -166,6 +164,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <FAQSection />
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
