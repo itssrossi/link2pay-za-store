@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Check, MessageCircle, Smartphone, Zap, Shield } from 'lucide-react';
+import { ArrowRight, Check, MessageCircle, Smartphone, Zap, Shield, CreditCard, Flag } from 'lucide-react';
 import FAQSection from '@/components/FAQSection';
 
 const Index = () => {
@@ -70,21 +70,44 @@ const Index = () => {
       <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Your WhatsApp Business
-            <span className="text-[#4C9F70] block">Made Simple</span>
+            Look Professional. Get Paid Faster.
+            <span className="text-[#4C9F70] block">Grow With Confidence.</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            The all-in-one storefront and invoice generator designed for South African entrepreneurs. 
-            Create your online store, generate professional invoices, and get paid faster.
+            Link2Pay gives South African entrepreneurs a powerful storefront and invoice tool—so you look legit, get paid on time, and scale your hustle into a real business.
           </p>
           
           <div className="flex justify-center mb-12">
             <Link to="/auth">
               <Button size="lg" className="bg-[#4C9F70] hover:bg-[#3d8159] text-white px-8 py-4 text-lg rounded-xl">
-                Start Your Free Store
+                👉 Build Your Free Store Now
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
+          </div>
+
+          {/* Trust Icons */}
+          <div className="mb-8">
+            <div className="flex justify-center items-center space-x-12 max-w-2xl mx-auto">
+              <div className="flex flex-col items-center space-y-2">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-gray-600" />
+                </div>
+                <p className="text-xs text-gray-500 text-center max-w-24">Secure Payments Powered by PayFast</p>
+              </div>
+              <div className="flex flex-col items-center space-y-2">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <MessageCircle className="w-6 h-6 text-gray-600" />
+                </div>
+                <p className="text-xs text-gray-500 text-center max-w-24">Seamless WhatsApp Integration</p>
+              </div>
+              <div className="flex flex-col items-center space-y-2">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <Flag className="w-6 h-6 text-gray-600" />
+                </div>
+                <p className="text-xs text-gray-500 text-center max-w-24">Built for SA Entrepreneurs</p>
+              </div>
+            </div>
           </div>
 
           {/* Quick Demo */}
