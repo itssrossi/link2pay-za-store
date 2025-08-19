@@ -8,22 +8,22 @@ const NailTech = () => {
   const features = [
     {
       icon: Zap,
-      title: '💸 Instant Invoices',
+      title: 'Instant Invoices',
       description: 'Get deposits upfront and avoid last-minute cancellations'
     },
     {
       icon: Smartphone,
-      title: '🛍 Mini Storefront',
+      title: 'Mini Storefront',
       description: 'Showcase your services and prices professionally'
     },
     {
       icon: MessageCircle,
-      title: '📱 WhatsApp Integration',
+      title: 'WhatsApp Integration',
       description: 'Clients book and pay without leaving WhatsApp'
     },
     {
       icon: Shield,
-      title: '🔒 Safe & Secure',
+      title: 'Safe & Secure',
       description: 'Payments powered by PayFast, trusted across South Africa'
     }
   ];
@@ -77,7 +77,7 @@ const NailTech = () => {
       <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            💅 Nail Techs: Stop Chasing Payments.
+            Nail Techs: Stop Chasing Payments.
             <span className="text-[#4C9F70] block">Start Growing Your Business.</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
@@ -87,7 +87,7 @@ const NailTech = () => {
           <div className="flex justify-center mb-12">
             <Link to="/auth">
               <Button size="lg" className="bg-[#4C9F70] hover:bg-[#3d8159] text-white px-8 py-4 text-lg rounded-xl">
-                👉 Build Your Free Store Now
+                Build Your Free Store Now
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
@@ -135,7 +135,7 @@ const NailTech = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-              💔 Tired of No-Shows, Late Payments, and Unprofessional WhatsApp Bookings?
+              Tired of No-Shows, Late Payments, and Unprofessional WhatsApp Bookings?
             </h2>
             <div className="max-w-3xl mx-auto text-xl text-gray-600 mb-8">
               <p className="mb-6">
@@ -168,7 +168,7 @@ const NailTech = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-              ✨ Imagine This:
+              Imagine This:
             </h2>
             
             <div className="space-y-6 max-w-3xl mx-auto">
@@ -187,7 +187,7 @@ const NailTech = () => {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-            🙌 Trusted by Nail Techs & Entrepreneurs Across South Africa
+            Trusted by Nail Techs & Entrepreneurs Across South Africa
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Whether you're a home-based nail artist or running a full salon, Link2Pay helps you run your business like a pro.
@@ -200,7 +200,7 @@ const NailTech = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              📲 Everything You Need in One App
+              Everything You Need in One App
             </h2>
           </div>
 
@@ -231,7 +231,7 @@ const NailTech = () => {
       <section className="py-16 bg-gradient-to-br from-[#4C9F70] to-[#3d8159] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            🚀 Start Free Today. Get Paid Faster by Your Next Appointment.
+            Start Free Today. Get Paid Faster by Your Next Appointment.
           </h2>
           <p className="text-xl mb-8 max-w-3xl mx-auto opacity-90">
             Don't let another client cancel without paying. With Link2Pay, you can set up your store and send your first professional invoice in less than 10 minutes — all free.
@@ -239,7 +239,7 @@ const NailTech = () => {
           
           <Link to="/auth">
             <Button size="lg" className="bg-white text-[#4C9F70] hover:bg-gray-100 px-8 py-4 text-lg rounded-xl">
-              👉 Build Your Free Store Now
+              Build Your Free Store Now
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </Link>
