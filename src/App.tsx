@@ -8,6 +8,7 @@ import { OnboardingProvider } from '@/contexts/OnboardingContext';
 
 // Lazy load pages for better performance
 const Index = lazy(() => import('@/pages/Index'));
+const NailTech = lazy(() => import('@/pages/NailTech'));
 const Auth = lazy(() => import('@/pages/Auth'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Products = lazy(() => import('@/pages/Products'));
@@ -39,6 +40,7 @@ function App() {
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Index />} />
+                  <Route path="/nailtech" element={<NailTech />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/store/:username" element={<Storefront />} />
                   <Route path="/invoice/:invoiceId" element={<InvoicePreview />} />
