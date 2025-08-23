@@ -77,8 +77,8 @@ Deno.serve(async (req) => {
     }
 
     // Use final amount from frontend (already considers promo codes)
-    const finalPrice = (finalAmount || 95) * 100; // Convert to kobo
-    const planName = finalPrice === 5000 ? 'Link2Pay Beta Plan' : 'Link2Pay Standard Plan';
+    const finalPrice = (finalAmount || 152) * 100; // Convert to kobo
+    const planName = finalPrice === 9500 ? 'Link2Pay Beta Plan' : 'Link2Pay Standard Plan';
 
     // Find or create plan
     const listPlansResponse = await fetch('https://api.paystack.co/plan', {

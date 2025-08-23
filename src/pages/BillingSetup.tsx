@@ -16,7 +16,7 @@ const generatePayFastSubscriptionLink = ({
   invoiceId,
   promo
 }: { name: string; email: string; invoiceId: string; promo?: string; }) => {
-  const billingAmount = promo?.toUpperCase() === 'BETA50' ? '50.00' : promo?.toUpperCase() === 'BETA5' ? '5.00' : '95.00';
+  const billingAmount = promo?.toUpperCase() === 'BETA50' ? '95.00' : promo?.toUpperCase() === 'BETA5' ? '5.00' : '152.00';
   const billingDate = new Date().toISOString().split('T')[0];
 
   const data: Record<string, string> = {
@@ -173,7 +173,7 @@ const BillingSetup = () => {
         .update({
           full_name: formData.name,
           business_name: formData.business_name,
-          subscription_amount: formData.promo?.toUpperCase() === 'BETA50' ? 50 : formData.promo?.toUpperCase() === 'BETA5' ? 5 : 95,
+          subscription_amount: formData.promo?.toUpperCase() === 'BETA50' ? 95 : formData.promo?.toUpperCase() === 'BETA5' ? 5 : 152,
           discount_applied: formData.promo?.toUpperCase() === 'BETA50' || formData.promo?.toUpperCase() === 'BETA5'
         })
         .eq('id', user?.id);
@@ -195,7 +195,7 @@ const BillingSetup = () => {
     navigate('/dashboard');
   };
 
-  const billingAmount = formData.promo?.toUpperCase() === 'BETA50' ? 50 : formData.promo?.toUpperCase() === 'BETA5' ? 5 : 95;
+  const billingAmount = formData.promo?.toUpperCase() === 'BETA50' ? 95 : formData.promo?.toUpperCase() === 'BETA5' ? 5 : 152;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center p-4">
@@ -270,13 +270,13 @@ const BillingSetup = () => {
                   <div className="flex justify-between">
                     <span>Monthly subscription:</span>
                     <span className={formData.promo?.toUpperCase() === 'BETA50' || formData.promo?.toUpperCase() === 'BETA5' ? 'line-through text-gray-500' : ''}>
-                      R95.00
+                      R152.00
                     </span>
                   </div>
                   {formData.promo?.toUpperCase() === 'BETA50' && (
                     <div className="flex justify-between text-green-600 font-medium">
                       <span>BETA50 discount:</span>
-                      <span>R50.00</span>
+                      <span>R95.00</span>
                     </div>
                   )}
                   {formData.promo?.toUpperCase() === 'BETA5' && (

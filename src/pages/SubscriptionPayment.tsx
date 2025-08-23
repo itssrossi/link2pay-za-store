@@ -23,7 +23,7 @@ const SubscriptionPayment = () => {
   const [loading, setLoading] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
 
-  const basePrice = 95;
+  const basePrice = 152;
 
   // Redirect if user has active subscription or trial
   useEffect(() => {

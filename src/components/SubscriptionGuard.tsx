@@ -50,9 +50,9 @@ const SubscriptionGuard = ({ children, feature }: SubscriptionGuardProps) => {
               <li>• Booking management</li>
             </ul>
             <div className="mt-3 font-bold text-lg">
-              Only R95/month
+              Only R152/month
               <span className="text-sm font-normal text-gray-600 ml-2">
-                (or R50 with BETA50 code)
+                (or R95 with BETA50 code)
               </span>
             </div>
           </div>

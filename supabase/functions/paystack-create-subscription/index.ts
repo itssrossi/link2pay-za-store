@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
     const trialEndsAt = new Date(trialStartsAt.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
 
     // Store promo code preference for later subscription
-    let subscriptionPrice = 9500; // Default R95
+    let subscriptionPrice = 15200; // Default R152
     let discountApplied = false;
 
     if (promoCode === 'BETA50') {
@@ -124,9 +124,9 @@ Deno.serve(async (req) => {
         .eq('code', 'BETA50')
         .eq('is_active', true)
         .single();
-
+      
       if (promo) {
-        subscriptionPrice = 5000; // R50
+        subscriptionPrice = 9500; // R95 with BETA50
         discountApplied = true;
       }
     }

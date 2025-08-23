@@ -33,7 +33,7 @@ const SubscriptionSetup = ({ trialEndsAt, onComplete }: SubscriptionSetupProps) 
   }, []);
 
   // Calculate pricing
-  const basePrice = 95;
+  const basePrice = 152;
   const finalPrice = basePrice - discount;
   const formattedTrialEnd = new Date(trialEndsAt).toLocaleDateString('en-ZA', {
     year: 'numeric',
