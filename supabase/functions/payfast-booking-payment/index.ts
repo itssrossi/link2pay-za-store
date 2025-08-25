@@ -78,7 +78,6 @@ serve(async (req) => {
       amount: amount.toFixed(2),
       item_name: `Booking Payment - ${customerName}`,
       item_description: `Payment for booking on ${new Date().toLocaleDateString()}`,
-      custom_int1: booking.user_id,
       custom_str1: booking.user_id,
       custom_str2: bookingId,
       custom_str3: 'booking_payment',
