@@ -82,30 +82,23 @@ serve(async (req) => {
       custom_str3: 'booking_payment',
     };
 
-    // Generate signature for PayFast using same method as BillingSetup
+    // Generate signature for PayFast using same method as cancel-subscription
     const generateSignature = (data: Record<string, any>, passphrase?: string) => {
-      // Create parameter string using same encoding as BillingSetup
-      let paramString = '';
-      const sortedKeys = Object.keys(data).sort();
+      // Sort parameters alphabetically by key (excluding empty values and signature)
+      const sortedKeys = Object.keys(data)
+        .filter(key => data[key] !== "" && data[key] !== null && data[key] !== undefined && key !== 'signature')
+        .sort();
       
-      for (const key of sortedKeys) {
-        if (data[key] !== '' && data[key] !== null && data[key] !== undefined) {
-          paramString += `${key}=${encodeURIComponent(data[key]).replace(/%20/g, '+')}&`;
-        }
-      }
+      // Build parameter string (URL encoded like cancel-subscription)
+      const paramString = sortedKeys.map(key => `${key}=${encodeURIComponent(data[key])}`).join('&');
       
-      // Remove last ampersand
-      paramString = paramString.slice(0, -1);
+      // Add passphrase
+      const stringToHash = passphrase ? `${paramString}&passphrase=${passphrase}` : paramString;
       
-      // Add passphrase if provided
-      if (passphrase) {
-        paramString += `&passphrase=${encodeURIComponent(passphrase).replace(/%20/g, '+')}`;
-      }
+      console.log('Parameter string for signature:', stringToHash);
       
-      console.log('Parameter string for signature:', paramString);
-      
-      // Generate MD5 hash using blueimp-md5 like BillingSetup
-      const signature = md5(paramString).toLowerCase();
+      // Generate MD5 hash using blueimp-md5 like cancel-subscription
+      const signature = md5(stringToHash);
       
       console.log('Generated signature:', signature);
       return signature;
