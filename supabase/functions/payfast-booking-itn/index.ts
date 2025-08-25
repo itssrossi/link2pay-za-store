@@ -1,0 +1,238 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createHash } from "https://deno.land/std@0.168.0/crypto/crypto.ts"
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// PayFast server IPs for validation
+const PAYFAST_IPS = [
+  '197.97.145.144',
+  '41.74.179.194',
+  '41.74.179.202',
+  '41.74.179.203',
+  '41.74.179.196',
+  '41.74.179.197',
+  '41.74.179.198',
+  '41.74.179.199',
+  '41.74.179.200',
+  '41.74.179.201',
+];
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get the client IP for validation
+    const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
+    console.log('ITN request from IP:', clientIP);
+
+    // Parse form data
+    const formData = await req.formData();
+    const itnData: Record<string, string> = {};
+    
+    for (const [key, value] of formData.entries()) {
+      itnData[key] = value.toString();
+    }
+
+    console.log('Received ITN data:', itnData);
+
+    // Extract booking information from custom fields
+    const bookingId = itnData.custom_str2;
+    const userId = itnData.custom_str1;
+    const paymentType = itnData.custom_str3;
+
+    if (!bookingId || !userId) {
+      console.error('Missing booking ID or user ID in ITN data');
+      return new Response('Invalid ITN data', { status: 400 });
+    }
+
+    // Fetch merchant settings for signature verification
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('payfast_merchant_id, payfast_merchant_key, payfast_passphrase')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('Failed to fetch merchant profile:', profileError);
+      return new Response('Merchant profile not found', { status: 400 });
+    }
+
+    // Verify PayFast signature
+    const verifySignature = (data: Record<string, string>, passphrase?: string) => {
+      const { signature, ...dataWithoutSignature } = data;
+      
+      // Create parameter string
+      let paramString = '';
+      const sortedKeys = Object.keys(dataWithoutSignature).sort();
+      
+      for (const key of sortedKeys) {
+        if (dataWithoutSignature[key] !== '' && dataWithoutSignature[key] !== null && dataWithoutSignature[key] !== undefined) {
+          paramString += `${key}=${encodeURIComponent(dataWithoutSignature[key])}&`;
+        }
+      }
+      
+      // Remove last ampersand
+      paramString = paramString.slice(0, -1);
+      
+      // Add passphrase if provided
+      if (passphrase) {
+        paramString += `&passphrase=${encodeURIComponent(passphrase)}`;
+      }
+      
+      // Generate MD5 hash
+      const encoder = new TextEncoder();
+      const data_array = encoder.encode(paramString);
+      const hashBuffer = createHash("md5").update(data_array).digest();
+      
+      const calculatedSignature = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
+      return calculatedSignature === signature;
+    };
+
+    const isValidSignature = verifySignature(itnData, profile.payfast_passphrase || undefined);
+    
+    if (!isValidSignature) {
+      console.error('Invalid PayFast signature');
+      return new Response('Invalid signature', { status: 400 });
+    }
+
+    // Check for duplicate ITN (idempotency)
+    const { data: existingTransaction, error: duplicateError } = await supabase
+      .from('booking_transactions')
+      .select('id, status')
+      .eq('payfast_payment_id', itnData.m_payment_id)
+      .eq('status', 'completed')
+      .single();
+
+    if (existingTransaction) {
+      console.log('Duplicate ITN detected, already processed:', itnData.m_payment_id);
+      return new Response('OK - Already processed', { status: 200 });
+    }
+
+    // Process payment based on status
+    const paymentStatus = itnData.payment_status;
+    const amount = parseFloat(itnData.amount_gross || '0');
+
+    console.log('Processing payment status:', paymentStatus, 'Amount:', amount);
+
+    if (paymentStatus === 'COMPLETE') {
+      // Update booking status to paid
+      const { error: bookingUpdateError } = await supabase
+        .from('bookings')
+        .update({
+          payment_status: 'paid',
+          amount_paid: amount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', bookingId);
+
+      if (bookingUpdateError) {
+        console.error('Error updating booking status:', bookingUpdateError);
+      }
+
+      // Update or create transaction record
+      const { error: transactionUpdateError } = await supabase
+        .from('booking_transactions')
+        .upsert({
+          booking_id: bookingId,
+          user_id: userId,
+          transaction_type: paymentType === 'deposit' ? 'deposit' : 'full',
+          amount: amount,
+          status: 'completed',
+          payfast_payment_id: itnData.m_payment_id,
+          payfast_data: itnData,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (transactionUpdateError) {
+        console.error('Error updating transaction:', transactionUpdateError);
+      }
+
+      // Send booking confirmation (optional)
+      try {
+        await supabase.functions.invoke('send-booking-confirmation', {
+          body: {
+            bookingId: bookingId,
+            paymentConfirmed: true,
+          },
+        });
+      } catch (confirmationError) {
+        console.error('Error sending booking confirmation:', confirmationError);
+      }
+
+      console.log('Booking payment completed successfully:', bookingId);
+
+    } else if (paymentStatus === 'FAILED' || paymentStatus === 'CANCELLED') {
+      // Update booking status to failed
+      const { error: bookingUpdateError } = await supabase
+        .from('bookings')
+        .update({
+          payment_status: 'failed',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', bookingId);
+
+      if (bookingUpdateError) {
+        console.error('Error updating booking status to failed:', bookingUpdateError);
+      }
+
+      // Update transaction record
+      const { error: transactionUpdateError } = await supabase
+        .from('booking_transactions')
+        .update({
+          status: 'failed',
+          payfast_data: itnData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('payfast_payment_id', itnData.m_payment_id);
+
+      if (transactionUpdateError) {
+        console.error('Error updating failed transaction:', transactionUpdateError);
+      }
+
+      console.log('Booking payment failed:', bookingId, paymentStatus);
+
+    } else {
+      console.log('Payment status pending or unknown:', paymentStatus);
+      
+      // Update transaction with current status
+      const { error: transactionUpdateError } = await supabase
+        .from('booking_transactions')
+        .update({
+          payfast_data: itnData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('payfast_payment_id', itnData.m_payment_id);
+
+      if (transactionUpdateError) {
+        console.error('Error updating pending transaction:', transactionUpdateError);
+      }
+    }
+
+    return new Response('OK', { 
+      status: 200,
+      headers: corsHeaders 
+    });
+
+  } catch (error) {
+    console.error('Error processing booking ITN:', error);
+    return new Response('Internal server error', { 
+      status: 500,
+      headers: corsHeaders 
+    });
+  }
+});

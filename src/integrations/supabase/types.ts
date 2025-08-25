@@ -85,8 +85,58 @@ export type Database = {
           },
         ]
       }
+      booking_transactions: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string
+          id: string
+          payfast_data: Json | null
+          payfast_payment_id: string | null
+          status: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          created_at?: string
+          id?: string
+          payfast_data?: Json | null
+          payfast_payment_id?: string | null
+          status?: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          id?: string
+          payfast_data?: Json | null
+          payfast_payment_id?: string | null
+          status?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
+          amount_due: number | null
+          amount_paid: number | null
+          balance_due_at: string | null
           booking_date: string
           booking_time: string
           created_at: string
@@ -96,11 +146,18 @@ export type Database = {
           duration: number | null
           id: string
           notes: string | null
+          payfast_payment_id: string | null
+          payment_data: Json | null
+          payment_status: string | null
+          product_ids: string[] | null
           status: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          amount_due?: number | null
+          amount_paid?: number | null
+          balance_due_at?: string | null
           booking_date: string
           booking_time: string
           created_at?: string
@@ -110,11 +167,18 @@ export type Database = {
           duration?: number | null
           id?: string
           notes?: string | null
+          payfast_payment_id?: string | null
+          payment_data?: Json | null
+          payment_status?: string | null
+          product_ids?: string[] | null
           status?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          amount_due?: number | null
+          amount_paid?: number | null
+          balance_due_at?: string | null
           booking_date?: string
           booking_time?: string
           created_at?: string
@@ -124,6 +188,10 @@ export type Database = {
           duration?: number | null
           id?: string
           notes?: string | null
+          payfast_payment_id?: string | null
+          payment_data?: Json | null
+          payment_status?: string | null
+          product_ids?: string[] | null
           status?: string | null
           updated_at?: string
           user_id?: string
@@ -422,14 +490,17 @@ export type Database = {
       profiles: {
         Row: {
           accent_color: string | null
+          allow_product_selection_bookings: boolean | null
           background_color: string | null
           billing_failures: number | null
           billing_start_date: string | null
+          booking_payments_enabled: boolean | null
           business_name: string | null
           cancelled_at: string | null
           capitec_paylink: string | null
           created_at: string
           customization_version: number | null
+          default_booking_deposit: number | null
           default_currency: string | null
           delivery_method: string | null
           delivery_note: string | null
@@ -480,14 +551,17 @@ export type Database = {
         }
         Insert: {
           accent_color?: string | null
+          allow_product_selection_bookings?: boolean | null
           background_color?: string | null
           billing_failures?: number | null
           billing_start_date?: string | null
+          booking_payments_enabled?: boolean | null
           business_name?: string | null
           cancelled_at?: string | null
           capitec_paylink?: string | null
           created_at?: string
           customization_version?: number | null
+          default_booking_deposit?: number | null
           default_currency?: string | null
           delivery_method?: string | null
           delivery_note?: string | null
@@ -538,14 +612,17 @@ export type Database = {
         }
         Update: {
           accent_color?: string | null
+          allow_product_selection_bookings?: boolean | null
           background_color?: string | null
           billing_failures?: number | null
           billing_start_date?: string | null
+          booking_payments_enabled?: boolean | null
           business_name?: string | null
           cancelled_at?: string | null
           capitec_paylink?: string | null
           created_at?: string
           customization_version?: number | null
+          default_booking_deposit?: number | null
           default_currency?: string | null
           delivery_method?: string | null
           delivery_note?: string | null

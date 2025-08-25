@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { BookingPaymentSettings } from './BookingPaymentSettings';
 
 interface AvailabilitySetting {
   id?: string;
@@ -130,88 +131,92 @@ const AvailabilitySettings: React.FC = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Set Your Availability</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Configure when customers can book appointments with you
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {DAYS_OF_WEEK.map(day => {
-          const setting = availability.find(a => a.day_of_week === day.value) || {
-            day_of_week: day.value,
-            start_time: '09:00',
-            end_time: '17:00',
-            is_available: false
-          };
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Set Your Availability</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Configure when customers can book appointments with you
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {DAYS_OF_WEEK.map(day => {
+            const setting = availability.find(a => a.day_of_week === day.value) || {
+              day_of_week: day.value,
+              start_time: '09:00',
+              end_time: '17:00',
+              is_available: false
+            };
 
-          return (
-            <div key={day.value} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center space-x-4">
-                <Switch
-                  checked={setting.is_available}
-                  onCheckedChange={(checked) => 
-                    updateAvailability(day.value, 'is_available', checked)
-                  }
-                />
-                <Label className="font-medium min-w-[80px]">{day.label}</Label>
-              </div>
-              
-              {setting.is_available && (
-                <div className="flex items-center space-x-2">
-                  <Select
-                    value={setting.start_time}
-                    onValueChange={(value) => 
-                      updateAvailability(day.value, 'start_time', value)
+            return (
+              <div key={day.value} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <Switch
+                    checked={setting.is_available}
+                    onCheckedChange={(checked) => 
+                      updateAvailability(day.value, 'is_available', checked)
                     }
-                  >
-                    <SelectTrigger className="w-24">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TIME_OPTIONS.map(time => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  <span className="text-muted-foreground">to</span>
-                  
-                  <Select
-                    value={setting.end_time}
-                    onValueChange={(value) => 
-                      updateAvailability(day.value, 'end_time', value)
-                    }
-                  >
-                    <SelectTrigger className="w-24">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TIME_OPTIONS.map(time => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
+                  <Label className="font-medium min-w-[80px]">{day.label}</Label>
                 </div>
-              )}
-            </div>
-          );
-        })}
-        
-        <Button 
-          onClick={handleSave} 
-          disabled={saving}
-          className="w-full"
-        >
-          {saving ? 'Saving...' : 'Save Availability Settings'}
-        </Button>
-      </CardContent>
-    </Card>
+                
+                {setting.is_available && (
+                  <div className="flex items-center space-x-2">
+                    <Select
+                      value={setting.start_time}
+                      onValueChange={(value) => 
+                        updateAvailability(day.value, 'start_time', value)
+                      }
+                    >
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIME_OPTIONS.map(time => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <span className="text-muted-foreground">to</span>
+                    
+                    <Select
+                      value={setting.end_time}
+                      onValueChange={(value) => 
+                        updateAvailability(day.value, 'end_time', value)
+                      }
+                    >
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIME_OPTIONS.map(time => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          
+          <Button 
+            onClick={handleSave} 
+            disabled={saving}
+            className="w-full"
+          >
+            {saving ? 'Saving...' : 'Save Availability Settings'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <BookingPaymentSettings />
+    </div>
   );
 };
 
