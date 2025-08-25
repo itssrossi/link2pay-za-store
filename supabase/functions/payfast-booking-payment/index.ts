@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import md5 from "https://esm.sh/blueimp-md5@2.19.0"
+import { Md5 } from "https://deno.land/std@0.160.0/hash/md5.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,23 +82,32 @@ serve(async (req) => {
       custom_str3: 'booking_payment',
     };
 
-    // Generate signature for PayFast using same method as cancel-subscription
+    // Generate signature for PayFast using same method as ITN handler
     const generateSignature = (data: Record<string, any>, passphrase?: string) => {
-      // Sort parameters alphabetically by key (excluding empty values and signature)
-      const sortedKeys = Object.keys(data)
-        .filter(key => data[key] !== "" && data[key] !== null && data[key] !== undefined && key !== 'signature')
-        .sort();
+      // Create parameter string using same logic as ITN handler
+      let paramString = '';
+      const sortedKeys = Object.keys(data).sort();
       
-      // Build parameter string (URL encoded like cancel-subscription)
-      const paramString = sortedKeys.map(key => `${key}=${encodeURIComponent(data[key])}`).join('&');
+      for (const key of sortedKeys) {
+        if (data[key] !== '' && data[key] !== null && data[key] !== undefined) {
+          paramString += `${key}=${encodeURIComponent(data[key])}&`;
+        }
+      }
       
-      // Add passphrase
-      const stringToHash = passphrase ? `${paramString}&passphrase=${passphrase}` : paramString;
+      // Remove last ampersand
+      paramString = paramString.slice(0, -1);
       
-      console.log('Parameter string for signature:', stringToHash);
+      // Add passphrase if provided
+      if (passphrase) {
+        paramString += `&passphrase=${encodeURIComponent(passphrase)}`;
+      }
       
-      // Generate MD5 hash using blueimp-md5 like cancel-subscription
-      const signature = md5(stringToHash);
+      console.log('Parameter string for signature:', paramString);
+      
+      // Generate MD5 hash using Deno's MD5 like ITN handler
+      const md5 = new Md5();
+      md5.update(paramString);
+      const signature = md5.toString();
       
       console.log('Generated signature:', signature);
       return signature;
