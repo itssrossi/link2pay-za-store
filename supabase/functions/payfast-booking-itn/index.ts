@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { Md5 } from "https://deno.land/std@0.208.0/hash/md5.ts"
+// Use a working MD5 implementation
+import { Md5 } from "https://deno.land/std@0.160.0/hash/md5.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
