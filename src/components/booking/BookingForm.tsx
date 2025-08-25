@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { BookingConfirmationModal } from './BookingConfirmationModal';
 import { createWhatsAppLink, formatPhoneForWhatsApp } from '@/utils/phoneFormatter';
+import { ProductSelection } from './ProductSelection';
+import { BookingPayment } from './BookingPayment';
 interface BookingFormProps {
   userId: string;
   selectedDate: Date;
@@ -37,9 +39,46 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
   const [businessProfile, setBusinessProfile] = useState<any>(null);
   const [whatsappSent, setWhatsappSent] = useState(false);
   const [confirmationStoreLocation, setConfirmationStoreLocation] = useState<string | undefined>(undefined);
+  
+  // Payment flow state
+  const [paymentSettings, setPaymentSettings] = useState<{
+    booking_payments_enabled: boolean;
+    default_booking_deposit: number;
+    allow_product_selection_bookings: boolean;
+  } | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [createdBookingId, setCreatedBookingId] = useState<string | null>(null);
+  const [showPaymentFlow, setShowPaymentFlow] = useState(false);
+
+  // Fetch payment settings on mount
+  useEffect(() => {
+    const fetchPaymentSettings = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('booking_payments_enabled, default_booking_deposit, allow_product_selection_bookings')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (profile) {
+        setPaymentSettings({
+          booking_payments_enabled: profile.booking_payments_enabled || false,
+          default_booking_deposit: profile.default_booking_deposit || 0,
+          allow_product_selection_bookings: profile.allow_product_selection_bookings || true
+        });
+      }
+    };
+
+    fetchPaymentSettings();
+  }, [userId]);
 
   const handleInputChange = (field: keyof BookingData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleProductSelectionChange = (productIds: string[], amount: number) => {
+    setSelectedProducts(productIds);
+    setTotalAmount(amount);
   };
 
   const validateForm = (): boolean => {
@@ -78,8 +117,17 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
     try {
       setLoading(true);
       
-      // Create the booking (no select to avoid SELECT RLS)
-      const { error: bookingError } = await supabase
+      // Determine if we need payment flow
+      const needsPayment = paymentSettings?.booking_payments_enabled && 
+        (selectedProducts.length > 0 || (paymentSettings.default_booking_deposit > 0));
+      
+      // Calculate amount due
+      const amountDue = selectedProducts.length > 0 
+        ? totalAmount 
+        : (paymentSettings?.default_booking_deposit || 0);
+      
+      // Create the booking
+      const { data: bookingData, error: bookingError } = await supabase
         .from('bookings')
         .insert({
           user_id: userId,
@@ -89,8 +137,13 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
           booking_date: format(selectedDate, 'yyyy-MM-dd'),
           booking_time: selectedTime,
           notes: formData.notes,
-          status: 'confirmed'
-        });
+          status: needsPayment ? 'pending' : 'confirmed',
+          payment_status: needsPayment ? 'pending' : 'not_required',
+          product_ids: selectedProducts.length > 0 ? selectedProducts : null,
+          amount_due: needsPayment ? amountDue : 0
+        })
+        .select('id')
+        .single();
 
       if (bookingError) {
         console.error('Error creating booking:', bookingError);
@@ -129,28 +182,36 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
 
       setBusinessProfile(profile);
       setConfirmationStoreLocation(profile?.store_address || profile?.store_location);
-      
-      // Attempt to open WhatsApp immediately (fallback on modal close if blocked)
-      if (profile?.whatsapp_number) {
-        const bookingDate = format(selectedDate, 'dd MMMM yyyy');
-        const phoneDisplay = formData.customerPhone ? `+${formatPhoneForWhatsApp(formData.customerPhone)}` : '';
-        const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${phoneDisplay}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}\n\nPlease send through the invoice.`;
-        const whatsappLink = createWhatsAppLink(profile.whatsapp_number, message);
-        const win = window.open(whatsappLink, '_blank');
-        if (!win) {
-          // Popup blocked – ignore here; fallback will redirect on modal close
-        } else {
-          setWhatsappSent(true);
+
+      if (needsPayment) {
+        // Payment flow - show payment component
+        setCreatedBookingId(bookingData.id);
+        setShowPaymentFlow(true);
+        toast({
+          title: "Booking Created",
+          description: "Please complete payment to confirm your booking.",
+        });
+      } else {
+        // Original flow - attempt WhatsApp and show confirmation
+        if (profile?.whatsapp_number) {
+          const bookingDate = format(selectedDate, 'dd MMMM yyyy');
+          const phoneDisplay = formData.customerPhone ? `+${formatPhoneForWhatsApp(formData.customerPhone)}` : '';
+          const message = `📅 New Booking Received!\n\nName: ${formData.customerName}\nDate: ${bookingDate}\nTime: ${selectedTime}\nPhone: ${phoneDisplay}\nEmail: ${formData.customerEmail}${formData.notes ? `\nNotes: ${formData.notes}` : ''}\n\nPlease send through the invoice.`;
+          const whatsappLink = createWhatsAppLink(profile.whatsapp_number, message);
+          const win = window.open(whatsappLink, '_blank');
+          if (!win) {
+            // Popup blocked – ignore here; fallback will redirect on modal close
+          } else {
+            setWhatsappSent(true);
+          }
         }
+
+        setShowConfirmationModal(true);
+        toast({
+          title: "Success",
+          description: "Booking confirmed successfully!",
+        });
       }
-
-      // Show confirmation modal
-      setShowConfirmationModal(true);
-
-      toast({
-        title: "Success",
-        description: "Booking confirmed successfully!",
-      });
 
     } catch (error) {
       console.error('Error submitting booking:', error);
@@ -187,6 +248,28 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
     
     onBookingComplete();
   };
+
+  const handlePaymentComplete = () => {
+    setShowPaymentFlow(false);
+    onBookingComplete();
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentFlow(false);
+    setCreatedBookingId(null);
+    // Could optionally delete the pending booking here
+  };
+
+  // Show payment flow if booking created and payment needed
+  if (showPaymentFlow && createdBookingId) {
+    return (
+      <BookingPayment
+        bookingId={createdBookingId}
+        onPaymentComplete={handlePaymentComplete}
+        onCancel={handlePaymentCancel}
+      />
+    );
+  }
 
   return (
     <>
@@ -257,6 +340,19 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
                 rows={3}
               />
             </div>
+
+            {/* Show product selection if payments enabled and allowed */}
+            {paymentSettings?.booking_payments_enabled && 
+             paymentSettings?.allow_product_selection_bookings && (
+              <div className="pt-4">
+                <ProductSelection
+                  userId={userId}
+                  selectedProducts={selectedProducts}
+                  onSelectionChange={handleProductSelectionChange}
+                  disabled={loading}
+                />
+              </div>
+            )}
 
             <div className="flex gap-3 pt-4">
               <Button
