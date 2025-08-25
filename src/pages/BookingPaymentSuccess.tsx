@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Clock, XCircle, MessageCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { createWhatsAppLink, formatPhoneForWhatsApp } from '@/utils/phoneFormatter';
+import { createWhatsAppLink, formatPhoneForWhatsApp, openWhatsAppLink } from '@/utils/phoneFormatter';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -133,13 +133,13 @@ export default function BookingPaymentSuccess() {
     const phoneDisplay = booking.customer_phone ? `+${formatPhoneForWhatsApp(booking.customer_phone)}` : '';
     const message = `🎉 Payment Confirmed!\n\nBooking Details:\nName: ${booking.customer_name}\nDate: ${bookingDate}\nTime: ${booking.booking_time}\nPhone: ${phoneDisplay}\nEmail: ${booking.customer_email}${booking.notes ? `\nNotes: ${booking.notes}` : ''}\n\nThank you for your payment!`;
     
-    const whatsappLink = createWhatsAppLink(business.whatsapp_number, message);
-    const win = window.open(whatsappLink, '_blank');
-    
-    if (!win) {
-      window.location.href = whatsappLink;
+    const success = openWhatsAppLink(business.whatsapp_number, message);
+    if (success) {
+      setWhatsappSent(true);
+      toast.success('Opening WhatsApp...');
+    } else {
+      toast.error('Unable to open WhatsApp. Please try the manual link below.');
     }
-    setWhatsappSent(true);
   };
 
   const getStatusBadge = () => {
@@ -252,14 +252,32 @@ export default function BookingPaymentSuccess() {
 
           <div className="space-y-2">
             {booking.payment_status === 'paid' && business?.whatsapp_number && (
-              <Button 
-                onClick={sendWhatsAppMessage}
-                className="w-full flex items-center gap-2"
-                disabled={whatsappSent}
-              >
-                <MessageCircle className="h-4 w-4" />
-                {whatsappSent ? 'WhatsApp Opened' : 'Contact Business'}
-              </Button>
+              <>
+                <Button 
+                  onClick={sendWhatsAppMessage}
+                  className="w-full flex items-center gap-2"
+                  disabled={whatsappSent}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  {whatsappSent ? 'WhatsApp Opened' : 'Contact Business'}
+                </Button>
+                
+                {/* Manual WhatsApp link as fallback */}
+                <Button 
+                  asChild
+                  variant="outline" 
+                  className="w-full flex items-center gap-2"
+                >
+                  <a 
+                    href={createWhatsAppLink(business.whatsapp_number, `🎉 Payment Confirmed!\n\nBooking Details:\nName: ${booking.customer_name}\nDate: ${format(new Date(booking.booking_date), 'dd MMMM yyyy')}\nTime: ${booking.booking_time}\nEmail: ${booking.customer_email}\n\nThank you for your payment!`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Manual WhatsApp Link
+                  </a>
+                </Button>
+              </>
             )}
             
             {booking.payment_status === 'failed' && (
