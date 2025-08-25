@@ -137,7 +137,7 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
           booking_date: format(selectedDate, 'yyyy-MM-dd'),
           booking_time: selectedTime,
           notes: formData.notes,
-          status: 'confirmed',
+          status: needsPayment ? 'pending' : 'confirmed',
           payment_status: needsPayment ? 'pending' : 'not_required',
           product_ids: selectedProducts.length > 0 ? selectedProducts : null,
           amount_due: needsPayment ? amountDue : 0

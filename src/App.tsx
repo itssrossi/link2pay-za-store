@@ -19,6 +19,8 @@ const InvoicePreview = lazy(() => import('@/pages/InvoicePreview'));
 const BillingSetup = lazy(() => import('@/pages/BillingSetup'));
 const BillingSuccess = lazy(() => import('@/pages/BillingSuccess'));
 const BillingCancelled = lazy(() => import('@/pages/BillingCancelled'));
+const BookingPaymentSuccess = lazy(() => import('@/pages/BookingPaymentSuccess'));
+const BookingPaymentCancelled = lazy(() => import('@/pages/BookingPaymentCancelled'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Storefront = lazy(() => import('@/pages/Storefront'));
 const ProtectedRoute = lazy(() => import('@/components/ProtectedRoute'));
@@ -44,6 +46,8 @@ function App() {
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/store/:username" element={<Storefront />} />
                   <Route path="/invoice/:invoiceId" element={<InvoicePreview />} />
+                  <Route path="/booking-payment-success" element={<BookingPaymentSuccess />} />
+                  <Route path="/booking-payment-cancelled" element={<BookingPaymentCancelled />} />
                   <Route
                     path="/billing/setup"
                     element={

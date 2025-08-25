@@ -127,10 +127,11 @@ serve(async (req) => {
     console.log('Processing payment status:', paymentStatus, 'Amount:', amount);
 
     if (paymentStatus === 'COMPLETE') {
-      // Update booking status to paid
+      // Update booking status to confirmed and payment to paid
       const { error: bookingUpdateError } = await supabase
         .from('bookings')
         .update({
+          status: 'confirmed',
           payment_status: 'paid',
           amount_paid: amount,
           updated_at: new Date().toISOString(),

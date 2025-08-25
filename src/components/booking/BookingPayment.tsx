@@ -46,10 +46,21 @@ export function BookingPayment({ bookingId, onPaymentComplete, onCancel }: Booki
   const [merchant, setMerchant] = useState<MerchantProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [pollingPaymentStatus, setPollingPaymentStatus] = useState(false);
 
   useEffect(() => {
     fetchBookingDetails();
-  }, [bookingId]);
+    
+    // Poll payment status every 5 seconds if payment is pending
+    const pollInterval = setInterval(() => {
+      if (booking?.payment_status === 'pending' && !paymentLoading) {
+        setPollingPaymentStatus(true);
+        fetchBookingDetails().finally(() => setPollingPaymentStatus(false));
+      }
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
+  }, [bookingId, booking?.payment_status, paymentLoading]);
 
   const fetchBookingDetails = async () => {
     try {
@@ -232,7 +243,14 @@ export function BookingPayment({ bookingId, onPaymentComplete, onCancel }: Booki
         </div>
 
         {/* Payment Actions */}
-        <div className="flex gap-3">
+        <div className="space-y-3">
+          {pollingPaymentStatus && (
+            <div className="text-center text-sm text-muted-foreground">
+              Checking payment status...
+            </div>
+          )}
+          
+          <div className="flex gap-3">
           {booking.payment_status === 'pending' && balanceRemaining > 0 && (
             <Button 
               onClick={handlePayment}
@@ -256,12 +274,17 @@ export function BookingPayment({ bookingId, onPaymentComplete, onCancel }: Booki
           )}
 
           {booking.payment_status === 'paid' && (
-            <Button 
-              onClick={onPaymentComplete}
-              className="flex-1"
-            >
-              Continue to WhatsApp
-            </Button>
+            <>
+              <Button 
+                onClick={onPaymentComplete}
+                className="flex-1"
+              >
+                Continue to WhatsApp
+              </Button>
+              <div className="w-full text-center text-sm text-green-600 mt-2">
+                ✅ Payment confirmed! Your booking is now active.
+              </div>
+            </>
           )}
 
           <Button 
@@ -270,6 +293,7 @@ export function BookingPayment({ bookingId, onPaymentComplete, onCancel }: Booki
           >
             Cancel
           </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
