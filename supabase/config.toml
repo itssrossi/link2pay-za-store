@@ -28,3 +28,6 @@ verify_jwt = true
 
 [functions.mark-time-slot]
 verify_jwt = false
+
+[functions.confirm-booking-payment]
+verify_jwt = false

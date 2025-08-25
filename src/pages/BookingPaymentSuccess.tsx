@@ -3,10 +3,11 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, XCircle, MessageCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, MessageCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { createWhatsAppLink, formatPhoneForWhatsApp } from '@/utils/phoneFormatter';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface BookingDetails {
   id: string;
@@ -37,6 +38,8 @@ export default function BookingPaymentSuccess() {
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [whatsappSent, setWhatsappSent] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [fallbackTriggered, setFallbackTriggered] = useState(false);
 
   useEffect(() => {
     if (bookingId) {
@@ -45,6 +48,14 @@ export default function BookingPaymentSuccess() {
       setLoading(false);
     }
   }, [bookingId]);
+
+  // Trigger fallback payment confirmation if needed
+  useEffect(() => {
+    if (booking && booking.payment_status === 'pending' && !fallbackTriggered && !confirmingPayment) {
+      console.log('Booking is pending, triggering fallback confirmation...');
+      triggerFallbackConfirmation();
+    }
+  }, [booking, fallbackTriggered, confirmingPayment]);
 
   const fetchBookingStatus = async () => {
     try {
@@ -72,6 +83,46 @@ export default function BookingPaymentSuccess() {
       console.error('Error fetching booking status:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const triggerFallbackConfirmation = async () => {
+    if (!bookingId || confirmingPayment || fallbackTriggered) return;
+    
+    setConfirmingPayment(true);
+    setFallbackTriggered(true);
+    
+    try {
+      console.log('Triggering fallback payment confirmation for booking:', bookingId);
+      
+      const { data, error } = await supabase.functions.invoke('confirm-booking-payment', {
+        body: { bookingId }
+      });
+
+      if (error) {
+        console.error('Fallback confirmation failed:', error);
+        toast.error('Failed to confirm payment. Please contact support.');
+        return;
+      }
+
+      console.log('Fallback confirmation successful:', data);
+      toast.success('Payment confirmed successfully!');
+      
+      // Refresh booking data
+      await fetchBookingStatus();
+      
+      // Auto-redirect to WhatsApp after confirmation
+      setTimeout(() => {
+        if (booking && business?.whatsapp_number) {
+          sendWhatsAppMessage();
+        }
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error in fallback confirmation:', error);
+      toast.error('Failed to confirm payment. Please contact support.');
+    } finally {
+      setConfirmingPayment(false);
     }
   };
 
@@ -106,12 +157,22 @@ export default function BookingPaymentSuccess() {
     }
   };
 
-  if (loading) {
+  if (loading || confirmingPayment) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Checking payment status...</CardTitle>
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+            <CardTitle>
+              {confirmingPayment ? 'Confirming payment...' : 'Checking payment status...'}
+            </CardTitle>
+            {confirmingPayment && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Please wait while we confirm your payment
+              </p>
+            )}
           </CardHeader>
         </Card>
       </div>
