@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { Md5 } from "https://deno.land/std@0.160.0/hash/md5.ts"
+import md5 from "https://esm.sh/blueimp-md5@2.19.0"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,15 +82,15 @@ serve(async (req) => {
       custom_str3: 'booking_payment',
     };
 
-    // Generate signature for PayFast using same method as ITN handler
+    // Generate signature for PayFast using same method as BillingSetup
     const generateSignature = (data: Record<string, any>, passphrase?: string) => {
-      // Create parameter string - exact same logic as ITN handler
+      // Create parameter string using same encoding as BillingSetup
       let paramString = '';
       const sortedKeys = Object.keys(data).sort();
       
       for (const key of sortedKeys) {
         if (data[key] !== '' && data[key] !== null && data[key] !== undefined) {
-          paramString += `${key}=${encodeURIComponent(data[key])}&`;
+          paramString += `${key}=${encodeURIComponent(data[key]).replace(/%20/g, '+')}&`;
         }
       }
       
@@ -99,15 +99,13 @@ serve(async (req) => {
       
       // Add passphrase if provided
       if (passphrase) {
-        paramString += `&passphrase=${encodeURIComponent(passphrase)}`;
+        paramString += `&passphrase=${encodeURIComponent(passphrase).replace(/%20/g, '+')}`;
       }
       
       console.log('Parameter string for signature:', paramString);
       
-      // Generate MD5 hash using Deno standard library
-      const md5 = new Md5();
-      md5.update(paramString);
-      const signature = md5.toString();
+      // Generate MD5 hash using blueimp-md5 like BillingSetup
+      const signature = md5(paramString).toLowerCase();
       
       console.log('Generated signature:', signature);
       return signature;
