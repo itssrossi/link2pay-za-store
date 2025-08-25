@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-// Use a working MD5 implementation
-import { Md5 } from "https://deno.land/std@0.160.0/hash/md5.ts"
+// Using Web Crypto API for MD5 like the working webhook function
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -83,33 +82,38 @@ serve(async (req) => {
       custom_str3: 'booking_payment',
     };
 
-    // Generate signature for PayFast using MD5
-    const generateSignature = (data: Record<string, any>, passphrase?: string) => {
-      // Create parameter string
-      let paramString = '';
+    // Generate signature for PayFast using Web Crypto API (same as working webhook)
+    const generateSignature = async (data: Record<string, any>, passphrase?: string) => {
+      // Create parameter string - same logic as working webhook
       const sortedKeys = Object.keys(data).sort();
+      const paramPairs = [];
       
       for (const key of sortedKeys) {
         if (data[key] !== '' && data[key] !== null && data[key] !== undefined) {
-          paramString += `${key}=${encodeURIComponent(data[key])}&`;
+          paramPairs.push(`${key}=${data[key]}`);
         }
       }
       
-      // Remove last ampersand
-      paramString = paramString.slice(0, -1);
+      let paramString = paramPairs.join('&');
       
       // Add passphrase if provided
       if (passphrase) {
-        paramString += `&passphrase=${encodeURIComponent(passphrase)}`;
+        paramString += `&passphrase=${passphrase}`;
       }
       
-      // Generate MD5 hash
-      const md5 = new Md5();
-      md5.update(paramString);
-      return md5.toString();
+      console.log('Parameter string for signature:', paramString);
+      
+      // Generate MD5 hash using Web Crypto API
+      const encoder = new TextEncoder();
+      const hashBuffer = await crypto.subtle.digest('MD5', encoder.encode(paramString));
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      console.log('Generated signature:', hashHex);
+      return hashHex;
     };
 
-    const signature = generateSignature(paymentData, profile.payfast_passphrase || undefined);
+    const signature = await generateSignature(paymentData, profile.payfast_passphrase || undefined);
     const paymentDataWithSignature = { ...paymentData, signature };
 
     // Update booking with payment ID
