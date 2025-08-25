@@ -94,6 +94,13 @@ const Dashboard = () => {
         .select('*')
         .eq('user_id', user.id);
 
+      // Fetch paid bookings data
+      const { data: bookings } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('payment_status', 'paid');
+
       // Fetch profile data
       const { data: profile } = await supabase
         .from('profiles')
@@ -101,7 +108,9 @@ const Dashboard = () => {
         .eq('id', user.id)
         .maybeSingle();
 
-      const totalRevenue = invoices?.reduce((sum, invoice) => sum + invoice.total_amount, 0) || 0;
+      const invoiceRevenue = invoices?.reduce((sum, invoice) => sum + invoice.total_amount, 0) || 0;
+      const bookingRevenue = bookings?.reduce((sum, booking) => sum + (booking.amount_paid || 0), 0) || 0;
+      const totalRevenue = invoiceRevenue + bookingRevenue;
       const pendingInvoices = invoices?.filter(inv => inv.status === 'pending').length || 0;
 
       // Monthly Data
