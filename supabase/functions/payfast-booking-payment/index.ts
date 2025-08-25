@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-// Using Web Crypto API for MD5 like the working webhook function
+import { Md5 } from "https://deno.land/std@0.160.0/hash/md5.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,38 +82,38 @@ serve(async (req) => {
       custom_str3: 'booking_payment',
     };
 
-    // Generate signature for PayFast using Web Crypto API (same as working webhook)
-    const generateSignature = async (data: Record<string, any>, passphrase?: string) => {
-      // Create parameter string - same logic as working webhook
+    // Generate signature for PayFast using same method as ITN handler
+    const generateSignature = (data: Record<string, any>, passphrase?: string) => {
+      // Create parameter string - exact same logic as ITN handler
+      let paramString = '';
       const sortedKeys = Object.keys(data).sort();
-      const paramPairs = [];
       
       for (const key of sortedKeys) {
         if (data[key] !== '' && data[key] !== null && data[key] !== undefined) {
-          paramPairs.push(`${key}=${data[key]}`);
+          paramString += `${key}=${encodeURIComponent(data[key])}&`;
         }
       }
       
-      let paramString = paramPairs.join('&');
+      // Remove last ampersand
+      paramString = paramString.slice(0, -1);
       
       // Add passphrase if provided
       if (passphrase) {
-        paramString += `&passphrase=${passphrase}`;
+        paramString += `&passphrase=${encodeURIComponent(passphrase)}`;
       }
       
       console.log('Parameter string for signature:', paramString);
       
-      // Generate MD5 hash using Web Crypto API
-      const encoder = new TextEncoder();
-      const hashBuffer = await crypto.subtle.digest('MD5', encoder.encode(paramString));
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      // Generate MD5 hash using Deno standard library
+      const md5 = new Md5();
+      md5.update(paramString);
+      const signature = md5.toString();
       
-      console.log('Generated signature:', hashHex);
-      return hashHex;
+      console.log('Generated signature:', signature);
+      return signature;
     };
 
-    const signature = await generateSignature(paymentData, profile.payfast_passphrase || undefined);
+    const signature = generateSignature(paymentData, profile.payfast_passphrase || undefined);
     const paymentDataWithSignature = { ...paymentData, signature };
 
     // Update booking with payment ID
