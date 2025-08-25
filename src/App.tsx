@@ -24,6 +24,7 @@ const BookingPaymentCancelled = lazy(() => import('@/pages/BookingPaymentCancell
 const Settings = lazy(() => import('@/pages/Settings'));
 const Storefront = lazy(() => import('@/pages/Storefront'));
 const ProtectedRoute = lazy(() => import('@/components/ProtectedRoute'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
 
 // Loading component
 const PageLoader = () => (
@@ -134,6 +135,7 @@ function App() {
                       </Suspense>
                     }
                   />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
               <Toaster />
