@@ -160,6 +160,30 @@ serve(async (req) => {
         console.error('Error updating transaction:', transactionUpdateError);
       }
 
+      // Mark time slot as booked since payment is now confirmed
+      const { data: booking } = await supabase
+        .from('bookings')
+        .select('booking_date, booking_time')
+        .eq('id', bookingId)
+        .single();
+
+      if (booking) {
+        const { error: markError } = await supabase.functions.invoke('mark-time-slot', {
+          body: {
+            userId: userId,
+            date: booking.booking_date,
+            timeSlot: booking.booking_time,
+            bookingId: bookingId,
+          },
+        });
+
+        if (markError) {
+          console.error('Error marking time slot as booked:', markError);
+        } else {
+          console.log('Time slot marked as booked for confirmed payment:', bookingId);
+        }
+      }
+
       // Send booking confirmation (optional)
       try {
         await supabase.functions.invoke('send-booking-confirmation', {

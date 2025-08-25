@@ -155,22 +155,26 @@ const BookingForm = ({ userId, selectedDate, selectedTime, onBookingComplete, on
         return;
       }
 
-      // Update the time slot to mark it as booked via Edge Function (bypasses RLS)
-      const { error: markError } = await supabase.functions.invoke('mark-time-slot', {
-        body: {
-          userId,
-          date: format(selectedDate, 'yyyy-MM-dd'),
-          timeSlot: selectedTime,
-        },
-      });
-
-      if (markError) {
-        console.error('Error marking time slot:', markError);
-        toast({
-          title: 'Warning',
-          description: 'Booking created but time slot may still appear available.',
-          variant: 'destructive',
+      // Only mark time slot as booked if payment is not required
+      // For payment-required bookings, time slot will be marked after successful payment
+      if (!needsPayment) {
+        const { error: markError } = await supabase.functions.invoke('mark-time-slot', {
+          body: {
+            userId,
+            date: format(selectedDate, 'yyyy-MM-dd'),
+            timeSlot: selectedTime,
+            bookingId: bookingData.id,
+          },
         });
+
+        if (markError) {
+          console.error('Error marking time slot:', markError);
+          toast({
+            title: 'Warning',
+            description: 'Booking created but time slot may still appear available.',
+            variant: 'destructive',
+          });
+        }
       }
 
       // Get business profile for WhatsApp message and modal

@@ -67,9 +67,9 @@ serve(async (req) => {
     const paymentData = {
       merchant_id: profile.payfast_merchant_id,
       merchant_key: profile.payfast_merchant_key,
-      return_url: `${Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovable.app')}/booking-payment-success?booking_id=${bookingId}`,
-      cancel_url: `${Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovable.app')}/booking-payment-cancelled?booking_id=${bookingId}`,
-      notify_url: 'https://link2pay.co.za/api/payfast/booking-itn',
+      return_url: `https://mpzqlidtvlbijloeusuj.lovable.app/booking-payment-success?booking_id=${bookingId}`,
+      cancel_url: `https://mpzqlidtvlbijloeusuj.lovable.app/booking-payment-cancelled?booking_id=${bookingId}`,
+      notify_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payfast-booking-itn`,
       name_first: customerName.split(' ')[0] || customerName,
       name_last: customerName.split(' ').slice(1).join(' ') || '',
       email_address: customerEmail,
