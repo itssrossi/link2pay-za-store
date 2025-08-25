@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { createHash } from "https://deno.land/std@0.168.0/crypto/crypto.ts"
+import { Md5 } from "https://deno.land/std@0.208.0/hash/md5.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -69,7 +69,7 @@ serve(async (req) => {
       return new Response('Merchant profile not found', { status: 400 });
     }
 
-    // Verify PayFast signature
+    // Verify PayFast signature using MD5
     const verifySignature = (data: Record<string, string>, passphrase?: string) => {
       const { signature, ...dataWithoutSignature } = data;
       
@@ -92,13 +92,9 @@ serve(async (req) => {
       }
       
       // Generate MD5 hash
-      const encoder = new TextEncoder();
-      const data_array = encoder.encode(paramString);
-      const hashBuffer = createHash("md5").update(data_array).digest();
-      
-      const calculatedSignature = Array.from(new Uint8Array(hashBuffer))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
+      const md5 = new Md5();
+      md5.update(paramString);
+      const calculatedSignature = md5.toString();
       
       return calculatedSignature === signature;
     };
