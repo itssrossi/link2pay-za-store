@@ -12,13 +12,6 @@ interface OnboardingContextType {
   setNeedsBillingSetup: (needs: boolean) => void;
   needsSubscriptionPayment: boolean;
   setNeedsSubscriptionPayment: (needs: boolean) => void;
-  // Interactive Walkthrough
-  walkthroughActive: boolean;
-  currentWalkthroughStep: number;
-  setCurrentWalkthroughStep: (step: number) => void;
-  completeWalkthrough: () => Promise<void>;
-  skipWalkthrough: () => Promise<void>;
-  restartWalkthrough: () => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -37,10 +30,6 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [needsBillingSetup, setNeedsBillingSetup] = useState(false);
   const [needsSubscriptionPayment, setNeedsSubscriptionPayment] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-  
-  // Interactive Walkthrough State
-  const [walkthroughActive, setWalkthroughActive] = useState(false);
-  const [currentWalkthroughStep, setCurrentWalkthroughStep] = useState(-1);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -80,11 +69,10 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             if (profile.has_active_subscription) {
             setNeedsBillingSetup(false);
             setNeedsSubscriptionPayment(false);
-            // Show walkthrough if not completed yet and not already completed in this session
+            // Show onboarding if not completed yet and not already completed in this session
             if (!profile.onboarding_completed && !onboardingCompleted) {
-              console.log('User has subscription but onboarding not completed - starting walkthrough');
-              setWalkthroughActive(true);
-              setCurrentWalkthroughStep(-1);
+              console.log('User has subscription but onboarding not completed - showing onboarding');
+              setShowOnboarding(true);
             }
           } else {
             // Check if user has started a trial
@@ -101,10 +89,9 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               const isTrialActive = trialEnd > now;
               
               if (!profile.onboarding_completed && !onboardingCompleted && isTrialActive) {
-                // User needs to complete walkthrough during active trial
-                console.log('User needs to complete walkthrough during trial');
-                setWalkthroughActive(true);
-                setCurrentWalkthroughStep(-1);
+                // User needs to complete onboarding during active trial
+                console.log('User needs to complete onboarding during trial');
+                setShowOnboarding(true);
                 setNeedsBillingSetup(false);
                 setNeedsSubscriptionPayment(false);
               } else if (!isTrialActive) {
@@ -197,41 +184,6 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     await completeOnboarding();
   };
 
-  const completeWalkthrough = async () => {
-    if (!user) return;
-
-    try {
-      console.log('Completing walkthrough for user:', user.id);
-      
-      await supabase
-        .from('profiles')
-        .update({ onboarding_completed: true })
-        .eq('id', user.id);
-
-      // Create default store sections
-      await createDefaultSections();
-
-      setWalkthroughActive(false);
-      setCurrentWalkthroughStep(-1);
-      setShowOnboarding(false);
-      setNeedsBillingSetup(false);
-      setNeedsSubscriptionPayment(false);
-      setOnboardingCompleted(true);
-      
-      console.log('Walkthrough completed successfully');
-    } catch (error) {
-      console.error('Error completing walkthrough:', error);
-    }
-  };
-
-  const skipWalkthrough = async () => {
-    await completeWalkthrough();
-  };
-
-  const restartWalkthrough = () => {
-    setWalkthroughActive(true);
-    setCurrentWalkthroughStep(-1);
-  };
 
   const value = {
     showOnboarding,
@@ -242,13 +194,6 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setNeedsBillingSetup,
     needsSubscriptionPayment,
     setNeedsSubscriptionPayment,
-    // Interactive Walkthrough
-    walkthroughActive,
-    currentWalkthroughStep,
-    setCurrentWalkthroughStep,
-    completeWalkthrough,
-    skipWalkthrough,
-    restartWalkthrough,
   };
 
   return (

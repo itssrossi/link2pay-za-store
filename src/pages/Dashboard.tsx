@@ -36,7 +36,7 @@ import QuickInvoiceWhatsApp from '@/components/QuickInvoiceWhatsApp';
 import GrowthCTA from '@/components/GrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 import InvoicesModal from '@/components/InvoicesModal';
-import InteractiveWalkthrough from '@/components/onboarding/InteractiveWalkthrough';
+import OnboardingModal from '@/components/onboarding/OnboardingModal';
 
 interface DashboardStats {
   totalProducts: number;
@@ -349,7 +349,10 @@ const Dashboard = () => {
         onClose={() => setShowInvoicesModal(false)} 
       />
 
-      <InteractiveWalkthrough />
+      <OnboardingModal 
+        isOpen={showOnboarding} 
+        onClose={() => setShowOnboarding(false)} 
+      />
     </Layout>
   );
 };
