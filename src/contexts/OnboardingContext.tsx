@@ -40,7 +40,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   
   // Interactive Walkthrough State
   const [walkthroughActive, setWalkthroughActive] = useState(false);
-  const [currentWalkthroughStep, setCurrentWalkthroughStep] = useState(0);
+  const [currentWalkthroughStep, setCurrentWalkthroughStep] = useState(-1);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -84,7 +84,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             if (!profile.onboarding_completed && !onboardingCompleted) {
               console.log('User has subscription but onboarding not completed - starting walkthrough');
               setWalkthroughActive(true);
-              setCurrentWalkthroughStep(0);
+              setCurrentWalkthroughStep(-1);
             }
           } else {
             // Check if user has started a trial
@@ -104,7 +104,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                 // User needs to complete walkthrough during active trial
                 console.log('User needs to complete walkthrough during trial');
                 setWalkthroughActive(true);
-                setCurrentWalkthroughStep(0);
+                setCurrentWalkthroughStep(-1);
                 setNeedsBillingSetup(false);
                 setNeedsSubscriptionPayment(false);
               } else if (!isTrialActive) {
@@ -212,7 +212,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       await createDefaultSections();
 
       setWalkthroughActive(false);
-      setCurrentWalkthroughStep(0);
+      setCurrentWalkthroughStep(-1);
       setShowOnboarding(false);
       setNeedsBillingSetup(false);
       setNeedsSubscriptionPayment(false);
@@ -230,7 +230,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const restartWalkthrough = () => {
     setWalkthroughActive(true);
-    setCurrentWalkthroughStep(0);
+    setCurrentWalkthroughStep(-1);
   };
 
   const value = {

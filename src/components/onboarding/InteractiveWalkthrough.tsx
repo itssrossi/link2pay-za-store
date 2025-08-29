@@ -9,6 +9,7 @@ import WalkthroughOverlay from './WalkthroughOverlay';
 import WalkthroughSpotlight from './WalkthroughSpotlight';
 import WalkthroughProgress from './WalkthroughProgress';
 import WalkthroughTooltip from './WalkthroughTooltip';
+import WelcomeModal from './WelcomeModal';
 import Confetti from './Confetti';
 
 const WALKTHROUGH_STEPS = [
@@ -158,6 +159,7 @@ const InteractiveWalkthrough: React.FC = () => {
   const [stepCompleted, setStepCompleted] = useState(false);
 
   const currentStep = WALKTHROUGH_STEPS[currentWalkthroughStep];
+  const isWelcomeStep = currentWalkthroughStep === -1;
 
   // Set current user ID for validation functions
   useEffect(() => {
@@ -200,7 +202,7 @@ const InteractiveWalkthrough: React.FC = () => {
 
   // Navigate to correct route when step changes
   useEffect(() => {
-    if (!currentStep) return;
+    if (!currentStep || isWelcomeStep) return;
 
     const targetRoute = currentStep.route;
     const targetTab = currentStep.tab;
@@ -234,7 +236,9 @@ const InteractiveWalkthrough: React.FC = () => {
   }, [currentWalkthroughStep, currentStep, navigate, location.pathname, location.hash]);
 
   const handleNext = () => {
-    if (currentWalkthroughStep < WALKTHROUGH_STEPS.length - 1) {
+    if (isWelcomeStep) {
+      setCurrentWalkthroughStep(0); // Start actual walkthrough steps
+    } else if (currentWalkthroughStep < WALKTHROUGH_STEPS.length - 1) {
       setCurrentWalkthroughStep(currentWalkthroughStep + 1);
     } else {
       completeWalkthrough();
@@ -245,7 +249,22 @@ const InteractiveWalkthrough: React.FC = () => {
     skipWalkthrough();
   };
 
-  if (!walkthroughActive || !currentStep) {
+  if (!walkthroughActive) {
+    return null;
+  }
+
+  // Show welcome modal for Step -1
+  if (isWelcomeStep) {
+    return (
+      <>
+        <WalkthroughOverlay onSkip={handleSkip}>
+          <WelcomeModal onStartSetup={handleNext} />
+        </WalkthroughOverlay>
+      </>
+    );
+  }
+
+  if (!currentStep) {
     return null;
   }
 
