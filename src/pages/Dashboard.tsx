@@ -114,6 +114,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showGrowthForm, setShowGrowthForm] = useState(false);
   const [showInvoicesModal, setShowInvoicesModal] = useState(false);
+  const [hideOnboardingChecklist, setHideOnboardingChecklist] = useState(false);
 
   useEffect(() => {
     if (user && !needsBillingSetup) {
@@ -327,9 +328,12 @@ const Dashboard = () => {
         {/* Quick Stats */}
         <div className="grid gap-2 sm:gap-3 lg:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {/* Onboarding Progress - Show when not completed */}
-          {!showOnboarding && onboardingSteps.some(step => !step.completed) && (
+          {!showOnboarding && !hideOnboardingChecklist && onboardingSteps.some(step => !step.completed) && (
             <div className="col-span-1 sm:col-span-2 lg:col-span-1 order-first">
-              <OnboardingProgressList steps={onboardingSteps} />
+              <OnboardingProgressList 
+                steps={onboardingSteps} 
+                onHide={() => setHideOnboardingChecklist(true)}
+              />
             </div>
           )}
           

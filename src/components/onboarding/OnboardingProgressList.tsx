@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Circle, Package, Palette, Calendar, CreditCard, FileText } from 'lucide-react';
+import { CheckCircle, Circle, Package, Palette, Calendar, CreditCard, FileText, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface OnboardingStep {
@@ -15,9 +15,10 @@ interface OnboardingStep {
 
 interface OnboardingProgressListProps {
   steps: OnboardingStep[];
+  onHide?: () => void;
 }
 
-const OnboardingProgressList: React.FC<OnboardingProgressListProps> = ({ steps }) => {
+const OnboardingProgressList: React.FC<OnboardingProgressListProps> = ({ steps, onHide }) => {
   const navigate = useNavigate();
   const completedCount = steps.filter(step => step.completed).length;
   const totalSteps = steps.length;
@@ -51,9 +52,20 @@ const OnboardingProgressList: React.FC<OnboardingProgressListProps> = ({ steps }
       <CardContent className="p-2 sm:p-3 md:p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-medium text-xs sm:text-sm md:text-base">Setup Progress</h3>
-          <span className="text-xs sm:text-sm text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
-            {completedCount}/{totalSteps}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs sm:text-sm text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+              {completedCount}/{totalSteps}
+            </span>
+            {onHide && (
+              <button
+                onClick={onHide}
+                className="p-1 hover:bg-muted/50 rounded-full transition-colors"
+                aria-label="Hide checklist"
+              >
+                <X className="w-3 h-3 text-muted-foreground" />
+              </button>
+            )}
+          </div>
         </div>
         
         <Progress value={progress} className="h-1 sm:h-1.5 md:h-2 mb-2 sm:mb-3" />

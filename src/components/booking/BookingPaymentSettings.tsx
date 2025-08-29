@@ -8,12 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import { CreditCard, Settings } from 'lucide-react';
+import { CreditCard, Settings, Calendar } from 'lucide-react';
 
 interface BookingPaymentSettingsData {
   booking_payments_enabled: boolean;
   default_booking_deposit: number;
   allow_product_selection_bookings: boolean;
+  booking_enabled: boolean;
 }
 
 export function BookingPaymentSettings() {
@@ -24,6 +25,7 @@ export function BookingPaymentSettings() {
     booking_payments_enabled: false,
     default_booking_deposit: 0,
     allow_product_selection_bookings: true,
+    booking_enabled: false,
   });
 
   useEffect(() => {
@@ -40,6 +42,12 @@ export function BookingPaymentSettings() {
         .eq('id', user!.id)
         .single();
 
+      // Check if user has any availability settings (indicates bookings are enabled)
+      const { count: availabilityCount } = await supabase
+        .from('availability_settings')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user!.id);
+
       if (error) throw error;
 
       if (data) {
@@ -47,6 +55,7 @@ export function BookingPaymentSettings() {
           booking_payments_enabled: data.booking_payments_enabled || false,
           default_booking_deposit: data.default_booking_deposit || 0,
           allow_product_selection_bookings: data.allow_product_selection_bookings !== false,
+          booking_enabled: (availabilityCount || 0) > 0,
         });
       }
     } catch (error) {
@@ -58,6 +67,56 @@ export function BookingPaymentSettings() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBookingToggle = async (enabled: boolean) => {
+    if (!user?.id) return;
+
+    try {
+      if (enabled) {
+        // Create default availability settings for all days
+        const defaultSettings = [];
+        for (let day = 0; day < 7; day++) {
+          defaultSettings.push({
+            user_id: user.id,
+            day_of_week: day,
+            start_time: '09:00',
+            end_time: '17:00',
+            is_available: day >= 1 && day <= 5, // Monday to Friday
+          });
+        }
+
+        const { error } = await supabase
+          .from('availability_settings')
+          .upsert(defaultSettings, { onConflict: 'user_id,day_of_week' });
+
+        if (error) throw error;
+      } else {
+        // Remove all availability settings
+        const { error } = await supabase
+          .from('availability_settings')
+          .delete()
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      }
+
+      updateSetting('booking_enabled', enabled);
+      
+      toast({
+        title: "Success",
+        description: enabled 
+          ? "Bookings enabled on your store with default availability." 
+          : "Bookings disabled and removed from your store.",
+      });
+    } catch (error) {
+      console.error('Error toggling bookings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update booking settings.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -128,20 +187,40 @@ export function BookingPaymentSettings() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex items-center justify-between space-x-4 p-4 border border-border rounded-lg" data-walkthrough="booking-toggle">
+        <div className="flex items-center justify-between space-x-4 p-4 border border-border rounded-lg bg-primary/5">
           <div className="space-y-0.5">
-            <Label className="font-medium">Enable Booking Payments</Label>
+            <Label className="font-medium flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Enable Bookings on Store
+            </Label>
             <p className="text-sm text-muted-foreground">
-              Allow customers to pay deposits or full amounts for bookings
+              Add booking functionality to your store with default availability
             </p>
           </div>
           <Switch
-            checked={settings.booking_payments_enabled}
-            onCheckedChange={(checked) => updateSetting('booking_payments_enabled', checked)}
+            checked={settings.booking_enabled}
+            onCheckedChange={handleBookingToggle}
           />
         </div>
 
-        {settings.booking_payments_enabled && (
+        {settings.booking_enabled && (
+          <>
+            <div className="flex items-center justify-between space-x-4 p-4 border border-border rounded-lg" data-walkthrough="booking-toggle">
+              <div className="space-y-0.5">
+                <Label className="font-medium">Enable Booking Payments</Label>
+                <p className="text-sm text-muted-foreground">
+                  Allow customers to pay deposits or full amounts for bookings
+                </p>
+              </div>
+              <Switch
+                checked={settings.booking_payments_enabled}
+                onCheckedChange={(checked) => updateSetting('booking_payments_enabled', checked)}
+              />
+            </div>
+          </>
+        )}
+
+        {settings.booking_enabled && settings.booking_payments_enabled && (
           <>
             <div className="space-y-2">
               <Label htmlFor="deposit-amount">Default Booking Deposit Amount (ZAR)</Label>
@@ -174,13 +253,15 @@ export function BookingPaymentSettings() {
           </>
         )}
 
-        <Button 
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full"
-        >
-          {saving ? 'Saving...' : 'Save Payment Settings'}
-        </Button>
+        {settings.booking_enabled && (
+          <Button 
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full"
+          >
+            {saving ? 'Saving...' : 'Save Payment Settings'}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
