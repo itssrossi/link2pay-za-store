@@ -113,10 +113,11 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
               label="Business Logo"
               accept=".jpg,.jpeg,.png"
               maxSize={5}
+              data-walkthrough="logo-upload"
             />
           </div>
 
-          <div>
+          <div data-walkthrough="whatsapp-input">
             <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
             <Input
               id="whatsapp_number"
@@ -183,6 +184,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
               placeholder="Enter your store address for local pickup/delivery..."
               rows={3}
               className="mt-1"
+              data-walkthrough="store-location"
             />
             <p className="text-sm text-gray-500 mt-1">
               This address will appear on invoices when customers select "Local Pickup" or delivery options.

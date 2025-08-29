@@ -128,7 +128,7 @@ export function BookingPaymentSettings() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex items-center justify-between space-x-4 p-4 border border-border rounded-lg">
+        <div className="flex items-center justify-between space-x-4 p-4 border border-border rounded-lg" data-walkthrough="booking-toggle">
           <div className="space-y-0.5">
             <Label className="font-medium">Enable Booking Payments</Label>
             <p className="text-sm text-muted-foreground">

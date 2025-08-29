@@ -36,7 +36,7 @@ import QuickInvoiceWhatsApp from '@/components/QuickInvoiceWhatsApp';
 import GrowthCTA from '@/components/GrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 import InvoicesModal from '@/components/InvoicesModal';
-import OnboardingModal from '@/components/onboarding/OnboardingModal';
+import InteractiveWalkthrough from '@/components/onboarding/InteractiveWalkthrough';
 
 interface DashboardStats {
   totalProducts: number;
@@ -196,8 +196,8 @@ const Dashboard = () => {
     <Layout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+            <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" data-walkthrough="dashboard-title">Dashboard</h1>
             <p className="text-gray-600 mt-1 text-sm sm:text-base">
               Welcome back! Here's an overview of your business.
             </p>
@@ -205,7 +205,7 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <div className="flex gap-2">
               <GrowthCTA onClick={() => setShowGrowthForm(true)} />
-              <Button size="sm" className="flex-1 sm:flex-none">
+              <Button size="sm" className="flex-1 sm:flex-none" data-walkthrough="add-product">
                 <Link to="/products/add" className="flex items-center">
                   <Plus className="w-4 h-4 mr-1 sm:mr-2" />
                   <span className="hidden xs:inline">Add Product</span>
@@ -213,7 +213,7 @@ const Dashboard = () => {
                 </Link>
               </Button>
             </div>
-            <Button size="sm" variant="outline" className="w-full sm:w-auto">
+            <Button size="sm" variant="outline" className="w-full sm:w-auto" data-walkthrough="new-invoice">
               <Link to="/invoice-builder" className="flex items-center">
                 <FileText className="w-4 h-4 mr-1 sm:mr-2" />
                 <span className="hidden xs:inline">New Invoice</span>
@@ -271,7 +271,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="p-4 sm:p-6">
+          <Card className="p-4 sm:p-6" data-walkthrough="store-link">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
               <CardTitle className="text-sm font-medium">Store Link</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -349,10 +349,7 @@ const Dashboard = () => {
         onClose={() => setShowInvoicesModal(false)} 
       />
 
-      <OnboardingModal 
-        isOpen={showOnboarding}
-        onClose={handleCloseOnboarding}
-      />
+      <InteractiveWalkthrough />
     </Layout>
   );
 };

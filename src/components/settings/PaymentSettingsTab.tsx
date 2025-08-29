@@ -65,7 +65,7 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card data-walkthrough="payment-settings">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="w-5 h-5" />
