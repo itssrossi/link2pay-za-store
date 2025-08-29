@@ -325,15 +325,15 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-2 sm:gap-3 lg:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {/* Onboarding Progress - Show when not completed */}
           {!showOnboarding && onboardingSteps.some(step => !step.completed) && (
-            <div className="sm:col-span-2 lg:col-span-4">
+            <div className="col-span-1 sm:col-span-2 lg:col-span-1 order-first">
               <OnboardingProgressList steps={onboardingSteps} />
             </div>
           )}
           
-          <Card className="p-4 sm:p-6">
+          <Card className="p-3 sm:p-4 lg:p-6">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
               <CardTitle className="text-sm font-medium">Total Products</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
