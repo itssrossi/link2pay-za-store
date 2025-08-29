@@ -23,7 +23,7 @@ const WalkthroughOverlay: React.FC<WalkthroughOverlayProps> = ({ children, onSki
       )}
       
       {/* Content */}
-      <div className="relative z-[10000]">
+      <div className="relative z-[10000] pointer-events-auto">
         {children}
       </div>
     </div>,
