@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { supabase } from '@/integrations/supabase/client';
 import OnboardingWelcome from './OnboardingWelcome';
 import OnboardingDashboard from './OnboardingDashboard';
@@ -13,6 +14,7 @@ interface OnboardingModalProps {
 const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { completeOnboarding } = useOnboarding();
   const [showWelcome, setShowWelcome] = useState(true);
   const [onboardingSteps, setOnboardingSteps] = useState([
     {
@@ -125,7 +127,9 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
     setShowWelcome(false);
   };
 
-  const handleStepClick = (route: string) => {
+  const handleStepClick = async (route: string) => {
+    // Complete onboarding when any step is clicked
+    await completeOnboarding();
     onClose();
     navigate(route);
   };
