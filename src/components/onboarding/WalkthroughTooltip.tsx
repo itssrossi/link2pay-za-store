@@ -26,30 +26,45 @@ const WalkthroughTooltip: React.FC<WalkthroughTooltipProps> = ({
   const [tooltipPosition, setTooltipPosition] = useState<'top' | 'bottom' | 'left' | 'right'>('bottom');
 
   useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 15;
+    
     const updatePosition = () => {
       const element = document.querySelector(targetSelector);
+      console.log('💬 WalkthroughTooltip looking for:', targetSelector, 'found:', !!element);
+      
       if (element) {
         const rect = element.getBoundingClientRect();
-        setTargetRect(rect);
+        if (rect.width > 0 && rect.height > 0) {
+          setTargetRect(rect);
+          console.log('✅ Tooltip positioned for element:', rect);
 
-        // Auto-calculate position if set to auto
-        if (position === 'auto') {
-          const windowHeight = window.innerHeight;
-          const windowWidth = window.innerWidth;
-          
-          // Prefer bottom, but use top if not enough space
-          if (rect.bottom + 200 < windowHeight) {
-            setTooltipPosition('bottom');
-          } else if (rect.top - 200 > 0) {
-            setTooltipPosition('top');
-          } else if (rect.right + 300 < windowWidth) {
-            setTooltipPosition('right');
+          // Auto-calculate position if set to auto
+          if (position === 'auto') {
+            const windowHeight = window.innerHeight;
+            const windowWidth = window.innerWidth;
+            
+            // Prefer bottom, but use top if not enough space
+            if (rect.bottom + 250 < windowHeight) {
+              setTooltipPosition('bottom');
+            } else if (rect.top - 250 > 0) {
+              setTooltipPosition('top');
+            } else if (rect.right + 350 < windowWidth) {
+              setTooltipPosition('right');
+            } else {
+              setTooltipPosition('left');
+            }
           } else {
-            setTooltipPosition('left');
+            setTooltipPosition(position);
           }
-        } else {
-          setTooltipPosition(position);
+          return;
         }
+      }
+      
+      if (retryCount < maxRetries) {
+        retryCount++;
+        console.log(`🔄 Tooltip retry ${retryCount}/${maxRetries}`);
+        setTimeout(updatePosition, 300);
       }
     };
 
@@ -159,7 +174,7 @@ const WalkthroughTooltip: React.FC<WalkthroughTooltipProps> = ({
 
   return (
     <div style={getTooltipStyle()}>
-      <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 animate-scale-in">
+      <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-5 animate-scale-in backdrop-blur-sm">
         {/* Arrow */}
         <div style={getArrowStyle()} />
         
@@ -168,8 +183,8 @@ const WalkthroughTooltip: React.FC<WalkthroughTooltipProps> = ({
           <div className="flex items-start gap-2">
             {completed && <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />}
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
-              <p className="text-gray-600 text-sm mt-1">{description}</p>
+              <h3 className="font-bold text-gray-900 text-base">{title}</h3>
+              <p className="text-gray-700 text-sm mt-1 leading-relaxed">{description}</p>
             </div>
           </div>
           
@@ -177,7 +192,7 @@ const WalkthroughTooltip: React.FC<WalkthroughTooltipProps> = ({
             <div className="flex justify-end">
               <button
                 onClick={onNext}
-                className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-all duration-200 shadow-md hover:shadow-lg"
               >
                 {nextText}
                 <ChevronRight className="w-4 h-4" />

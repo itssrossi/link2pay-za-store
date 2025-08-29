@@ -9,8 +9,8 @@ interface WalkthroughOverlayProps {
 const WalkthroughOverlay: React.FC<WalkthroughOverlayProps> = ({ children, onSkip }) => {
   return createPortal(
     <div className="fixed inset-0 z-[9999] pointer-events-none">
-      {/* Dark overlay with blur */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-auto" />
+      {/* Dark overlay with enhanced blur */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md pointer-events-auto" />
       
       {/* Skip button */}
       {onSkip && (

@@ -13,22 +13,30 @@ const WalkthroughSpotlight: React.FC<WalkthroughSpotlightProps> = ({
 
   useEffect(() => {
     let retryCount = 0;
-    const maxRetries = 10;
+    const maxRetries = 20; // Increased retries
+    let timeoutId: NodeJS.Timeout;
     
     const updatePosition = () => {
       const element = document.querySelector(targetSelector);
-      console.log('WalkthroughSpotlight looking for:', targetSelector, 'found:', !!element);
+      console.log('🎯 WalkthroughSpotlight looking for:', targetSelector, 'found:', !!element);
       
       if (element) {
         const rect = element.getBoundingClientRect();
-        setTargetRect(rect);
-        console.log('Element found and positioned:', rect);
-      } else if (retryCount < maxRetries) {
+        // Only set if element is actually visible
+        if (rect.width > 0 && rect.height > 0) {
+          setTargetRect(rect);
+          console.log('✅ Element found and positioned:', rect);
+          return;
+        }
+      }
+      
+      if (retryCount < maxRetries) {
         retryCount++;
-        console.log(`Element not found, retry ${retryCount}/${maxRetries}`);
-        setTimeout(updatePosition, 500);
+        const delay = retryCount < 5 ? 200 : retryCount < 10 ? 500 : 1000; // Progressive delays
+        console.log(`🔄 Element not found, retry ${retryCount}/${maxRetries} (delay: ${delay}ms)`);
+        timeoutId = setTimeout(updatePosition, delay);
       } else {
-        console.warn('Element not found after max retries:', targetSelector);
+        console.warn('❌ Element not found after max retries:', targetSelector);
       }
     };
 
@@ -46,23 +54,30 @@ const WalkthroughSpotlight: React.FC<WalkthroughSpotlightProps> = ({
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition);
       observer.disconnect();
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [targetSelector]);
 
   if (!targetRect) return null;
 
   const spotlightStyle = {
-    position: 'absolute' as const,
+    position: 'fixed' as const, // Changed to fixed for better positioning
     left: targetRect.left - padding,
     top: targetRect.top - padding,
     width: targetRect.width + (padding * 2),
     height: targetRect.height + (padding * 2),
-    border: '3px solid hsl(var(--primary))',
-    borderRadius: '8px',
-    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 20px hsl(var(--primary))',
+    border: '4px solid hsl(var(--primary))',
+    borderRadius: '12px',
+    boxShadow: `
+      0 0 0 9999px rgba(0, 0, 0, 0.75),
+      0 0 30px hsl(var(--primary)),
+      inset 0 0 20px rgba(255, 255, 255, 0.1)
+    `,
     pointerEvents: 'none' as const,
     zIndex: 9998,
     animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+    background: 'rgba(255, 255, 255, 0.02)',
+    backdropFilter: 'blur(1px)',
   };
 
   return <div style={spotlightStyle} />;

@@ -14,6 +14,7 @@ interface ImageUploadProps {
   accept?: string;
   maxSize?: number; // in MB
   className?: string;
+  [key: string]: any; // Allow data attributes and other props
 }
 
 const ImageUpload = ({
@@ -22,7 +23,8 @@ const ImageUpload = ({
   label,
   accept = ".jpg,.jpeg,.png",
   maxSize = 5,
-  className = ""
+  className = "",
+  ...props // Spread remaining props (including data attributes)
 }: ImageUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string>(value || '');
@@ -128,6 +130,7 @@ const ImageUpload = ({
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           className="w-full sm:w-auto"
+          {...props}
         >
           <Upload className="w-4 h-4 mr-2" />
           {uploading ? 'Uploading...' : 'Upload Image'}
