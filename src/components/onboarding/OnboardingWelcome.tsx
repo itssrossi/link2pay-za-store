@@ -53,11 +53,11 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onComplete }) => 
 
   return (
     <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 overflow-y-auto">
-      <div className="min-h-screen flex items-start justify-center p-4 py-8">
+      <div className="min-h-screen flex items-start justify-center p-2 sm:p-4 py-4 sm:py-8">
         <div className="w-full max-w-2xl">
           {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between text-sm text-muted-foreground mb-2">
+        <div className="mb-4 sm:mb-8 px-2 sm:px-0">
+          <div className="flex justify-between text-xs sm:text-sm text-muted-foreground mb-2">
             <span>Step {currentStep + 1} of {steps.length}</span>
             <span>{Math.round(((currentStep + 1) / steps.length) * 100)}% Complete</span>
           </div>
@@ -70,18 +70,18 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onComplete }) => 
         </div>
 
         {/* Content Card */}
-        <Card className="border-0 shadow-2xl">
-          <CardContent className="p-8 sm:p-12">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+        <Card className="border-0 shadow-2xl mx-2 sm:mx-0">
+          <CardContent className="p-4 sm:p-8 lg:p-12">
+            <div className="text-center mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2 sm:mb-4 leading-tight">
                 {steps[currentStep].title}
               </h1>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-sm sm:text-lg text-muted-foreground">
                 Help us customize your experience
               </p>
             </div>
 
-            <div className="grid gap-4 sm:gap-6">
+            <div className="grid gap-3 sm:gap-4 lg:gap-6">
               {steps[currentStep].options.map((option, index) => {
                 const Icon = option.icon;
                 return (
@@ -95,21 +95,21 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onComplete }) => 
                     onClick={() => handleOptionSelect(option.id)}
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
-                    <CardContent className="p-6 flex items-center space-x-4">
+                    <CardContent className="p-3 sm:p-6 flex items-center space-x-3 sm:space-x-4">
                       <div className="flex-shrink-0">
-                        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Icon className="w-6 h-6 text-primary" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-foreground mb-1">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm sm:text-lg text-foreground mb-1">
                           {option.label}
                         </h3>
-                        <p className="text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                           {option.desc}
                         </p>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                     </CardContent>
                   </Card>
                 );
@@ -117,8 +117,8 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onComplete }) => 
             </div>
 
             {currentStep > 0 && (
-              <div className="flex justify-start mt-8">
-                <Button variant="ghost" onClick={handleBack} className="flex items-center">
+              <div className="flex justify-start mt-6 sm:mt-8 px-2 sm:px-0">
+                <Button variant="ghost" onClick={handleBack} className="flex items-center text-sm">
                   <ChevronLeft className="w-4 h-4 mr-2" />
                   Back
                 </Button>

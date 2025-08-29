@@ -24,7 +24,7 @@ const OnboardingProgressList: React.FC<OnboardingProgressListProps> = ({ steps }
   const progress = (completedCount / totalSteps) * 100;
 
   const getIcon = (iconName: string, completed: boolean) => {
-    const iconProps = { className: `w-4 h-4 ${completed ? 'text-primary' : 'text-muted-foreground'}` };
+    const iconProps = { className: `w-3 h-3 sm:w-4 sm:h-4 ${completed ? 'text-primary' : 'text-muted-foreground'}` };
     
     switch (iconName) {
       case 'package':
@@ -48,30 +48,30 @@ const OnboardingProgressList: React.FC<OnboardingProgressListProps> = ({ steps }
 
   return (
     <Card className="w-full">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-medium text-sm">Setup Progress</h3>
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <h3 className="font-medium text-xs sm:text-sm">Setup Progress</h3>
           <span className="text-xs text-muted-foreground">{completedCount}/{totalSteps}</span>
         </div>
         
-        <Progress value={progress} className="h-2 mb-4" />
+        <Progress value={progress} className="h-1.5 sm:h-2 mb-3 sm:mb-4" />
         
-        <div className="space-y-2">
+        <div className="space-y-1 sm:space-y-2">
           {steps.map((step) => (
             <div
               key={step.id}
               onClick={() => handleStepClick(step.route)}
-              className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+              className="flex items-center space-x-2 sm:space-x-3 p-1.5 sm:p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
             >
               <div className="flex-shrink-0">
                 {step.completed ? (
-                  <CheckCircle className="w-4 h-4 text-primary" />
+                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
                 ) : (
                   getIcon(step.icon, step.completed)
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium ${step.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                <p className={`text-xs sm:text-sm font-medium truncate ${step.completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                   {step.title}
                 </p>
               </div>
@@ -80,7 +80,7 @@ const OnboardingProgressList: React.FC<OnboardingProgressListProps> = ({ steps }
         </div>
         
         {progress === 100 && (
-          <div className="mt-3 p-2 bg-primary/10 rounded-lg text-center">
+          <div className="mt-2 sm:mt-3 p-2 bg-primary/10 rounded-lg text-center">
             <p className="text-xs text-primary font-medium">🎉 Setup Complete!</p>
           </div>
         )}
