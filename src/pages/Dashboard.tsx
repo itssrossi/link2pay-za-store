@@ -37,6 +37,7 @@ import GrowthCTA from '@/components/GrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 import InvoicesModal from '@/components/InvoicesModal';
 import OnboardingModal from '@/components/onboarding/OnboardingModal';
+import OnboardingProgressList from '@/components/onboarding/OnboardingProgressList';
 
 interface DashboardStats {
   totalProducts: number;
@@ -58,7 +59,49 @@ interface DashboardStats {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { needsBillingSetup, showOnboarding, setShowOnboarding } = useOnboarding();
+  const { needsBillingSetup, showOnboarding, setShowOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
+  const [onboardingSteps, setOnboardingSteps] = useState([
+    {
+      id: 'add_product',
+      title: 'Add your first product',
+      description: 'Create your first product listing to start selling',
+      completed: false,
+      route: '/products/add',
+      icon: 'package'
+    },
+    {
+      id: 'customize_store',
+      title: 'Customize your store',
+      description: 'Set up your business profile and branding',
+      completed: false,
+      route: '/settings#business',
+      icon: 'palette'
+    },
+    {
+      id: 'setup_bookings',
+      title: 'Setup bookings',
+      description: 'Configure appointment booking for services',
+      completed: false,
+      route: '/settings#booking',
+      icon: 'calendar'
+    },
+    {
+      id: 'setup_payments',
+      title: 'Setup payments',
+      description: 'Configure payment methods to accept payments',
+      completed: false,
+      route: '/settings#payment',
+      icon: 'credit_card'
+    },
+    {
+      id: 'send_invoice',
+      title: 'Send your first invoice',
+      description: 'Create and send your first invoice to a customer',
+      completed: false,
+      route: '/invoice-builder',
+      icon: 'file_text'
+    }
+  ]);
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
     totalInvoices: 0,
@@ -75,8 +118,66 @@ const Dashboard = () => {
   useEffect(() => {
     if (user && !needsBillingSetup) {
       fetchDashboardData();
+      checkOnboardingProgress();
     }
   }, [user, needsBillingSetup]);
+
+  const checkOnboardingProgress = async () => {
+    if (!user) return;
+
+    try {
+      // Check products
+      const { count: productsCount } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      // Check profile completeness
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('business_name, logo_url, store_handle, eft_details, payfast_link, snapscan_link')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      // Check invoices
+      const { count: invoicesCount } = await supabase
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      // Check availability settings for bookings
+      const { count: bookingsCount } = await supabase
+        .from('availability_settings')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      // Check payment settings
+      const hasPayments = profile?.eft_details || profile?.payfast_link || profile?.snapscan_link;
+
+      // Update steps based on actual progress
+      setOnboardingSteps(prev => prev.map(step => {
+        switch (step.id) {
+          case 'add_product':
+            return { ...step, completed: (productsCount || 0) > 0 };
+          case 'customize_store':
+            return { 
+              ...step, 
+              completed: !!(profile?.business_name && (profile?.logo_url || profile?.store_handle))
+            };
+          case 'setup_bookings':
+            return { ...step, completed: (bookingsCount || 0) > 0 };
+          case 'setup_payments':
+            return { ...step, completed: !!hasPayments };
+          case 'send_invoice':
+            return { ...step, completed: (invoicesCount || 0) > 0 };
+          default:
+            return step;
+        }
+      }));
+    } catch (error) {
+      console.error('Error checking onboarding progress:', error);
+    }
+  };
 
   const fetchDashboardData = async () => {
     if (!user) return;
@@ -204,7 +305,7 @@ const Dashboard = () => {
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <div className="flex gap-2">
-              <GrowthCTA onClick={() => setShowGrowthForm(true)} />
+              {!showOnboarding && <GrowthCTA onClick={() => setShowGrowthForm(true)} />}
               <Button size="sm" className="flex-1 sm:flex-none" data-walkthrough="add-product">
                 <Link to="/products/add" className="flex items-center">
                   <Plus className="w-4 h-4 mr-1 sm:mr-2" />
@@ -225,6 +326,13 @@ const Dashboard = () => {
 
         {/* Quick Stats */}
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Onboarding Progress - Show when not completed */}
+          {!showOnboarding && onboardingSteps.some(step => !step.completed) && (
+            <div className="sm:col-span-2 lg:col-span-4">
+              <OnboardingProgressList steps={onboardingSteps} />
+            </div>
+          )}
+          
           <Card className="p-4 sm:p-6">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
               <CardTitle className="text-sm font-medium">Total Products</CardTitle>

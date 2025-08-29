@@ -2,6 +2,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -17,6 +18,7 @@ import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
+  const { showOnboarding } = useOnboarding();
   const location = useLocation();
   const navigate = useNavigate();
   const [showGrowthForm, setShowGrowthForm] = useState(false);
@@ -126,8 +128,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </div>
 
-      {/* Mobile Sticky Growth CTA - only show on dashboard */}
-      {location.pathname === '/dashboard' && (
+      {/* Mobile Sticky Growth CTA - only show on dashboard when not onboarding */}
+      {location.pathname === '/dashboard' && !showOnboarding && (
         <MobileStickyGrowthCTA onClick={() => setShowGrowthForm(true)} />
       )}
 

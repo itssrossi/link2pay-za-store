@@ -4,15 +4,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Package, Store, Zap, Users, ArrowRight, ChevronLeft } from 'lucide-react';
 
 interface OnboardingWelcomeProps {
-  onComplete: (selections: { sellType: string; businessType: string; sellLocation: string }) => void;
+  onComplete: (selections: { sellType: string; businessType: string }) => void;
 }
 
 const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selections, setSelections] = useState({
     sellType: '',
-    businessType: '',
-    sellLocation: ''
+    businessType: ''
   });
 
   const steps = [
@@ -22,14 +21,6 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onComplete }) => 
         { id: 'products', label: 'Physical Products', icon: Package, desc: 'Items you can ship or deliver' },
         { id: 'services', label: 'Services', icon: Users, desc: 'Appointments, consultations, etc.' },
         { id: 'both', label: 'Products & Services', icon: Store, desc: 'Mix of physical and service offerings' }
-      ]
-    },
-    {
-      title: "Where would you like to sell?",
-      options: [
-        { id: 'online', label: 'Online Store', icon: Store, desc: 'Sell through your website' },
-        { id: 'person', label: 'In Person', icon: Users, desc: 'Face-to-face sales' },
-        { id: 'both', label: 'Online & In Person', icon: Package, desc: 'Multiple sales channels' }
       ]
     },
     {
@@ -43,7 +34,7 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onComplete }) => 
   ];
 
   const handleOptionSelect = (value: string) => {
-    const stepKeys = ['sellType', 'sellLocation', 'businessType'];
+    const stepKeys = ['sellType', 'businessType'];
     const newSelections = { ...selections, [stepKeys[currentStep]]: value };
     setSelections(newSelections);
 

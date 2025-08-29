@@ -120,21 +120,8 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
     }
   };
 
-  const handleWelcomeComplete = async (selections: any) => {
-    // Save user selections to profile
-    if (user) {
-      try {
-        await supabase
-          .from('profiles')
-          .update({
-            // We can store these selections for later personalization
-            // For now, just complete the welcome flow
-          })
-          .eq('id', user.id);
-      } catch (error) {
-        console.error('Error saving onboarding selections:', error);
-      }
-    }
+  const handleWelcomeComplete = async (selections: { sellType: string; businessType: string }) => {
+    // Complete the welcome flow - selections can be used for future personalization
     setShowWelcome(false);
   };
 
