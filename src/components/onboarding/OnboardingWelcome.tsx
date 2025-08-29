@@ -21,7 +21,6 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onComplete }) => 
       options: [
         { id: 'products', label: 'Physical Products', icon: Package, desc: 'Items you can ship or deliver' },
         { id: 'services', label: 'Services', icon: Users, desc: 'Appointments, consultations, etc.' },
-        { id: 'digital', label: 'Digital Products', icon: Zap, desc: 'Downloads, courses, software' },
         { id: 'both', label: 'Products & Services', icon: Store, desc: 'Mix of physical and service offerings' }
       ]
     },
