@@ -22,7 +22,7 @@ const DashboardTip = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 animate-fade-in">
+    <div className="fixed bottom-20 left-4 right-4 z-50 animate-fade-in">
       <Card className="bg-primary text-primary-foreground border-none shadow-lg mx-auto max-w-sm">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
