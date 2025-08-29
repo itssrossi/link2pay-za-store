@@ -62,9 +62,10 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onComplete }) => 
   };
 
   return (
-    <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        {/* Progress Bar */}
+    <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 overflow-y-auto">
+      <div className="min-h-screen flex items-start justify-center p-4 py-8">
+        <div className="w-full max-w-2xl">
+          {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between text-sm text-muted-foreground mb-2">
             <span>Step {currentStep + 1} of {steps.length}</span>
@@ -135,6 +136,7 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onComplete }) => 
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );
