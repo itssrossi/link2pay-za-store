@@ -18,6 +18,20 @@ const Settings = () => {
     const hash = window.location.hash.replace('#', '');
     return hash || 'business';
   });
+  
+  // Listen for hash changes from walkthrough
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && hash !== activeTab) {
+        console.log('Settings: Tab changed via hash to:', hash);
+        setActiveTab(hash);
+      }
+    };
+    
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [activeTab]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

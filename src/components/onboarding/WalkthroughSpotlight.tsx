@@ -12,11 +12,23 @@ const WalkthroughSpotlight: React.FC<WalkthroughSpotlightProps> = ({
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 10;
+    
     const updatePosition = () => {
       const element = document.querySelector(targetSelector);
+      console.log('WalkthroughSpotlight looking for:', targetSelector, 'found:', !!element);
+      
       if (element) {
         const rect = element.getBoundingClientRect();
         setTargetRect(rect);
+        console.log('Element found and positioned:', rect);
+      } else if (retryCount < maxRetries) {
+        retryCount++;
+        console.log(`Element not found, retry ${retryCount}/${maxRetries}`);
+        setTimeout(updatePosition, 500);
+      } else {
+        console.warn('Element not found after max retries:', targetSelector);
       }
     };
 
@@ -25,7 +37,9 @@ const WalkthroughSpotlight: React.FC<WalkthroughSpotlightProps> = ({
     window.addEventListener('scroll', updatePosition);
 
     // Use MutationObserver to detect DOM changes
-    const observer = new MutationObserver(updatePosition);
+    const observer = new MutationObserver(() => {
+      setTimeout(updatePosition, 100); // Small delay for DOM to settle
+    });
     observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {

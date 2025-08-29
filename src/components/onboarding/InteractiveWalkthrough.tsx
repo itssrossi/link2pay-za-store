@@ -44,7 +44,7 @@ const WALKTHROUGH_STEPS = [
     description: 'Link your payment method so you can get paid.',
     targetSelector: '[data-walkthrough="payment-settings"]',
     route: '/settings',
-    tab: 'payments',
+    tab: 'payment',
     validation: () => checkPaymentSetup()
   },
   {
@@ -97,11 +97,11 @@ const checkLogoUpload = async () => {
 const checkWhatsAppAndLocation = async () => {
   const { data } = await supabase
     .from('profiles')
-    .select('whatsapp_number, store_location')
+    .select('whatsapp_number, store_address')
     .eq('id', (window as any).currentUserId)
     .single();
   
-  return !!(data?.whatsapp_number && data?.store_location);
+  return !!(data?.whatsapp_number && data?.store_address);
 };
 
 const checkFirstProduct = async () => {
@@ -116,11 +116,11 @@ const checkFirstProduct = async () => {
 const checkPaymentSetup = async () => {
   const { data } = await supabase
     .from('profiles')
-    .select('payfast_merchant_id, payfast_merchant_key, snapscan_link, eft_details')
+    .select('payfast_merchant_id, payfast_merchant_key, snapscan_link, eft_details, capitec_paylink')
     .eq('id', (window as any).currentUserId)
     .single();
   
-  return !!(data?.payfast_merchant_id || data?.snapscan_link || data?.eft_details);
+  return !!(data?.payfast_merchant_id || data?.snapscan_link || data?.eft_details || data?.capitec_paylink);
 };
 
 const checkFirstInvoice = async () => {
@@ -203,15 +203,35 @@ const InteractiveWalkthrough: React.FC = () => {
     if (!currentStep) return;
 
     const targetRoute = currentStep.route;
+    const targetTab = currentStep.tab;
     const currentRoute = location.pathname;
     
-    if (currentRoute !== targetRoute) {
-      navigate(targetRoute);
+    // Build full URL with hash if tab is specified
+    const fullTargetUrl = targetTab ? `${targetRoute}#${targetTab}` : targetRoute;
+    const currentFullUrl = targetTab ? `${currentRoute}${location.hash}` : currentRoute;
+    
+    console.log('Walkthrough navigation check:', {
+      currentStep: currentStep.id,
+      targetRoute,
+      targetTab,
+      currentRoute,
+      fullTargetUrl,
+      currentFullUrl,
+      hash: location.hash
+    });
+    
+    if (currentFullUrl !== fullTargetUrl) {
+      console.log('Navigating to:', fullTargetUrl);
+      if (targetTab) {
+        navigate(`${targetRoute}#${targetTab}`);
+      } else {
+        navigate(targetRoute);
+      }
     }
 
     // Reset step completion when step changes
     setStepCompleted(false);
-  }, [currentWalkthroughStep, currentStep, navigate, location.pathname]);
+  }, [currentWalkthroughStep, currentStep, navigate, location.pathname, location.hash]);
 
   const handleNext = () => {
     if (currentWalkthroughStep < WALKTHROUGH_STEPS.length - 1) {
