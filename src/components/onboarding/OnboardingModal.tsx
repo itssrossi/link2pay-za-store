@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { supabase } from '@/integrations/supabase/client';
+import { triggerConfetti } from '@/components/ui/confetti';
 import OnboardingWelcome from './OnboardingWelcome';
 import OnboardingDashboard from './OnboardingDashboard';
 
@@ -18,20 +19,20 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
   const [showWelcome, setShowWelcome] = useState(true);
   const [onboardingSteps, setOnboardingSteps] = useState([
     {
+      id: 'customize_store',
+      title: 'Set up your store',
+      description: 'Complete your business profile with WhatsApp number',
+      completed: false,
+      route: '/settings#business',
+      icon: 'palette'
+    },
+    {
       id: 'add_product',
       title: 'Add your first product',
       description: 'Create your first product listing to start selling',
       completed: false,
       route: '/products/add',
       icon: 'package'
-    },
-    {
-      id: 'customize_store',
-      title: 'Customize your store',
-      description: 'Set up your business profile and branding',
-      completed: false,
-      route: '/settings#business',
-      icon: 'palette'
     },
     {
       id: 'setup_bookings',
@@ -78,7 +79,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
       // Check profile completeness
       const { data: profile } = await supabase
         .from('profiles')
-        .select('business_name, logo_url, store_handle, eft_details, payfast_link, snapscan_link')
+        .select('business_name, logo_url, store_handle, eft_details, payfast_link, snapscan_link, whatsapp_number')
         .eq('id', user.id)
         .maybeSingle();
 
@@ -105,7 +106,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
           case 'customize_store':
             return { 
               ...step, 
-              completed: !!(profile?.business_name && (profile?.logo_url || profile?.store_handle))
+              completed: !!(profile?.business_name && profile?.whatsapp_number && profile?.store_handle)
             };
           case 'setup_bookings':
             return { ...step, completed: (bookingsCount || 0) > 0 };
@@ -127,7 +128,21 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
     setShowWelcome(false);
   };
 
-  const handleStepClick = async (route: string) => {
+  const handleStepClick = async (route: string, stepId: string) => {
+    // Trigger confetti for step completion
+    triggerConfetti();
+    
+    // Create default sections when setting up store
+    if (stepId === 'customize_store' && user) {
+      try {
+        await supabase.functions.invoke('create-default-sections', {
+          body: { user_id: user.id }
+        });
+      } catch (error) {
+        console.error('Error creating default sections:', error);
+      }
+    }
+    
     // Complete onboarding when any step is clicked
     await completeOnboarding();
     onClose();

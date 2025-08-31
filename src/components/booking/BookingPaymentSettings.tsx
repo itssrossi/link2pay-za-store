@@ -7,25 +7,33 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/hooks/use-toast';
-import { CreditCard, Settings, Calendar } from 'lucide-react';
+import { CreditCard, Settings, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface BookingPaymentSettingsData {
   booking_payments_enabled: boolean;
   default_booking_deposit: number;
   allow_product_selection_bookings: boolean;
   booking_enabled: boolean;
+  payfast_merchant_id: string;
+  payfast_merchant_key: string;
+  payfast_passphrase: string;
 }
 
 export function BookingPaymentSettings() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [paymentSettingsExpanded, setPaymentSettingsExpanded] = useState(false);
   const [settings, setSettings] = useState<BookingPaymentSettingsData>({
     booking_payments_enabled: false,
     default_booking_deposit: 0,
     allow_product_selection_bookings: true,
     booking_enabled: false,
+    payfast_merchant_id: '',
+    payfast_merchant_key: '',
+    payfast_passphrase: '',
   });
 
   useEffect(() => {
@@ -38,7 +46,7 @@ export function BookingPaymentSettings() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('booking_payments_enabled, default_booking_deposit, allow_product_selection_bookings')
+        .select('booking_payments_enabled, default_booking_deposit, allow_product_selection_bookings, payfast_merchant_id, payfast_merchant_key, payfast_passphrase')
         .eq('id', user!.id)
         .single();
 
@@ -56,7 +64,12 @@ export function BookingPaymentSettings() {
           default_booking_deposit: data.default_booking_deposit || 0,
           allow_product_selection_bookings: data.allow_product_selection_bookings !== false,
           booking_enabled: (availabilityCount || 0) > 0,
+          payfast_merchant_id: data.payfast_merchant_id || '',
+          payfast_merchant_key: data.payfast_merchant_key || '',
+          payfast_passphrase: data.payfast_passphrase || '',
         });
+        
+        setPaymentSettingsExpanded(data.booking_payments_enabled || false);
       }
     } catch (error) {
       console.error('Error fetching booking payment settings:', error);
@@ -131,12 +144,18 @@ export function BookingPaymentSettings() {
           booking_payments_enabled: settings.booking_payments_enabled,
           default_booking_deposit: settings.default_booking_deposit,
           allow_product_selection_bookings: settings.allow_product_selection_bookings,
+          payfast_merchant_id: settings.payfast_merchant_id,
+          payfast_merchant_key: settings.payfast_merchant_key,
+          payfast_passphrase: settings.payfast_passphrase,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
       if (error) throw error;
 
+      // Refresh availability settings display
+      await fetchSettings();
+      
       toast({
         title: "Success",
         description: "Booking payment settings saved successfully.",
@@ -214,44 +233,106 @@ export function BookingPaymentSettings() {
               </div>
               <Switch
                 checked={settings.booking_payments_enabled}
-                onCheckedChange={(checked) => updateSetting('booking_payments_enabled', checked)}
+                onCheckedChange={(checked) => {
+                  updateSetting('booking_payments_enabled', checked);
+                  setPaymentSettingsExpanded(checked);
+                }}
               />
             </div>
           </>
         )}
 
-        {settings.booking_enabled && settings.booking_payments_enabled && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="deposit-amount">Default Booking Deposit Amount (ZAR)</Label>
-              <Input
-                id="deposit-amount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={settings.default_booking_deposit}
-                onChange={(e) => updateSetting('default_booking_deposit', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-              />
-              <p className="text-sm text-muted-foreground">
-                Default deposit amount when no products are selected. Set to 0 for full payment only.
-              </p>
+        <Collapsible open={paymentSettingsExpanded} onOpenChange={setPaymentSettingsExpanded}>
+          <CollapsibleTrigger asChild>
+            <div className="w-full">
+              {settings.booking_enabled && settings.booking_payments_enabled && (
+                <div className="flex items-center justify-between p-4 border border-border rounded-lg cursor-pointer hover:bg-muted/30">
+                  <div className="space-y-0.5">
+                    <Label className="font-medium cursor-pointer">Payment Settings</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Configure PayFast payment details and booking options
+                    </p>
+                  </div>
+                  {paymentSettingsExpanded ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </div>
+              )}
             </div>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent className="space-y-4 mt-4">
+            {settings.booking_enabled && settings.booking_payments_enabled && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="merchant-id">PayFast Merchant ID</Label>
+                    <Input
+                      id="merchant-id"
+                      type="text"
+                      value={settings.payfast_merchant_id}
+                      onChange={(e) => updateSetting('payfast_merchant_id', e.target.value)}
+                      placeholder="Enter your PayFast merchant ID"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="merchant-key">PayFast Merchant Key</Label>
+                    <Input
+                      id="merchant-key"
+                      type="text"
+                      value={settings.payfast_merchant_key}
+                      onChange={(e) => updateSetting('payfast_merchant_key', e.target.value)}
+                      placeholder="Enter your PayFast merchant key"
+                    />
+                  </div>
+                </div>
 
-            <div className="flex items-center justify-between space-x-4 p-4 border border-border rounded-lg">
-              <div className="space-y-0.5">
-                <Label className="font-medium">Allow Product Selection</Label>
-                <p className="text-sm text-muted-foreground">
-                  Let customers select products/services when making bookings
-                </p>
-              </div>
-              <Switch
-                checked={settings.allow_product_selection_bookings}
-                onCheckedChange={(checked) => updateSetting('allow_product_selection_bookings', checked)}
-              />
-            </div>
-          </>
-        )}
+                <div className="space-y-2">
+                  <Label htmlFor="passphrase">PayFast Passphrase</Label>
+                  <Input
+                    id="passphrase"
+                    type="password"
+                    value={settings.payfast_passphrase}
+                    onChange={(e) => updateSetting('payfast_passphrase', e.target.value)}
+                    placeholder="Enter your PayFast passphrase"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deposit-amount">Default Booking Deposit Amount (ZAR)</Label>
+                  <Input
+                    id="deposit-amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={settings.default_booking_deposit}
+                    onChange={(e) => updateSetting('default_booking_deposit', parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Default deposit amount when no products are selected. Set to 0 for full payment only.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between space-x-4 p-4 border border-border rounded-lg">
+                  <div className="space-y-0.5">
+                    <Label className="font-medium">Allow Product Selection</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Let customers select products/services when making bookings
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settings.allow_product_selection_bookings}
+                    onCheckedChange={(checked) => updateSetting('allow_product_selection_bookings', checked)}
+                  />
+                </div>
+              </>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
 
         {settings.booking_enabled && (
           <Button 

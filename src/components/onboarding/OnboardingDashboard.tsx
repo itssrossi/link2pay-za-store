@@ -17,7 +17,7 @@ interface OnboardingStep {
 interface OnboardingDashboardProps {
   onClose: () => void;
   steps: OnboardingStep[];
-  onStepClick: (route: string) => void;
+  onStepClick: (route: string, stepId: string) => void;
 }
 
 const OnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
@@ -81,7 +81,7 @@ const OnboardingDashboard: React.FC<OnboardingDashboardProps> = ({
                     key={step.id}
                     step={step}
                     stepNumber={index + 1}
-                    onClick={() => onStepClick(step.route)}
+                    onClick={() => onStepClick(step.route, step.id)}
                   />
                 ))}
               </div>

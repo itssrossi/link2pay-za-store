@@ -2,21 +2,29 @@ import { useState, useEffect } from 'react';
 import { X, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
 
 const DashboardTip = () => {
+  const { user } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Check if the tip has been dismissed before
-    const tipDismissed = localStorage.getItem('dashboard-tip-dismissed');
+    if (!user?.id) return;
+    
+    // Use user-specific localStorage key
+    const tipKey = `dashboard-tip-dismissed-${user.id}`;
+    const tipDismissed = localStorage.getItem(tipKey);
     if (!tipDismissed) {
       setIsVisible(true);
     }
-  }, []);
+  }, [user?.id]);
 
   const handleDismiss = () => {
+    if (!user?.id) return;
+    
     setIsVisible(false);
-    localStorage.setItem('dashboard-tip-dismissed', 'true');
+    const tipKey = `dashboard-tip-dismissed-${user.id}`;
+    localStorage.setItem(tipKey, 'true');
   };
 
   if (!isVisible) return null;
