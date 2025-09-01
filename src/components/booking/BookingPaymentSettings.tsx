@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/hooks/use-toast';
-import { CreditCard, Settings, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { CreditCard, Settings, Calendar, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { CompletionPopup } from '@/components/ui/completion-popup';
 
 interface BookingPaymentSettingsData {
   booking_payments_enabled: boolean;
@@ -26,6 +27,8 @@ export function BookingPaymentSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [paymentSettingsExpanded, setPaymentSettingsExpanded] = useState(false);
+  const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+  const [availabilitySettings, setAvailabilitySettings] = useState<any[]>([]);
   const [settings, setSettings] = useState<BookingPaymentSettingsData>({
     booking_payments_enabled: false,
     default_booking_deposit: 0,
@@ -56,6 +59,13 @@ export function BookingPaymentSettings() {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user!.id);
 
+      // Fetch actual availability settings to display
+      const { data: availabilityData } = await supabase
+        .from('availability_settings')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('day_of_week');
+
       if (error) throw error;
 
       if (data) {
@@ -69,6 +79,7 @@ export function BookingPaymentSettings() {
           payfast_passphrase: data.payfast_passphrase || '',
         });
         
+        setAvailabilitySettings(availabilityData || []);
         setPaymentSettingsExpanded(data.booking_payments_enabled || false);
       }
     } catch (error) {
@@ -155,6 +166,9 @@ export function BookingPaymentSettings() {
 
       // Refresh availability settings display
       await fetchSettings();
+      
+      // Show completion popup with confetti
+      setShowCompletionPopup(true);
       
       toast({
         title: "Success",
@@ -334,6 +348,33 @@ export function BookingPaymentSettings() {
           </CollapsibleContent>
         </Collapsible>
 
+        {settings.booking_enabled && availabilitySettings.length > 0 && (
+          <div className="space-y-4">
+            <div className="p-4 border border-border rounded-lg bg-muted/30">
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="h-4 w-4 text-primary" />
+                <h4 className="font-medium">Current Availability Schedule</h4>
+              </div>
+              <div className="grid gap-2">
+                {availabilitySettings.map((setting) => {
+                  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                  return (
+                    <div key={setting.day_of_week} className="flex justify-between text-sm">
+                      <span className="font-medium">{days[setting.day_of_week]}</span>
+                      <span className={setting.is_available ? 'text-primary' : 'text-muted-foreground'}>
+                        {setting.is_available 
+                          ? `${setting.start_time} - ${setting.end_time}` 
+                          : 'Unavailable'
+                        }
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {settings.booking_enabled && (
           <Button 
             onClick={handleSave}
@@ -343,6 +384,13 @@ export function BookingPaymentSettings() {
             {saving ? 'Saving...' : 'Save Payment Settings'}
           </Button>
         )}
+
+        <CompletionPopup
+          isOpen={showCompletionPopup}
+          onClose={() => setShowCompletionPopup(false)}
+          title="Booking Settings Saved!"
+          message="Click the dashboard button to complete the rest of the steps"
+        />
       </CardContent>
     </Card>
   );

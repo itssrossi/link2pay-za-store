@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
-import DashboardTip from '@/components/DashboardTip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import BusinessProfileTab from '@/components/settings/BusinessProfileTab';
 import PaymentSettingsTab from '@/components/settings/PaymentSettingsTab';
@@ -150,7 +149,6 @@ const Settings = () => {
 
   return (
     <Layout>
-      <DashboardTip />
       <div className="space-y-6 px-4 sm:px-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
         

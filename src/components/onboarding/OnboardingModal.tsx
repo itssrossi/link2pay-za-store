@@ -129,9 +129,6 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClose }) =>
   };
 
   const handleStepClick = async (route: string, stepId: string) => {
-    // Trigger confetti for step completion
-    triggerConfetti();
-    
     // Create default sections when setting up store
     if (stepId === 'customize_store' && user) {
       try {
