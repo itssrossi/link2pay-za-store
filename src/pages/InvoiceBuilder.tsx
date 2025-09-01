@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Send, CreditCard, Truck } from 'lucide-react';
 import { ZokoService } from '@/utils/zokoService';
+import { CompletionPopup } from '@/components/ui/completion-popup';
 // PayFast integration removed - migrated to Paystack
 
 interface InvoiceItem {
@@ -38,6 +39,7 @@ const InvoiceBuilder = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [showCompletionPopup, setShowCompletionPopup] = useState(false);
   
   // Invoice details
   const [clientName, setClientName] = useState('');
@@ -322,8 +324,13 @@ const InvoiceBuilder = () => {
         toast.success(`Invoice ${invoiceNumber} created successfully! 📄✅`);
       }
 
-      // Navigate to invoice view
-      navigate(`/invoice/${invoice!.id}`);
+      // Show completion popup with confetti
+      setShowCompletionPopup(true);
+      
+      // Navigate after a short delay to show the popup
+      setTimeout(() => {
+        navigate(`/invoice/${invoice!.id}`);
+      }, 2000);
       
     } catch (error) {
       console.error('Critical error creating invoice:', {
@@ -775,6 +782,13 @@ const InvoiceBuilder = () => {
           </div>
         </div>
       </div>
+
+      <CompletionPopup
+        isOpen={showCompletionPopup}
+        onClose={() => setShowCompletionPopup(false)}
+        title="First Invoice Created!"
+        message="Click the dashboard button to complete the rest of the steps"
+      />
     </Layout>
   );
 };

@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { CompletionPopup } from '@/components/ui/completion-popup';
 
 const AddProduct = () => {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ const AddProduct = () => {
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [showCompletionPopup, setShowCompletionPopup] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -169,7 +171,14 @@ const AddProduct = () => {
 
       console.log('Product created successfully');
       toast.success(`Product added successfully! Product ID: ${productId}`);
-      navigate('/products');
+      
+      // Show completion popup with confetti
+      setShowCompletionPopup(true);
+      
+      // Navigate after a short delay to show the popup
+      setTimeout(() => {
+        navigate('/products');
+      }, 2000);
     } catch (error: any) {
       console.error('Error creating product:', error);
       
@@ -385,6 +394,13 @@ const AddProduct = () => {
           </CardContent>
         </Card>
       </div>
+
+      <CompletionPopup
+        isOpen={showCompletionPopup}
+        onClose={() => setShowCompletionPopup(false)}
+        title="First Product Added!"
+        message="Click the dashboard button to complete the rest of the steps"
+      />
     </Layout>
   );
 };

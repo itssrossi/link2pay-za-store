@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import DeleteAccountDialog from '@/components/settings/DeleteAccountDialog';
+import { CompletionPopup } from '@/components/ui/completion-popup';
 
 
 interface Profile {
@@ -51,6 +52,12 @@ interface BusinessProfileTabProps {
 }
 
 const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessProfileTabProps) => {
+  const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+
+  const handleSave = async () => {
+    await onSave();
+    setShowCompletionPopup(true);
+  };
   const handleChange = (field: string, value: string) => {
     setProfile({ ...profile, [field]: value });
   };
@@ -207,13 +214,20 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Button 
-          onClick={onSave} 
+          onClick={handleSave} 
           disabled={loading}
           className="w-full sm:w-auto"
         >
           {loading ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
+
+      <CompletionPopup
+        isOpen={showCompletionPopup}
+        onClose={() => setShowCompletionPopup(false)}
+        title="Store Setup Complete!"
+        message="Click the dashboard button to complete the rest of the steps"
+      />
     </div>
   );
 };

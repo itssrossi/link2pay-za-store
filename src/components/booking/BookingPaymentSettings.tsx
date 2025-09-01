@@ -165,7 +165,13 @@ export function BookingPaymentSettings() {
       if (error) throw error;
 
       // Refresh availability settings display
-      await fetchSettings();
+      const { data: refreshedAvailabilityData } = await supabase
+        .from('availability_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('day_of_week');
+        
+      setAvailabilitySettings(refreshedAvailabilityData || []);
       
       // Show completion popup with confetti
       setShowCompletionPopup(true);
