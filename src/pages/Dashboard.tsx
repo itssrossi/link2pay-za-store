@@ -307,7 +307,7 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <div className="flex gap-2">
               {!showOnboarding && <GrowthCTA onClick={() => setShowGrowthForm(true)} />}
-              <Button size="sm" className="flex-1 sm:flex-none" data-walkthrough="add-product">
+              <Button size="sm" className="flex-1 sm:flex-none" data-walkthrough="add-product" asChild>
                 <Link to="/products/add" className="flex items-center">
                   <Plus className="w-4 h-4 mr-1 sm:mr-2" />
                   <span className="hidden xs:inline">Add Product</span>
@@ -315,7 +315,7 @@ const Dashboard = () => {
                 </Link>
               </Button>
             </div>
-            <Button size="sm" variant="outline" className="w-full sm:w-auto" data-walkthrough="new-invoice">
+            <Button size="sm" variant="outline" className="w-full sm:w-auto" data-walkthrough="new-invoice" asChild>
               <Link to="/invoice-builder" className="flex items-center">
                 <FileText className="w-4 h-4 mr-1 sm:mr-2" />
                 <span className="hidden xs:inline">New Invoice</span>
@@ -360,11 +360,11 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="p-0 pt-2">
               <div className="text-2xl font-bold">{stats.totalInvoices}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground">
                 <Badge variant={stats.pendingInvoices > 0 ? "destructive" : "secondary"} className="text-xs">
                   {stats.pendingInvoices} pending
                 </Badge>
-              </p>
+              </div>
               <p className="text-xs text-blue-600 mt-1">Click to view all invoices</p>
             </CardContent>
           </Card>
@@ -399,7 +399,7 @@ const Dashboard = () => {
                       <Copy className="w-3 h-3 mr-1" />
                       Copy
                     </Button>
-                    <Button size="sm" variant="outline" className="flex-1 text-xs">
+                    <Button size="sm" variant="outline" className="flex-1 text-xs" asChild>
                       <Link to={`/store/${stats.storeHandle}`} target="_blank" rel="noopener noreferrer" className="flex items-center">
                         <ExternalLink className="w-3 h-3 mr-1" />
                         View
@@ -413,7 +413,7 @@ const Dashboard = () => {
                   <p className="text-xs text-gray-600 mb-2">
                     Set up your store handle to enable your public store
                   </p>
-                  <Button size="sm" className="w-full text-xs">
+                  <Button size="sm" className="w-full text-xs" asChild>
                     <Link to="/settings" className="flex items-center">
                       <Settings className="w-3 h-3 mr-1" />
                       Go to Settings
