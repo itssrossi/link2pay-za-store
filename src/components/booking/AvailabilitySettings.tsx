@@ -106,19 +106,27 @@ const AvailabilitySettings: React.FC = () => {
         is_available: setting.is_available
       }));
 
-      const { error } = await supabase
+      const { data: insertedData, error } = await supabase
         .from('availability_settings')
-        .insert(settingsToInsert);
+        .insert(settingsToInsert)
+        .select();
 
       if (error) throw error;
+
+      // Update state immediately with the inserted data
+      if (insertedData) {
+        setAvailability(insertedData);
+      }
 
       // Show completion popup with confetti
       setShowCompletionPopup(true);
       
       toast.success('Availability settings saved successfully');
       
-      // Refresh to get IDs and ensure state is properly updated
-      await fetchAvailability();
+      // Wait a moment then refresh to ensure everything is synced
+      setTimeout(async () => {
+        await fetchAvailability();
+      }, 200);
     } catch (error) {
       console.error('Error saving availability:', error);
       toast.error('Failed to save availability settings');
