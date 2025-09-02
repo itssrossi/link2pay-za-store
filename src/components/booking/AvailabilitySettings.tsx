@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { BookingPaymentSettings } from './BookingPaymentSettings';
+import { CompletionPopup } from '@/components/ui/completion-popup';
 
 interface AvailabilitySetting {
   id?: string;
@@ -37,6 +38,7 @@ const AvailabilitySettings: React.FC = () => {
   const [availability, setAvailability] = useState<AvailabilitySetting[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showCompletionPopup, setShowCompletionPopup] = useState(false);
 
   useEffect(() => {
     fetchAvailability();
@@ -110,8 +112,13 @@ const AvailabilitySettings: React.FC = () => {
 
       if (error) throw error;
 
+      // Show completion popup with confetti
+      setShowCompletionPopup(true);
+      
       toast.success('Availability settings saved successfully');
-      fetchAvailability(); // Refresh to get IDs
+      
+      // Refresh to get IDs and ensure state is properly updated
+      await fetchAvailability();
     } catch (error) {
       console.error('Error saving availability:', error);
       toast.error('Failed to save availability settings');
@@ -149,7 +156,7 @@ const AvailabilitySettings: React.FC = () => {
             };
 
             return (
-              <div key={day.value} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={day.value} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg space-y-3 sm:space-y-0">
                 <div className="flex items-center space-x-4">
                   <Switch
                     checked={setting.is_available}
@@ -161,14 +168,14 @@ const AvailabilitySettings: React.FC = () => {
                 </div>
                 
                 {setting.is_available && (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 ml-auto">
                     <Select
                       value={setting.start_time}
                       onValueChange={(value) => 
                         updateAvailability(day.value, 'start_time', value)
                       }
                     >
-                      <SelectTrigger className="w-24">
+                      <SelectTrigger className="w-20 sm:w-24">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -180,7 +187,7 @@ const AvailabilitySettings: React.FC = () => {
                       </SelectContent>
                     </Select>
                     
-                    <span className="text-muted-foreground">to</span>
+                    <span className="text-muted-foreground text-xs sm:text-sm">to</span>
                     
                     <Select
                       value={setting.end_time}
@@ -188,7 +195,7 @@ const AvailabilitySettings: React.FC = () => {
                         updateAvailability(day.value, 'end_time', value)
                       }
                     >
-                      <SelectTrigger className="w-24">
+                      <SelectTrigger className="w-20 sm:w-24">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -216,6 +223,13 @@ const AvailabilitySettings: React.FC = () => {
       </Card>
 
       <BookingPaymentSettings />
+      
+      <CompletionPopup
+        isOpen={showCompletionPopup}
+        onClose={() => setShowCompletionPopup(false)}
+        title="Availability Settings Saved!"
+        message="Click the dashboard button to complete the rest of the steps"
+      />
     </div>
   );
 };

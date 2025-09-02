@@ -164,14 +164,16 @@ export function BookingPaymentSettings() {
 
       if (error) throw error;
 
-      // Refresh availability settings display
-      const { data: refreshedAvailabilityData } = await supabase
-        .from('availability_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('day_of_week');
-        
-      setAvailabilitySettings(refreshedAvailabilityData || []);
+      // Wait a moment then refresh availability settings display
+      setTimeout(async () => {
+        const { data: refreshedAvailabilityData } = await supabase
+          .from('availability_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('day_of_week');
+          
+        setAvailabilitySettings(refreshedAvailabilityData || []);
+      }, 100);
       
       // Show completion popup with confetti
       setShowCompletionPopup(true);
