@@ -40,6 +40,12 @@ const AvailabilitySettings: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
 
+  // Helper function to format time from HH:MM:SS to HH:MM
+  const formatTimeForDisplay = (timeString: string) => {
+    if (!timeString) return timeString;
+    return timeString.substring(0, 5); // Convert "09:00:00" to "09:00"
+  };
+
   useEffect(() => {
     fetchAvailability();
   }, [user]);
@@ -66,7 +72,14 @@ const AvailabilitySettings: React.FC = () => {
         }));
         setAvailability(defaultSettings);
       } else {
-        setAvailability(data);
+        // Format times from database (HH:MM:SS) to display format (HH:MM)
+        const formattedData = data.map(setting => ({
+          ...setting,
+          start_time: formatTimeForDisplay(setting.start_time),
+          end_time: formatTimeForDisplay(setting.end_time)
+        }));
+        console.log('Formatted availability data:', formattedData); // Debug log
+        setAvailability(formattedData);
       }
     } catch (error) {
       console.error('Error fetching availability:', error);
@@ -115,7 +128,13 @@ const AvailabilitySettings: React.FC = () => {
 
       // Update state immediately with the inserted data
       if (insertedData) {
-        setAvailability(insertedData);
+        const formattedInsertedData = insertedData.map(setting => ({
+          ...setting,
+          start_time: formatTimeForDisplay(setting.start_time),
+          end_time: formatTimeForDisplay(setting.end_time)
+        }));
+        console.log('Formatted inserted data:', formattedInsertedData); // Debug log
+        setAvailability(formattedInsertedData);
       }
 
       // Show completion popup with confetti
