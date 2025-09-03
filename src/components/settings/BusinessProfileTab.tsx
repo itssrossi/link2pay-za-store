@@ -53,10 +53,32 @@ interface BusinessProfileTabProps {
 
 const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessProfileTabProps) => {
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+  const [wasStoreSetupComplete, setWasStoreSetupComplete] = useState(false);
+
+  // Check if store setup is complete
+  const isStoreSetupComplete = (profile: Profile) => {
+    return !!(profile?.business_name && profile?.whatsapp_number && profile?.store_handle);
+  };
+
+  // Track completion status changes
+  useEffect(() => {
+    if (profile) {
+      const currentlyComplete = isStoreSetupComplete(profile);
+      setWasStoreSetupComplete(currentlyComplete);
+    }
+  }, []);
 
   const handleSave = async () => {
+    const wasComplete = wasStoreSetupComplete;
     await onSave();
-    setShowCompletionPopup(true);
+    
+    // Check if this is the first time completing store setup
+    const isNowComplete = isStoreSetupComplete(profile);
+    if (!wasComplete && isNowComplete) {
+      setShowCompletionPopup(true);
+    }
+    
+    setWasStoreSetupComplete(isNowComplete);
   };
   const handleChange = (field: string, value: string) => {
     setProfile({ ...profile, [field]: value });

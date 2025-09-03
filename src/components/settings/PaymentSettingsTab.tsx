@@ -6,6 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { CreditCard } from 'lucide-react';
+import { CompletionPopup } from '@/components/ui/completion-popup';
+import { triggerConfetti } from '@/components/ui/confetti';
+import { useState, useEffect } from 'react';
 
 interface Profile {
   business_name: string;
@@ -50,6 +53,9 @@ interface PaymentSettingsTabProps {
 }
 
 const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSettingsTabProps) => {
+  const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+  const [wasPaymentSetupComplete, setWasPaymentSetupComplete] = useState(false);
+
   // Safety check - if profile is null or undefined, don't render
   if (!profile) {
     return (
@@ -59,8 +65,35 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
     );
   }
 
+  // Check if payment setup is complete
+  const isPaymentSetupComplete = (profile: Profile) => {
+    return !!(profile?.eft_details || profile?.payfast_link || profile?.snapscan_link);
+  };
+
+  // Track completion status changes
+  useEffect(() => {
+    if (profile) {
+      const currentlyComplete = isPaymentSetupComplete(profile);
+      setWasPaymentSetupComplete(currentlyComplete);
+    }
+  }, []);
+
   const handleChange = (field: string, value: string | boolean) => {
     setProfile({ ...profile, [field]: value });
+  };
+
+  const handleSave = async () => {
+    const wasComplete = wasPaymentSetupComplete;
+    await onSave();
+    
+    // Check if this is the first time completing payment setup
+    const isNowComplete = isPaymentSetupComplete(profile);
+    if (!wasComplete && isNowComplete) {
+      triggerConfetti();
+      setShowCompletionPopup(true);
+    }
+    
+    setWasPaymentSetupComplete(isNowComplete);
   };
 
   return (
@@ -208,12 +241,19 @@ const PaymentSettingsTab = ({ profile, setProfile, onSave, loading }: PaymentSet
       </Card>
 
       <Button 
-        onClick={onSave} 
+        onClick={handleSave} 
         disabled={loading}
         className="w-full sm:w-auto"
       >
         {loading ? 'Saving...' : 'Save Changes'}
       </Button>
+
+      <CompletionPopup
+        isOpen={showCompletionPopup}
+        onClose={() => setShowCompletionPopup(false)}
+        title="Payment Setup Complete!"
+        message="Click the dashboard button to complete the rest of the steps"
+      />
     </div>
   );
 };
