@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Send, CreditCard, Truck } from 'lucide-react';
 import { ZokoService } from '@/utils/zokoService';
 import { CompletionPopup } from '@/components/ui/completion-popup';
+import { triggerConfetti } from '@/components/ui/confetti';
 // PayFast integration removed - migrated to Paystack
 
 interface InvoiceItem {
@@ -40,6 +41,7 @@ const InvoiceBuilder = () => {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+  const [isFirstInvoice, setIsFirstInvoice] = useState(false);
   
   // Invoice details
   const [clientName, setClientName] = useState('');
@@ -83,8 +85,25 @@ const InvoiceBuilder = () => {
     if (user) {
       fetchProducts();
       fetchProfile();
+      checkExistingInvoices();
     }
   }, [user]);
+
+  const checkExistingInvoices = async () => {
+    if (!user) return;
+
+    try {
+      const { count, error } = await supabase
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setIsFirstInvoice((count || 0) === 0);
+    } catch (error) {
+      console.error('Error checking existing invoices:', error);
+    }
+  };
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -324,13 +343,19 @@ const InvoiceBuilder = () => {
         toast.success(`Invoice ${invoiceNumber} created successfully! 📄✅`);
       }
 
-      // Show completion popup with confetti
-      setShowCompletionPopup(true);
-      
-      // Navigate after a short delay to show the popup
-      setTimeout(() => {
+      // Only show completion popup and confetti for first invoice
+      if (isFirstInvoice) {
+        triggerConfetti();
+        setShowCompletionPopup(true);
+        
+        // Navigate after a delay to show the popup
+        setTimeout(() => {
+          navigate(`/invoice/${invoice!.id}`);
+        }, 2000);
+      } else {
+        // Navigate immediately for subsequent invoices
         navigate(`/invoice/${invoice!.id}`);
-      }, 2000);
+      }
       
     } catch (error) {
       console.error('Critical error creating invoice:', {

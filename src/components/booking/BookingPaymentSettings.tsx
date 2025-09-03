@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { toast } from '@/hooks/use-toast';
 import { CreditCard, Settings, Calendar, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import { CompletionPopup } from '@/components/ui/completion-popup';
+import { triggerConfetti } from '@/components/ui/confetti';
 
 interface BookingPaymentSettingsData {
   booking_payments_enabled: boolean;
@@ -29,6 +30,7 @@ export function BookingPaymentSettings() {
   const [paymentSettingsExpanded, setPaymentSettingsExpanded] = useState(false);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
   const [availabilitySettings, setAvailabilitySettings] = useState<any[]>([]);
+  const [wasBookingPaymentsEnabled, setWasBookingPaymentsEnabled] = useState(false);
   const [settings, setSettings] = useState<BookingPaymentSettingsData>({
     booking_payments_enabled: false,
     default_booking_deposit: 0,
@@ -69,8 +71,11 @@ export function BookingPaymentSettings() {
       if (error) throw error;
 
       if (data) {
+        const bookingPaymentsEnabled = data.booking_payments_enabled || false;
+        setWasBookingPaymentsEnabled(bookingPaymentsEnabled);
+        
         setSettings({
-          booking_payments_enabled: data.booking_payments_enabled || false,
+          booking_payments_enabled: bookingPaymentsEnabled,
           default_booking_deposit: data.default_booking_deposit || 0,
           allow_product_selection_bookings: data.allow_product_selection_bookings !== false,
           booking_enabled: (availabilityCount || 0) > 0,
@@ -80,7 +85,7 @@ export function BookingPaymentSettings() {
         });
         
         setAvailabilitySettings(availabilityData || []);
-        setPaymentSettingsExpanded(data.booking_payments_enabled || false);
+        setPaymentSettingsExpanded(bookingPaymentsEnabled);
       }
     } catch (error) {
       console.error('Error fetching booking payment settings:', error);
@@ -147,6 +152,7 @@ export function BookingPaymentSettings() {
   const handleSave = async () => {
     if (!user?.id) return;
 
+    const isFirstTimeEnabling = !wasBookingPaymentsEnabled && settings.booking_payments_enabled;
     setSaving(true);
     try {
       const { error } = await supabase
@@ -175,8 +181,14 @@ export function BookingPaymentSettings() {
         setAvailabilitySettings(refreshedAvailabilityData || []);
       }, 100);
       
-      // Show completion popup with confetti
-      setShowCompletionPopup(true);
+      // Only show completion popup and confetti on first-time enabling booking payments
+      if (isFirstTimeEnabling) {
+        triggerConfetti();
+        setShowCompletionPopup(true);
+      }
+      
+      // Update tracking state
+      setWasBookingPaymentsEnabled(settings.booking_payments_enabled);
       
       toast({
         title: "Success",

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { CompletionPopup } from '@/components/ui/completion-popup';
+import { triggerConfetti } from '@/components/ui/confetti';
 
 const AddProduct = () => {
   const { user } = useAuth();
@@ -20,6 +21,7 @@ const AddProduct = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+  const [isFirstProduct, setIsFirstProduct] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -30,6 +32,26 @@ const AddProduct = () => {
     stock_quantity: 0,
     is_active: true
   });
+
+  useEffect(() => {
+    checkExistingProducts();
+  }, [user]);
+
+  const checkExistingProducts = async () => {
+    if (!user) return;
+
+    try {
+      const { count, error } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setIsFirstProduct((count || 0) === 0);
+    } catch (error) {
+      console.error('Error checking existing products:', error);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -172,13 +194,19 @@ const AddProduct = () => {
       console.log('Product created successfully');
       toast.success(`Product added successfully! Product ID: ${productId}`);
       
-      // Show completion popup with confetti
-      setShowCompletionPopup(true);
-      
-      // Navigate after a short delay to show the popup
-      setTimeout(() => {
+      // Only show completion popup and confetti for first product
+      if (isFirstProduct) {
+        triggerConfetti();
+        setShowCompletionPopup(true);
+        
+        // Navigate after a delay to show the popup
+        setTimeout(() => {
+          navigate('/products');
+        }, 2000);
+      } else {
+        // Navigate immediately for subsequent products
         navigate('/products');
-      }, 2000);
+      }
     } catch (error: any) {
       console.error('Error creating product:', error);
       

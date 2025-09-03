@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { BookingPaymentSettings } from './BookingPaymentSettings';
 import { CompletionPopup } from '@/components/ui/completion-popup';
+import { triggerConfetti } from '@/components/ui/confetti';
 
 interface AvailabilitySetting {
   id?: string;
@@ -39,6 +40,7 @@ const AvailabilitySettings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+  const [hasExistingAvailability, setHasExistingAvailability] = useState(false);
 
   // Helper function to format time from HH:MM:SS to HH:MM
   const formatTimeForDisplay = (timeString: string) => {
@@ -62,8 +64,12 @@ const AvailabilitySettings: React.FC = () => {
 
       if (error) throw error;
 
+      // Track if user had existing availability settings
+      const hasExisting = data && data.length > 0;
+      setHasExistingAvailability(hasExisting);
+
       // If no availability settings exist, create default ones
-      if (!data || data.length === 0) {
+      if (!hasExisting) {
         const defaultSettings = DAYS_OF_WEEK.map(day => ({
           day_of_week: day.value,
           start_time: '09:00',
@@ -102,6 +108,7 @@ const AvailabilitySettings: React.FC = () => {
   const handleSave = async () => {
     if (!user) return;
 
+    const isFirstTimeSetup = !hasExistingAvailability;
     setSaving(true);
     try {
       // Delete existing settings
@@ -137,10 +144,16 @@ const AvailabilitySettings: React.FC = () => {
         setAvailability(formattedInsertedData);
       }
 
-      // Show completion popup with confetti
-      setShowCompletionPopup(true);
+      // Only show completion popup and confetti on first-time setup
+      if (isFirstTimeSetup) {
+        triggerConfetti();
+        setShowCompletionPopup(true);
+      }
       
       toast.success('Availability settings saved successfully');
+      
+      // Update the tracking state
+      setHasExistingAvailability(true);
       
       // Wait a moment then refresh to ensure everything is synced
       setTimeout(async () => {
