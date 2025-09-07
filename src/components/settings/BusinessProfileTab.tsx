@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import DeleteAccountDialog from '@/components/settings/DeleteAccountDialog';
 import { CompletionPopup } from '@/components/ui/completion-popup';
+import { triggerConfetti } from '@/components/ui/confetti';
 
 
 interface Profile {
@@ -75,6 +76,7 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
     // Check if this is the first time completing store setup
     const isNowComplete = isStoreSetupComplete(profile);
     if (!wasComplete && isNowComplete) {
+      triggerConfetti();
       setShowCompletionPopup(true);
     }
     

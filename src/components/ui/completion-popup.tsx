@@ -21,9 +21,6 @@ export const CompletionPopup: React.FC<CompletionPopupProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      // Trigger confetti first
-      triggerConfetti();
-      
       // Show popup after a short delay
       setTimeout(() => setShow(true), 500);
       
