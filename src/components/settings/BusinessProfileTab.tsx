@@ -71,15 +71,37 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
 
   const handleSave = async () => {
     const wasComplete = wasStoreSetupComplete;
+    console.log('BusinessProfileTab - Before save:', {
+      wasComplete,
+      currentProfile: {
+        business_name: profile?.business_name,
+        whatsapp_number: profile?.whatsapp_number,
+        store_handle: profile?.store_handle
+      }
+    });
+    
     await onSave();
     
     // Check completion based on current profile state (which should be updated by now)
     // Use a small delay to ensure state is updated
     setTimeout(() => {
       const isNowComplete = isStoreSetupComplete(profile);
+      console.log('BusinessProfileTab - After save timeout:', {
+        wasComplete,
+        isNowComplete,
+        profileAfterSave: {
+          business_name: profile?.business_name,
+          whatsapp_number: profile?.whatsapp_number,
+          store_handle: profile?.store_handle
+        }
+      });
+      
       if (!wasComplete && isNowComplete) {
+        console.log('BusinessProfileTab - Triggering completion popup!');
         triggerConfetti();
         setShowCompletionPopup(true);
+      } else {
+        console.log('BusinessProfileTab - Not triggering popup:', { wasComplete, isNowComplete });
       }
       setWasStoreSetupComplete(isNowComplete);
     }, 100);
