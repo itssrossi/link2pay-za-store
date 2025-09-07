@@ -73,14 +73,16 @@ const BusinessProfileTab = ({ profile, setProfile, onSave, loading }: BusinessPr
     const wasComplete = wasStoreSetupComplete;
     await onSave();
     
-    // Check if this is the first time completing store setup
-    const isNowComplete = isStoreSetupComplete(profile);
-    if (!wasComplete && isNowComplete) {
-      triggerConfetti();
-      setShowCompletionPopup(true);
-    }
-    
-    setWasStoreSetupComplete(isNowComplete);
+    // Check completion based on current profile state (which should be updated by now)
+    // Use a small delay to ensure state is updated
+    setTimeout(() => {
+      const isNowComplete = isStoreSetupComplete(profile);
+      if (!wasComplete && isNowComplete) {
+        triggerConfetti();
+        setShowCompletionPopup(true);
+      }
+      setWasStoreSetupComplete(isNowComplete);
+    }, 100);
   };
   const handleChange = (field: string, value: string) => {
     setProfile({ ...profile, [field]: value });
