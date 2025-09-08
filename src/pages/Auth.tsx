@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Loader2, Building2, User, Mail, Lock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, Building2, User, Mail, Lock, CheckCircle, AlertTriangle, MessageCircle } from 'lucide-react';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -26,6 +26,7 @@ const Auth = () => {
     password: '',
     businessName: '',
     fullName: '',
+    whatsappNumber: '',
     acceptTerms: false
   });
 
@@ -66,8 +67,8 @@ const Auth = () => {
       return false;
     }
 
-    if (isSignUp && (!formData.businessName || !formData.fullName)) {
-      toast.error('Business name and full name are required for sign up');
+    if (isSignUp && (!formData.businessName || !formData.fullName || !formData.whatsappNumber)) {
+      toast.error('Business name, full name, and WhatsApp number are required for sign up');
       return false;
     }
 
@@ -93,7 +94,8 @@ const Auth = () => {
         emailRedirectTo: `${window.location.origin}/dashboard`,
         data: {
           business_name: formData.businessName,
-          full_name: formData.fullName
+          full_name: formData.fullName,
+          whatsapp_number: formData.whatsappNumber
         }
       });
 
@@ -124,7 +126,7 @@ const Auth = () => {
         // Switch to sign in tab
         setTimeout(() => {
           setIsLogin(true);
-          setFormData(prev => ({ ...prev, businessName: '', fullName: '', acceptTerms: false }));
+          setFormData(prev => ({ ...prev, businessName: '', fullName: '', whatsappNumber: '', acceptTerms: false }));
         }, 3000);
       }
     } catch (error: any) {
@@ -309,6 +311,23 @@ const Auth = () => {
                       value={formData.fullName}
                       onChange={handleInputChange}
                       placeholder="Enter your full name"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsappNumber" className="flex items-center gap-2">
+                      <MessageCircle className="w-4 h-4" />
+                      WhatsApp Number *
+                    </Label>
+                    <Input
+                      id="whatsappNumber"
+                      name="whatsappNumber"
+                      type="tel"
+                      value={formData.whatsappNumber}
+                      onChange={handleInputChange}
+                      placeholder="e.g. +27812345678"
                       required
                       disabled={loading}
                     />

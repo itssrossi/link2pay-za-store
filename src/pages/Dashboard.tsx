@@ -36,7 +36,7 @@ import QuickInvoiceWhatsApp from '@/components/QuickInvoiceWhatsApp';
 import GrowthCTA from '@/components/GrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 import InvoicesModal from '@/components/InvoicesModal';
-import OnboardingModal from '@/components/onboarding/OnboardingModal';
+import NewOnboardingContainer from '@/components/onboarding/NewOnboardingContainer';
 import OnboardingProgressList from '@/components/onboarding/OnboardingProgressList';
 
 interface DashboardStats {
@@ -461,7 +461,8 @@ const Dashboard = () => {
         onClose={() => setShowInvoicesModal(false)} 
       />
 
-      <OnboardingModal 
+      {/* Use new onboarding container */}
+      <NewOnboardingContainer 
         isOpen={showOnboarding} 
         onClose={() => setShowOnboarding(false)} 
       />

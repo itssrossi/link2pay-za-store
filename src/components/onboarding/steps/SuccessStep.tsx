@@ -1,0 +1,136 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Confetti, triggerConfetti } from '@/components/ui/confetti';
+import { Copy, ExternalLink, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { OnboardingState } from '../NewOnboardingContainer';
+
+interface SuccessStepProps {
+  onComplete: () => void;
+  state: OnboardingState;
+  setState: React.Dispatch<React.SetStateAction<OnboardingState>>;
+}
+
+const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
+  const { user } = useAuth();
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [uniqueLink, setUniqueLink] = useState('');
+
+  useEffect(() => {
+    // Trigger confetti on mount
+    setShowConfetti(true);
+    triggerConfetti();
+    generateUniqueLink();
+    enableInvoiceTabGlow();
+  }, []);
+
+  const generateUniqueLink = () => {
+    const baseUrl = window.location.origin;
+    if (state.choice === 'bookings') {
+      setUniqueLink(`${baseUrl}/book/${state.storeHandle}`);
+    } else {
+      setUniqueLink(`${baseUrl}/storefront/${state.storeHandle}`);
+    }
+  };
+
+  const enableInvoiceTabGlow = async () => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from('profiles')
+        .update({ glowing_invoice_tab: true })
+        .eq('id', user.id);
+    } catch (error) {
+      console.error('Error enabling invoice tab glow:', error);
+    }
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(uniqueLink);
+    toast.success('Link copied to clipboard!');
+  };
+
+  const openLink = () => {
+    window.open(uniqueLink, '_blank');
+  };
+
+  const getSuccessMessage = () => {
+    if (state.choice === 'bookings') {
+      return {
+        title: 'Congratulations! 🎉',
+        subtitle: 'Your booking system is ready!',
+        description: 'Share your booking link and begin to accept appointments. Don\'t forget to invoice your clients to get paid.',
+        linkLabel: 'Your Booking Link'
+      };
+    } else {
+      return {
+        title: 'Congratulations! 🎉',
+        subtitle: 'Your store is live!',
+        description: 'Share your store link and begin to accept orders. Don\'t forget to invoice your clients to get paid.',
+        linkLabel: 'Your Store Link'
+      };
+    }
+  };
+
+  const success = getSuccessMessage();
+
+  return (
+    <div className="text-center space-y-8">
+      <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
+      
+      <div className="space-y-4">
+        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Sparkles className="w-10 h-10 text-green-600" />
+        </div>
+        
+        <h2 className="text-3xl font-bold text-gray-900">
+          {success.title}
+        </h2>
+        <p className="text-xl text-gray-700 font-medium">
+          {success.subtitle}
+        </p>
+        <p className="text-gray-600 max-w-md mx-auto">
+          {success.description}
+        </p>
+      </div>
+
+      <Card className="max-w-lg mx-auto bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+        <CardHeader>
+          <CardTitle className="text-lg">{success.linkLabel}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-white rounded-lg p-3 font-mono text-sm break-all">
+            {uniqueLink}
+          </div>
+          
+          <div className="flex gap-3">
+            <Button onClick={copyLink} className="flex-1" size="lg">
+              <Copy className="w-4 h-4 mr-2" />
+              Copy Link
+            </Button>
+            <Button onClick={openLink} variant="outline" className="flex-1" size="lg">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              View Live
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto">
+        <p className="text-sm text-yellow-800">
+          💡 <strong>Pro Tip:</strong> Check out the Invoice tab (it's glowing!) to create your first invoice and get paid faster.
+        </p>
+      </div>
+
+      <Button onClick={onComplete} size="lg" className="bg-green-600 hover:bg-green-700">
+        Go to Dashboard
+      </Button>
+    </div>
+  );
+};
+
+export default SuccessStep;

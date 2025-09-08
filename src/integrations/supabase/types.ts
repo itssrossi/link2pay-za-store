@@ -508,6 +508,7 @@ export type Database = {
           eft_details: string | null
           email: string | null
           full_name: string | null
+          glowing_invoice_tab: boolean | null
           has_active_subscription: boolean | null
           header_banner_url: string | null
           hero_cta_link: string | null
@@ -518,6 +519,7 @@ export type Database = {
           id: string
           last_customized_at: string | null
           logo_url: string | null
+          onboarding_choice: string | null
           onboarding_completed: boolean | null
           payfast_billing_token: string | null
           payfast_link: string | null
@@ -569,6 +571,7 @@ export type Database = {
           eft_details?: string | null
           email?: string | null
           full_name?: string | null
+          glowing_invoice_tab?: boolean | null
           has_active_subscription?: boolean | null
           header_banner_url?: string | null
           hero_cta_link?: string | null
@@ -579,6 +582,7 @@ export type Database = {
           id: string
           last_customized_at?: string | null
           logo_url?: string | null
+          onboarding_choice?: string | null
           onboarding_completed?: boolean | null
           payfast_billing_token?: string | null
           payfast_link?: string | null
@@ -630,6 +634,7 @@ export type Database = {
           eft_details?: string | null
           email?: string | null
           full_name?: string | null
+          glowing_invoice_tab?: boolean | null
           has_active_subscription?: boolean | null
           header_banner_url?: string | null
           hero_cta_link?: string | null
@@ -640,6 +645,7 @@ export type Database = {
           id?: string
           last_customized_at?: string | null
           logo_url?: string | null
+          onboarding_choice?: string | null
           onboarding_completed?: boolean | null
           payfast_billing_token?: string | null
           payfast_link?: string | null

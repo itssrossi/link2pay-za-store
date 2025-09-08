@@ -66,7 +66,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           console.log('Profile data:', profile);
           
           // If user has active subscription (including dev accounts), no billing setup needed
-            if (profile.has_active_subscription) {
+          if (profile.has_active_subscription) {
             setNeedsBillingSetup(false);
             setNeedsSubscriptionPayment(false);
             // Show onboarding if not completed yet and not already completed in this session
@@ -118,43 +118,6 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     checkOnboardingStatus();
   }, [user, session, authLoading]);
 
-  const createDefaultSections = async () => {
-    if (!user) return;
-
-    try {
-      console.log('Creating default store sections for user:', user.id);
-      
-      // Check if sections already exist
-      const { data: existingSections } = await supabase
-        .from('store_sections')
-        .select('id')
-        .eq('user_id', user.id)
-        .limit(1);
-
-      if (existingSections && existingSections.length > 0) {
-        console.log('Store sections already exist');
-        return;
-      }
-
-      // Create default Products section
-      await supabase
-        .from('store_sections')
-        .insert({
-          user_id: user.id,
-          section_type: 'products',
-          section_title: 'Our Products',
-          section_content: '',
-          section_order: 1,
-          is_enabled: true,
-          section_settings: {}
-        });
-
-      console.log('Default store sections created successfully');
-    } catch (error) {
-      console.error('Error creating default sections:', error);
-    }
-  };
-
   const completeOnboarding = async () => {
     if (!user) return;
 
@@ -165,9 +128,6 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         .from('profiles')
         .update({ onboarding_completed: true })
         .eq('id', user.id);
-
-      // Create default store sections
-      await createDefaultSections();
 
       setShowOnboarding(false);
       setNeedsBillingSetup(false);
@@ -183,7 +143,6 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const skipOnboarding = async () => {
     await completeOnboarding();
   };
-
 
   const value = {
     showOnboarding,
