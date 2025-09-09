@@ -30,10 +30,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
+    let initTimeout: NodeJS.Timeout;
 
-    // Set up auth state listener FIRST
+    // Clear any corrupted session data on startup
+    const clearCorruptedSession = () => {
+      try {
+        localStorage.removeItem('supabase.auth.token');
+        localStorage.removeItem('sb-mpzqlidtvlbijloeusuj-auth-token');
+        console.log('Cleared potentially corrupted session data');
+      } catch (error) {
+        console.error('Error clearing session data:', error);
+      }
+    };
+
+    // Set up auth state listener FIRST - synchronous to avoid deadlocks
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
         if (mounted) {
@@ -45,10 +57,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Handle specific auth events
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('User signed in successfully');
-          // Give the trigger time to create the profile
-          setTimeout(() => {
-            console.log('Profile should be created by trigger');
-          }, 1000);
         } else if (event === 'SIGNED_OUT') {
           console.log('User signed out');
         } else if (event === 'TOKEN_REFRESHED') {
@@ -57,22 +65,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN get initial session
+    // THEN get initial session with error handling
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting initial session:', error);
-        } else {
-          console.log('Initial session:', session?.user?.id);
-          if (mounted) {
-            setSession(session);
-            setUser(session?.user ?? null);
+          
+          // If token refresh failed, clear corrupted session and set signed out state
+          if (error.message?.includes('refresh_token_not_found') || 
+              error.message?.includes('Invalid Refresh Token')) {
+            console.log('Clearing corrupted session due to token error');
+            clearCorruptedSession();
+            
+            if (mounted) {
+              setSession(null);
+              setUser(null);
+              setLoading(false);
+            }
+            return;
           }
+        }
+
+        console.log('Initial session:', session?.user?.id);
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
         }
       } catch (error) {
         console.error('Error in getInitialSession:', error);
+        
+        // On any error, clear session and set signed out state
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+        }
       } finally {
         if (mounted) {
           setLoading(false);
@@ -80,10 +108,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    // Add timeout to prevent infinite loading
+    initTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth initialization timeout - setting loading to false');
+        setLoading(false);
+      }
+    }, 5000);
+
     getInitialSession();
 
     return () => {
       mounted = false;
+      clearTimeout(initTimeout);
       subscription.unsubscribe();
     };
   }, []);

@@ -33,9 +33,18 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
-      // Wait for auth to be ready
-      if (authLoading || !user || !session) {
-        console.log('Onboarding check skipped - auth not ready');
+      // Wait for auth to be ready, but don't wait forever
+      if (authLoading) {
+        console.log('Onboarding check skipped - auth still loading');
+        return;
+      }
+
+      if (!user || !session) {
+        console.log('Onboarding check skipped - no user or session');
+        // Reset onboarding states when no user
+        setShowOnboarding(false);
+        setNeedsBillingSetup(false);
+        setNeedsSubscriptionPayment(false);
         return;
       }
 
@@ -115,7 +124,16 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
     };
 
+    // Add timeout to prevent hanging on auth issues
+    const timeoutId = setTimeout(() => {
+      if (authLoading) {
+        console.warn('Onboarding check timeout - auth took too long');
+      }
+    }, 5000);
+
     checkOnboardingStatus();
+    
+    return () => clearTimeout(timeoutId);
   }, [user, session, authLoading]);
 
   const completeOnboarding = async () => {

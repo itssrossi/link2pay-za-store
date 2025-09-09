@@ -2,14 +2,28 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Navigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, session, loading: authLoading } = useAuth();
   const { trialExpired, hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
   const location = useLocation();
+  const [timeoutReached, setTimeoutReached] = useState(false);
+
+  // Timeout mechanism to prevent infinite loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (authLoading || subscriptionLoading) {
+        console.warn('ProtectedRoute timeout reached - proceeding with auth check');
+        setTimeoutReached(true);
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [authLoading, subscriptionLoading]);
 
   // Show loading spinner while authentication and subscription are being determined
-  if (authLoading || subscriptionLoading) {
+  if (!timeoutReached && (authLoading || subscriptionLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4C9F70]"></div>
