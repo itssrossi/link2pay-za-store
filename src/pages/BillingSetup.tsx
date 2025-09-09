@@ -120,21 +120,16 @@ const BillingSetup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.business_name) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      // Handle DEVJOHN promo code - activate unlimited trial
+      // Handle DEVJOHN promo code first - activate unlimited trial (bypass validation)
       if (formData.promo?.toUpperCase() === 'DEVJOHN') {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            full_name: formData.name,
-            business_name: formData.business_name,
+            full_name: formData.name || user?.email?.split('@')[0] || 'Developer',
+            business_name: formData.business_name || 'Developer Business',
             subscription_status: 'active',
             has_active_subscription: true,
             trial_expired: false,
@@ -149,7 +144,15 @@ const BillingSetup = () => {
         }
 
         toast.success('Unlimited trial activated! Welcome to Link2Pay.');
+        setLoading(false);
         navigate('/dashboard');
+        return;
+      }
+
+      // Check required fields for regular billing setup
+      if (!formData.name || !formData.email || !formData.business_name) {
+        toast.error('Please fill in all required fields');
+        setLoading(false);
         return;
       }
 
