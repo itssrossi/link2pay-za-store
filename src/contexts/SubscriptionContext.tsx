@@ -33,7 +33,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [subscriptionStatus, setSubscriptionStatus] = useState('trial');
   const [loading, setLoading] = useState(true);
 
-  const refreshSubscription = async () => {
+  const refreshSubscription = async (retryCount = 0) => {
     if (!user) {
       setLoading(false);
       return;
@@ -49,9 +49,22 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       if (error || !profile) {
-        console.warn('Failed to fetch updated subscription. Retrying...');
-        await new Promise((r) => setTimeout(r, 3000)); // wait 3s
-        return refreshSubscription(); // recursive retry (1 level deep)
+        if (retryCount < 3) {
+          console.warn(`Failed to fetch subscription (attempt ${retryCount + 1}/3). Retrying...`);
+          await new Promise((r) => setTimeout(r, 2000));
+          return refreshSubscription(retryCount + 1);
+        } else {
+          console.error('Failed to fetch subscription after 3 attempts. Setting defaults.');
+          // Set safe defaults when we can't fetch subscription data
+          setHasActiveSubscription(false);
+          setIsTrialActive(false);
+          setTrialEndsAt(null);
+          setTrialDaysLeft(0);
+          setTrialExpired(true);
+          setSubscriptionStatus('expired');
+          setLoading(false);
+          return;
+        }
       }
 
       if (profile) {
@@ -108,7 +121,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     trialExpired,
     subscriptionStatus,
     loading,
-    refreshSubscription,
+    refreshSubscription: () => refreshSubscription(),
   };
 
   return (
