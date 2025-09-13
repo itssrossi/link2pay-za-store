@@ -117,11 +117,11 @@ const Dashboard = () => {
   const [hideOnboardingChecklist, setHideOnboardingChecklist] = useState(false);
 
   useEffect(() => {
-    if (user && !needsBillingSetup) {
+    if (user) {
       fetchDashboardData();
       checkOnboardingProgress();
     }
-  }, [user, needsBillingSetup]);
+  }, [user]);
 
   const checkOnboardingProgress = async () => {
     if (!user) return;

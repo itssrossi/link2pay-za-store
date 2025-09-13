@@ -51,9 +51,6 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       try {
         console.log('Checking onboarding status for user:', user.id);
         
-        // Add a small delay to allow profile creation to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('onboarding_completed, has_active_subscription, trial_ends_at')
