@@ -129,35 +129,66 @@ const BillingSetup = () => {
       if (formData.promo?.toUpperCase() === 'DEVJOHN') {
         console.log('Processing DEVJOHN promo code for user:', user?.id);
         
-        const { error: upsertError } = await supabase
+        // Check if profile exists first
+        const { data: existingProfile, error: selectError } = await supabase
           .from('profiles')
-          .upsert({
-            id: user?.id,
-            full_name: formData.name || user?.email?.split('@')[0] || 'Developer',
-            business_name: formData.business_name || 'Developer Business',
-            whatsapp_number: '+27000000000', // Placeholder to satisfy any constraints
-            subscription_status: 'active',
-            has_active_subscription: true,
-            trial_expired: false,
-            trial_ends_at: null, // No expiry date for unlimited trial
-            subscription_amount: 0,
-            discount_applied: true,
-            onboarding_completed: true
-          }, {
-            onConflict: 'id'
-          });
+          .select('id')
+          .eq('id', user?.id)
+          .maybeSingle();
 
-        if (upsertError) {
-          console.error('DEVJOHN upsert error:', upsertError);
-          throw upsertError;
+        if (selectError) {
+          console.error('DEVJOHN select error:', selectError);
+          throw selectError;
         }
 
-        console.log('DEVJOHN profile updated successfully');
+        const profileData = {
+          full_name: formData.name || user?.email?.split('@')[0] || 'Developer',
+          business_name: formData.business_name || 'Developer Business',
+          whatsapp_number: '+27000000000', // Placeholder to satisfy any constraints
+          subscription_status: 'active',
+          has_active_subscription: true,
+          trial_expired: false,
+          trial_ends_at: null, // No expiry date for unlimited trial
+          subscription_amount: 0,
+          discount_applied: true,
+          onboarding_completed: true
+        };
+
+        if (existingProfile) {
+          // Update existing profile
+          console.log('Updating existing profile for DEVJOHN');
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update(profileData)
+            .eq('id', user?.id);
+
+          if (updateError) {
+            console.error('DEVJOHN update error:', updateError);
+            throw updateError;
+          }
+        } else {
+          // Insert new profile
+          console.log('Creating new profile for DEVJOHN');
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user?.id,
+              ...profileData
+            });
+
+          if (insertError) {
+            console.error('DEVJOHN insert error:', insertError);
+            throw insertError;
+          }
+        }
+
+        console.log('DEVJOHN profile processed successfully');
         
         // Set bypass flag to prevent redirect loop
         localStorage.setItem('devjohn_bypass', Date.now().toString());
         
         // Refresh subscription context to reflect changes
+        console.log('Refreshing subscription context...');
         await refreshSubscription();
         
         toast.success('Developer account activated! Welcome to Link2Pay.');
@@ -165,6 +196,7 @@ const BillingSetup = () => {
         
         // Small delay to ensure state updates propagate
         setTimeout(() => {
+          console.log('Navigating to dashboard...');
           navigate('/dashboard');
         }, 100);
         return;

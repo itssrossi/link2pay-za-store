@@ -27,8 +27,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (devJohnBypass) {
       const bypassTime = parseInt(devJohnBypass);
-      // Clear the bypass after 10 seconds
-      if (Date.now() - bypassTime > 10000) {
+      // Clear the bypass after 30 seconds
+      if (Date.now() - bypassTime > 30000) {
         localStorage.removeItem('devjohn_bypass');
       }
     }
