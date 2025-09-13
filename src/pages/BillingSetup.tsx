@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,6 +66,7 @@ const generatePayFastSubscriptionLink = ({
 
 const BillingSetup = () => {
   const { user } = useAuth();
+  const { refreshSubscription } = useSubscription();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -125,27 +127,46 @@ const BillingSetup = () => {
     try {
       // Handle DEVJOHN promo code first - activate unlimited trial (bypass validation)
       if (formData.promo?.toUpperCase() === 'DEVJOHN') {
-        const { error: updateError } = await supabase
+        console.log('Processing DEVJOHN promo code for user:', user?.id);
+        
+        const { error: upsertError } = await supabase
           .from('profiles')
-          .update({
+          .upsert({
+            id: user?.id,
             full_name: formData.name || user?.email?.split('@')[0] || 'Developer',
             business_name: formData.business_name || 'Developer Business',
+            whatsapp_number: '+27000000000', // Placeholder to satisfy any constraints
             subscription_status: 'active',
             has_active_subscription: true,
             trial_expired: false,
             trial_ends_at: null, // No expiry date for unlimited trial
             subscription_amount: 0,
-            discount_applied: true
-          })
-          .eq('id', user?.id);
+            discount_applied: true,
+            onboarding_completed: true
+          }, {
+            onConflict: 'id'
+          });
 
-        if (updateError) {
-          throw updateError;
+        if (upsertError) {
+          console.error('DEVJOHN upsert error:', upsertError);
+          throw upsertError;
         }
 
-        toast.success('Unlimited trial activated! Welcome to Link2Pay.');
+        console.log('DEVJOHN profile updated successfully');
+        
+        // Set bypass flag to prevent redirect loop
+        localStorage.setItem('devjohn_bypass', Date.now().toString());
+        
+        // Refresh subscription context to reflect changes
+        await refreshSubscription();
+        
+        toast.success('Developer account activated! Welcome to Link2Pay.');
         setLoading(false);
-        navigate('/dashboard');
+        
+        // Small delay to ensure state updates propagate
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 100);
         return;
       }
 

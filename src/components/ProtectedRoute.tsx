@@ -22,6 +22,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return () => clearTimeout(timer);
   }, [authLoading, subscriptionLoading]);
 
+  // Safety mechanism for DEVJOHN bypass
+  const devJohnBypass = localStorage.getItem('devjohn_bypass');
+  useEffect(() => {
+    if (devJohnBypass) {
+      const bypassTime = parseInt(devJohnBypass);
+      // Clear the bypass after 10 seconds
+      if (Date.now() - bypassTime > 10000) {
+        localStorage.removeItem('devjohn_bypass');
+      }
+    }
+  }, [devJohnBypass]);
+
   // Show loading spinner while authentication and subscription are being determined
   if (!timeoutReached && (authLoading || subscriptionLoading)) {
     return (
@@ -38,7 +50,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   // Redirect to billing setup if trial expired and no active subscription
-  if (trialExpired && !hasActiveSubscription && location.pathname !== '/billing/setup') {
+  // BUT skip if we just processed DEVJOHN
+  if (trialExpired && !hasActiveSubscription && location.pathname !== '/billing/setup' && !devJohnBypass) {
     console.log('Trial expired and no subscription, redirecting to billing setup');
     return <Navigate to="/billing/setup" replace />;
   }
