@@ -16,7 +16,7 @@ const OnboardingChoiceComponent: React.FC<OnboardingChoiceProps> = ({ onChoice }
           Welcome to Link2Pay!
         </h1>
         <p className="text-lg text-gray-600">
-          Let's set up your business. What will you be selling?
+          Let's get your business set up. What type of business are you running?
         </p>
       </div>
 
@@ -33,7 +33,7 @@ const OnboardingChoiceComponent: React.FC<OnboardingChoiceProps> = ({ onChoice }
           </CardHeader>
           <CardContent className="text-center">
             <CardDescription className="text-base mb-6">
-              Sell physical products like clothing, electronics, handmade items, or any tangible goods.
+              Sell physical products like clothing, electronics, handmade items, or any tangible goods that need to be shipped or picked up.
             </CardDescription>
             <Button 
               onClick={() => onChoice('physical_products')}
@@ -57,7 +57,7 @@ const OnboardingChoiceComponent: React.FC<OnboardingChoiceProps> = ({ onChoice }
           </CardHeader>
           <CardContent className="text-center">
             <CardDescription className="text-base mb-6">
-              Offer services like consultations, beauty treatments, repairs, or any appointment-based business.
+              Offer appointment-based services like consultations, beauty treatments, repairs, or any business that requires scheduling.
             </CardDescription>
             <Button 
               onClick={() => onChoice('bookings')}

@@ -21,6 +21,7 @@ interface PaymentForm {
   eftDetails: string;
   payfastLink: string;
   snapscanLink: string;
+  capitecPaylink: string;
 }
 
 const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOptional }) => {
@@ -29,7 +30,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
   const [payment, setPayment] = useState<PaymentForm>({
     eftDetails: '',
     payfastLink: '',
-    snapscanLink: ''
+    snapscanLink: '',
+    capitecPaylink: ''
   });
 
   useEffect(() => {
@@ -42,7 +44,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('eft_details, payfast_link, snapscan_link')
+        .select('eft_details, payfast_link, snapscan_link, capitec_paylink')
         .eq('id', user.id)
         .maybeSingle();
 
@@ -50,7 +52,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
         setPayment({
           eftDetails: profile.eft_details || '',
           payfastLink: profile.payfast_link || '',
-          snapscanLink: profile.snapscan_link || ''
+          snapscanLink: profile.snapscan_link || '',
+          capitecPaylink: profile.capitec_paylink || ''
         });
       }
     } catch (error) {
@@ -72,7 +75,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
         .update({
           eft_details: payment.eftDetails,
           payfast_link: payment.payfastLink,
-          snapscan_link: payment.snapscanLink
+          snapscan_link: payment.snapscanLink,
+          capitec_paylink: payment.capitecPaylink
         })
         .eq('id', user.id);
 
@@ -93,7 +97,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
     onNext();
   };
 
-  const hasAnyPaymentInfo = payment.eftDetails || payment.payfastLink || payment.snapscanLink;
+  const hasAnyPaymentInfo = payment.eftDetails || payment.payfastLink || payment.snapscanLink || payment.capitecPaylink;
 
   return (
     <div className="space-y-8">
@@ -103,13 +107,14 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
         </h2>
         <p className="text-gray-600">
           Set up payment methods to accept payments from your customers.
+          {state.choice === 'physical_products' ? ' At least one payment method is required.' : ''}
         </p>
-        {isOptional && state.choice === 'bookings' && (
+        {state.choice === 'bookings' && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
               <p className="text-sm text-blue-800">
-                Automatic payments can be setup later via PayFast in Bookings settings.
+                Payment methods are optional for bookings. Automatic payments can be setup later via PayFast in Bookings settings.
               </p>
             </div>
           </div>
@@ -161,6 +166,19 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
             />
             <p className="text-xs text-gray-500 mt-1">
               Your SnapScan QR code link for mobile payments
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="capitecPaylink">Capitec Pay Link</Label>
+            <Input
+              id="capitecPaylink"
+              value={payment.capitecPaylink}
+              onChange={(e) => handleInputChange('capitecPaylink', e.target.value)}
+              placeholder="https://paylink.capitecbank.co.za/your-link"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Your Capitec Pay link for instant payments
             </p>
           </div>
         </CardContent>

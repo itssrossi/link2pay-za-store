@@ -63,14 +63,14 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
       return {
         title: 'Congratulations! 🎉',
         subtitle: 'Your booking system is ready!',
-        description: 'Share your booking link and begin to accept appointments. Don\'t forget to invoice your clients to get paid.',
+        description: 'Share your booking link and begin to accept bookings.',
         linkLabel: 'Your Booking Link'
       };
     } else {
       return {
         title: 'Congratulations! 🎉',
         subtitle: 'Your store is live!',
-        description: 'Share your store link and begin to accept orders. Don\'t forget to invoice your clients to get paid.',
+        description: 'Share your store link and begin to accept orders.',
         linkLabel: 'Your Store Link'
       };
     }
@@ -120,10 +120,20 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
         </CardContent>
       </Card>
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto">
-        <p className="text-sm text-yellow-800">
-          💡 <strong>Pro Tip:</strong> Check out the Invoice tab (it's glowing!) to create your first invoice and get paid faster.
-        </p>
+      <div className="space-y-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto">
+          <p className="text-sm text-yellow-800">
+            💡 <strong>Don't forget to invoice your clients to get paid!</strong> Check out the Invoice tab (it's glowing!) to create your first invoice.
+          </p>
+        </div>
+        
+        {state.choice === 'bookings' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+            <p className="text-sm text-blue-800">
+              ⚡ <strong>Automatic payments</strong> can be setup via PayFast in Bookings tab in settings.
+            </p>
+          </div>
+        )}
       </div>
 
       <Button onClick={onComplete} size="lg" className="bg-green-600 hover:bg-green-700">
