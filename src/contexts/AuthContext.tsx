@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string, keepSignedIn?: boolean) => Promise<{ error: any }>;
   signUp: (email: string, password: string, options?: any) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   resendConfirmation: (email: string) => Promise<{ error: any }>;
@@ -125,10 +125,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, keepSignedIn: boolean = true) => {
     try {
       console.log('Attempting to sign in user:', email);
       setLoading(true);
+      
+      // Set session persistence based on keepSignedIn option
+      if (!keepSignedIn) {
+        // Use session storage (browser session only) when not keeping signed in
+        await supabase.auth.setSession(null as any);
+      }
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -138,6 +144,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Sign in error:', error);
         return { error };
+      }
+
+      // If user doesn't want to stay signed in, we'll need to modify the session
+      // Supabase doesn't directly support session-only storage after sign in,
+      // but we can store this preference for handling on browser close
+      if (!keepSignedIn && data.session) {
+        // Store the preference in sessionStorage to handle on page/browser close
+        sessionStorage.setItem('supabase_session_temporary', 'true');
+        localStorage.removeItem('supabase_session_temporary');
+      } else {
+        // Remove temporary session flag if keeping signed in
+        sessionStorage.removeItem('supabase_session_temporary');
+        localStorage.removeItem('supabase_session_temporary');
       }
 
       console.log('Sign in successful:', data.user?.id);

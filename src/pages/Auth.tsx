@@ -27,7 +27,8 @@ const Auth = () => {
     businessName: '',
     fullName: '',
     whatsappNumber: '',
-    acceptTerms: false
+    acceptTerms: false,
+    keepSignedIn: true
   });
 
   // Redirect if already authenticated
@@ -148,7 +149,7 @@ const Auth = () => {
     try {
       addAuthStatus('Starting sign in process...');
       
-      const { error } = await signIn(formData.email, formData.password);
+      const { error } = await signIn(formData.email, formData.password, formData.keepSignedIn);
 
       if (error) {
         addAuthStatus(`Sign in failed: ${error.message}`, 'error');
@@ -263,6 +264,20 @@ const Auth = () => {
                       disabled={loading}
                       minLength={6}
                     />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="keepSignedIn"
+                      checked={formData.keepSignedIn}
+                      onCheckedChange={(checked) => 
+                        setFormData(prev => ({ ...prev, keepSignedIn: !!checked }))
+                      }
+                      disabled={loading}
+                    />
+                    <Label htmlFor="keepSignedIn" className="text-sm cursor-pointer">
+                      Keep me signed in
+                    </Label>
                   </div>
                   
                   <Button 
