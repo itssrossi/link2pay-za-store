@@ -149,7 +149,7 @@ const Settings = () => {
 
   return (
     <Layout>
-      <div className="space-y-6 px-4 sm:px-6">
+        <div className="space-y-6 px-4 sm:px-6 pb-[calc(10rem+env(safe-area-inset-bottom))] md:pb-10">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Settings</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
