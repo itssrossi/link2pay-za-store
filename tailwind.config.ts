@@ -98,11 +98,11 @@ export default {
 				},
 				'glow': {
 					'0%, 100%': {
-						boxShadow: '0 0 10px hsl(var(--primary))',
+						boxShadow: '0 0 10px #4C9F70',
 						transform: 'scale(1)'
 					},
 					'50%': {
-						boxShadow: '0 0 20px hsl(var(--primary)), 0 0 30px hsl(var(--primary))',
+						boxShadow: '0 0 20px #4C9F70, 0 0 30px #4C9F70',
 						transform: 'scale(1.02)'
 					}
 				}
