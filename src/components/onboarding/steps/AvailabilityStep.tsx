@@ -133,34 +133,37 @@ const AvailabilityStep: React.FC<AvailabilityStepProps> = ({ onNext, state, setS
             Weekly Schedule
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {availability.map((day, index) => (
-            <div key={day.dayOfWeek} className="flex items-center gap-4 p-4 border rounded-lg">
-              <div className="flex items-center space-x-3 min-w-32">
-                <Switch
-                  checked={day.isAvailable}
-                  onCheckedChange={(checked) => updateDay(index, { isAvailable: checked })}
-                />
-                <Label className="font-medium">{day.dayName}</Label>
+            <div key={day.dayOfWeek} className="p-3 border rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <Switch
+                    checked={day.isAvailable}
+                    onCheckedChange={(checked) => updateDay(index, { isAvailable: checked })}
+                  />
+                  <Label className="font-medium text-sm sm:text-base">{day.dayName}</Label>
+                </div>
               </div>
               
               {day.isAvailable && (
-                <div className="flex items-center gap-3 flex-1">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 pl-1">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
+                    <Clock className="w-4 h-4 text-muted-foreground" />
                     <Input
                       type="time"
                       value={day.startTime}
                       onChange={(e) => updateDay(index, { startTime: e.target.value })}
-                      className="w-28"
+                      className="w-24 sm:w-28 text-sm"
                     />
                   </div>
-                  <span className="text-gray-500">to</span>
+                  <span className="text-muted-foreground text-sm hidden sm:inline">to</span>
+                  <span className="text-muted-foreground text-sm sm:hidden">until</span>
                   <Input
                     type="time"
                     value={day.endTime}
                     onChange={(e) => updateDay(index, { endTime: e.target.value })}
-                    className="w-28"
+                    className="w-24 sm:w-28 text-sm"
                   />
                 </div>
               )}
