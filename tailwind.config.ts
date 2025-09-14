@@ -95,12 +95,23 @@ export default {
 						transform: 'scale(1)',
 						opacity: '1'
 					}
+				},
+				'glow': {
+					'0%, 100%': {
+						boxShadow: '0 0 10px hsl(var(--primary))',
+						transform: 'scale(1)'
+					},
+					'50%': {
+						boxShadow: '0 0 20px hsl(var(--primary)), 0 0 30px hsl(var(--primary))',
+						transform: 'scale(1.02)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'scale-in': 'scale-in 0.2s ease-out'
+				'scale-in': 'scale-in 0.2s ease-out',
+				'glow': 'glow 2s ease-in-out infinite'
 			},
 			fontFamily: {
 				'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],

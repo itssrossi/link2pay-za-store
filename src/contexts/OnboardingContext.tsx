@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,7 +52,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('onboarding_completed, has_active_subscription, trial_ends_at')
+          .select('onboarding_completed, has_active_subscription, trial_ends_at, first_sign_in_completed')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -75,10 +74,20 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           if (profile.has_active_subscription) {
             setNeedsBillingSetup(false);
             setNeedsSubscriptionPayment(false);
-            // Show onboarding if not completed yet and not already completed in this session
+            // Smart onboarding logic: only show if not completed OR (completed but first sign-in not done)
             if (!profile.onboarding_completed && !onboardingCompleted) {
               console.log('User has subscription but onboarding not completed - showing onboarding');
               setShowOnboarding(true);
+            } else if (profile.onboarding_completed && !profile.first_sign_in_completed) {
+              console.log('Onboarding completed but first sign-in not done - skipping onboarding');
+              // Mark first sign-in as completed for future sessions
+              await supabase
+                .from('profiles')
+                .update({ first_sign_in_completed: true })
+                .eq('id', user.id);
+              setShowOnboarding(false);
+            } else {
+              setShowOnboarding(false);
             }
           } else {
             // Check if user has started a trial
@@ -98,6 +107,16 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                 // User needs to complete onboarding during active trial
                 console.log('User needs to complete onboarding during trial');
                 setShowOnboarding(true);
+                setNeedsBillingSetup(false);
+                setNeedsSubscriptionPayment(false);
+              } else if (profile.onboarding_completed && !profile.first_sign_in_completed && isTrialActive) {
+                // Onboarding completed but first sign-in not done - skip onboarding
+                console.log('Onboarding completed during trial but first sign-in not done - skipping onboarding');
+                await supabase
+                  .from('profiles')
+                  .update({ first_sign_in_completed: true })
+                  .eq('id', user.id);
+                setShowOnboarding(false);
                 setNeedsBillingSetup(false);
                 setNeedsSubscriptionPayment(false);
               } else if (!isTrialActive) {

@@ -507,6 +507,7 @@ export type Database = {
           discount_applied: boolean | null
           eft_details: string | null
           email: string | null
+          first_sign_in_completed: boolean | null
           full_name: string | null
           glowing_invoice_tab: boolean | null
           has_active_subscription: boolean | null
@@ -570,6 +571,7 @@ export type Database = {
           discount_applied?: boolean | null
           eft_details?: string | null
           email?: string | null
+          first_sign_in_completed?: boolean | null
           full_name?: string | null
           glowing_invoice_tab?: boolean | null
           has_active_subscription?: boolean | null
@@ -633,6 +635,7 @@ export type Database = {
           discount_applied?: boolean | null
           eft_details?: string | null
           email?: string | null
+          first_sign_in_completed?: boolean | null
           full_name?: string | null
           glowing_invoice_tab?: boolean | null
           has_active_subscription?: boolean | null

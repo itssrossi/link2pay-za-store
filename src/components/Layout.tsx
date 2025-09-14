@@ -1,8 +1,9 @@
 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -22,10 +23,47 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showGrowthForm, setShowGrowthForm] = useState(false);
+  const [shouldGlowInvoice, setShouldGlowInvoice] = useState(false);
+
+  useEffect(() => {
+    const fetchGlowStatus = async () => {
+      if (!user) return;
+      
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('glowing_invoice_tab')
+          .eq('id', user.id)
+          .maybeSingle();
+          
+        if (profile?.glowing_invoice_tab) {
+          setShouldGlowInvoice(true);
+        }
+      } catch (error) {
+        console.error('Error fetching glow status:', error);
+      }
+    };
+
+    fetchGlowStatus();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const handleInvoiceClick = async () => {
+    if (shouldGlowInvoice && user) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ glowing_invoice_tab: false })
+          .eq('id', user.id);
+        setShouldGlowInvoice(false);
+      } catch (error) {
+        console.error('Error disabling glow:', error);
+      }
+    }
   };
 
   const navigationItems = [
@@ -53,15 +91,19 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 {navigationItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.href;
+                  const isInvoice = item.href === '/invoice-builder';
+                  const shouldApplyGlow = isInvoice && shouldGlowInvoice;
+                  
                   return (
                     <Link
                       key={item.name}
                       to={item.href}
-                      className={`flex items-center space-x-2 px-2 lg:px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      onClick={isInvoice ? handleInvoiceClick : undefined}
+                      className={`flex items-center space-x-2 px-2 lg:px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                         isActive
                           ? 'bg-[#4C9F70] text-white'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                      }`}
+                      } ${shouldApplyGlow ? 'animate-glow' : ''}`}
                     >
                       <Icon className="w-4 h-4" />
                       <span className="hidden lg:block">{item.name}</span>
@@ -110,15 +152,19 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
+            const isInvoice = item.href === '/invoice-builder';
+            const shouldApplyGlow = isInvoice && shouldGlowInvoice;
+            
             return (
               <Link
                 key={item.name}
                 to={item.href}
-                className={`flex flex-col items-center justify-center space-y-1 py-2 px-1 rounded-md ${
+                onClick={isInvoice ? handleInvoiceClick : undefined}
+                className={`flex flex-col items-center justify-center space-y-1 py-2 px-1 rounded-md transition-all duration-200 ${
                   isActive
                     ? 'bg-[#4C9F70] text-white'
                     : 'text-gray-600'
-                }`}
+                } ${shouldApplyGlow ? 'animate-glow' : ''}`}
               >
                 <Icon className="w-5 h-5" />
                 <span className="text-xs font-medium text-center">{item.name}</span>
