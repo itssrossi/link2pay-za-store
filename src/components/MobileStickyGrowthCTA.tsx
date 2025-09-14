@@ -27,7 +27,7 @@ const MobileStickyGrowthCTA = ({ onClick }: MobileStickyGrowthCTAProps) => {
   }
 
     return (
-      <div className="fixed bottom-32 left-3 right-3 z-40 md:hidden">
+      <div className="fixed bottom-28 left-3 right-3 z-40 md:hidden">
         <div className="bg-gradient-to-r from-[#4C9F70] to-[#3d7a59] rounded-full shadow-lg p-2 sm:p-3 flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
             <Rocket className="w-4 h-4 sm:w-5 sm:h-5 text-white flex-shrink-0" />

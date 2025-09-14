@@ -1,12 +1,19 @@
 
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Check, MessageCircle, Smartphone, Zap, Shield, CreditCard, Flag } from 'lucide-react';
 import FAQSection from '@/components/FAQSection';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
+  const { user, loading } = useAuth();
+
+  // Redirect authenticated users to dashboard
+  if (!loading && user) {
+    return <Navigate to="/dashboard" replace />;
+  }
   const features = [
     {
       icon: Smartphone,
