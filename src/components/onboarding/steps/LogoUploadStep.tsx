@@ -50,29 +50,29 @@ const LogoUploadStep: React.FC<LogoUploadStepProps> = ({ onNext, state, setState
   };
 
   return (
-    <div className="text-center space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-3">
+    <div className="text-center space-y-6 sm:space-y-8 px-2 sm:px-0">
+      <div className="space-y-2 sm:space-y-3">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
           Upload Your Logo
         </h2>
-        <p className="text-gray-600">
+        <p className="text-sm sm:text-base text-gray-600">
           Add your business logo to make your {state.choice === 'bookings' ? 'booking page' : 'store'} look professional.
         </p>
         {isOptional && (
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-xs sm:text-sm text-gray-500 mt-2">
             This step is optional - you can skip it and add a logo later.
           </p>
         )}
       </div>
 
       <Card className="max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-center gap-2">
-            <Upload className="w-5 h-5" />
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-xl">
+            <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
             Business Logo
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6">
           <ImageUpload
             value={logoUrl}
             onChange={handleLogoUpload}
@@ -83,13 +83,14 @@ const LogoUploadStep: React.FC<LogoUploadStepProps> = ({ onNext, state, setState
         </CardContent>
       </Card>
 
-      <div className="flex gap-4 justify-center">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
         {isOptional && (
           <Button
             variant="outline"
             onClick={handleSkip}
             disabled={uploading}
             size="lg"
+            className="w-full sm:w-auto min-h-[44px]"
           >
             <ArrowRight className="w-4 h-4 mr-2" />
             Skip for Now
@@ -99,7 +100,7 @@ const LogoUploadStep: React.FC<LogoUploadStepProps> = ({ onNext, state, setState
           onClick={handleNext}
           disabled={uploading}
           size="lg"
-          className="min-w-32"
+          className="w-full sm:w-auto sm:min-w-32 min-h-[44px]"
         >
           {logoUrl ? 'Continue' : isOptional ? 'Continue' : 'Upload Logo'}
         </Button>

@@ -142,13 +142,13 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 md:pb-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-24 md:pb-8">
         {children}
       </main>
 
       {/* Mobile Navigation - Updated to remove Store Builder and Orders */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-pb">
-        <div className="grid grid-cols-4 gap-1 p-2">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-50 pb-[env(safe-area-inset-bottom)]">
+        <div className="grid grid-cols-4 gap-1 p-2 pb-2">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
@@ -160,14 +160,14 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 key={item.name}
                 to={item.href}
                 onClick={isInvoice ? handleInvoiceClick : undefined}
-                className={`flex flex-col items-center justify-center space-y-1 py-2 px-1 rounded-md transition-all duration-200 ${
+                className={`flex flex-col items-center justify-center space-y-1 py-3 px-2 rounded-lg transition-all duration-200 min-h-[60px] ${
                   isActive
                     ? 'bg-[#4C9F70] text-white'
-                    : 'text-gray-600'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 } ${shouldApplyGlow ? 'animate-glow' : ''}`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="text-xs font-medium text-center">{item.name}</span>
+                <span className="text-xs font-medium text-center leading-tight">{item.name}</span>
               </Link>
             );
           })}
