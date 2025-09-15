@@ -25,8 +25,14 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
     setShowConfetti(true);
     triggerConfetti();
     playCelebrationSound();
-    generateUniqueLink();
   }, []);
+
+  // Generate link when storeHandle is available
+  useEffect(() => {
+    if (state.storeHandle) {
+      generateUniqueLink();
+    }
+  }, [state.storeHandle]);
 
   const generateUniqueLink = () => {
     const baseUrl = window.location.origin;
