@@ -1,8 +1,21 @@
-// Simple celebration sound using Web Audio API
-export const playCelebrationSound = () => {
+// Celebration sound with mobile compatibility
+let audioContext: AudioContext | null = null;
+
+const getAudioContext = () => {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  return audioContext;
+};
+
+export const playCelebrationSound = async () => {
   try {
-    // Create audio context
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const context = getAudioContext();
+    
+    // Resume context if it's suspended (required for mobile)
+    if (context.state === 'suspended') {
+      await context.resume();
+    }
     
     // Create celebration melody with multiple notes
     const notes = [
@@ -12,14 +25,14 @@ export const playCelebrationSound = () => {
       { freq: 1046.50, duration: 0.3 }, // C6
     ];
     
-    let startTime = audioContext.currentTime;
+    let startTime = context.currentTime;
     
     notes.forEach((note, index) => {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+      const oscillator = context.createOscillator();
+      const gainNode = context.createGain();
       
       oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      gainNode.connect(context.destination);
       
       oscillator.frequency.setValueAtTime(note.freq, startTime);
       oscillator.type = 'sine';

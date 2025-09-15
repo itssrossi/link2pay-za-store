@@ -102,6 +102,26 @@ const AvailabilityStep: React.FC<AvailabilityStepProps> = ({ onNext, state, setS
 
       if (error) throw error;
 
+      // Create default booking calendar section and enable store visibility
+      await Promise.all([
+        supabase
+          .from('store_sections')
+          .upsert({
+            user_id: user.id,
+            section_type: 'booking_calendar',
+            section_title: 'Book an Appointment',
+            is_enabled: true,
+            section_order: 1
+          }, { onConflict: 'user_id,section_type' }),
+        
+        supabase
+          .from('profiles')
+          .update({ 
+            store_visibility: true
+          })
+          .eq('id', user.id)
+      ]);
+
       setState(prev => ({ ...prev, hasAvailability: true }));
       toast.success('Availability saved successfully!');
       onNext();

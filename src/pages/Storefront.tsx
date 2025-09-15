@@ -484,6 +484,17 @@ const Storefront = () => {
               </CardContent>
             </Card>
           </div>
+        ) : sections.length === 0 && products.length > 0 ? (
+          // Show products even when no sections exist
+          renderSection({ 
+            id: 'fallback-products', 
+            section_type: 'products', 
+            section_title: 'Our Products', 
+            is_enabled: true, 
+            section_content: '', 
+            section_order: 1,
+            section_settings: null
+          })
         ) : (
           sections.map(renderSection)
         )}

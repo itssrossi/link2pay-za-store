@@ -19,13 +19,29 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
   const { user } = useAuth();
   const [showConfetti, setShowConfetti] = useState(false);
   const [uniqueLink, setUniqueLink] = useState('');
+  const [soundPlayed, setSoundPlayed] = useState(false);
 
   useEffect(() => {
     // Trigger confetti and sound on mount
     setShowConfetti(true);
     triggerConfetti();
-    playCelebrationSound();
+    
+    // Try to play sound immediately, but also set up user interaction fallback
+    playCelebrationSound().then(() => {
+      setSoundPlayed(true);
+    }).catch(() => {
+      // Will be handled by user interaction
+    });
   }, []);
+
+  // Handle user interaction to play sound on mobile
+  const handleUserInteraction = () => {
+    if (!soundPlayed) {
+      playCelebrationSound().then(() => {
+        setSoundPlayed(true);
+      });
+    }
+  };
 
   // Generate link when storeHandle is available
   useEffect(() => {
@@ -99,7 +115,12 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
   const success = getSuccessMessage();
 
   return (
-    <div className="text-center space-y-4 sm:space-y-6 px-2 sm:px-0 pb-16 sm:pb-12">
+    <div 
+      className="text-center space-y-4 sm:space-y-6 px-2 sm:px-0 pb-16 sm:pb-12" 
+      onClick={handleUserInteraction}
+      onKeyDown={handleUserInteraction}
+      tabIndex={0}
+    >
       <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
       
       <div className="space-y-2 sm:space-y-3">
@@ -128,11 +149,11 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={copyLink} className="flex-1 min-h-[40px] sm:min-h-[44px]" size="sm">
+            <Button onClick={copyLink} className="flex-1 min-h-[40px] sm:min-h-[44px]" size="sm" disabled={!state.storeHandle}>
               <Copy className="w-4 h-4 mr-2" />
               Copy Link
             </Button>
-            <Button onClick={openLink} variant="outline" className="flex-1 min-h-[40px] sm:min-h-[44px]" size="sm">
+            <Button onClick={openLink} variant="outline" className="flex-1 min-h-[40px] sm:min-h-[44px]" size="sm" disabled={!state.storeHandle}>
               <ExternalLink className="w-4 h-4 mr-2" />
               View Live
             </Button>

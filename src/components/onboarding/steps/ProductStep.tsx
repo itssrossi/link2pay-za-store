@@ -65,6 +65,26 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
 
       if (error) throw error;
 
+      // Create default products section and enable store visibility
+      await Promise.all([
+        supabase
+          .from('store_sections')
+          .upsert({
+            user_id: user.id,
+            section_type: 'products',
+            section_title: 'Our Products',
+            is_enabled: true,
+            section_order: 1
+          }, { onConflict: 'user_id,section_type' }),
+        
+        supabase
+          .from('profiles')
+          .update({ 
+            store_visibility: true
+          })
+          .eq('id', user.id)
+      ]);
+
       setState(prev => ({ ...prev, hasProducts: true }));
       toast.success('Product added successfully!');
       onNext();
