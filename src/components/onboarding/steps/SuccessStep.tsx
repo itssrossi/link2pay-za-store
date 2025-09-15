@@ -7,6 +7,7 @@ import { Confetti, triggerConfetti } from '@/components/ui/confetti';
 import { Copy, ExternalLink, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { OnboardingState } from '../NewOnboardingContainer';
+import { playCelebrationSound } from '@/utils/celebrationSound';
 
 interface SuccessStepProps {
   onComplete: () => void;
@@ -20,19 +21,17 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
   const [uniqueLink, setUniqueLink] = useState('');
 
   useEffect(() => {
-    // Trigger confetti on mount
+    // Trigger confetti and sound on mount
     setShowConfetti(true);
     triggerConfetti();
+    playCelebrationSound();
     generateUniqueLink();
   }, []);
 
   const generateUniqueLink = () => {
     const baseUrl = window.location.origin;
-    if (state.choice === 'bookings') {
-      setUniqueLink(`${baseUrl}/book/${state.storeHandle}`);
-    } else {
-      setUniqueLink(`${baseUrl}/storefront/${state.storeHandle}`);
-    }
+    // Both bookings and store use the same /store/:username route
+    setUniqueLink(`${baseUrl}/store/${state.storeHandle}`);
   };
 
   const enableInvoiceTabGlow = async () => {
