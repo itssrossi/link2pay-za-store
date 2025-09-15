@@ -116,7 +116,7 @@ const AvailabilityStep: React.FC<AvailabilityStepProps> = ({ onNext, state, setS
   const hasAtLeastOneAvailableDay = availability.some(day => day.isAvailable);
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8 pb-20 sm:pb-12">
       <div className="text-center px-4 sm:px-0">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
           Set Your Availability
@@ -126,14 +126,14 @@ const AvailabilityStep: React.FC<AvailabilityStepProps> = ({ onNext, state, setS
         </p>
       </div>
 
-      <Card className="max-w-2xl mx-auto">
+      <Card className="max-w-xl mx-auto">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Calendar className="w-5 h-5" />
             Weekly Schedule
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 sm:p-6 space-y-3">
+        <CardContent className="p-4 sm:p-6 space-y-4">
           {availability.map((day, index) => (
             <div key={day.dayOfWeek} className="p-3 sm:p-4 border rounded-lg">
               <div className="flex items-center justify-between mb-3">
@@ -172,7 +172,7 @@ const AvailabilityStep: React.FC<AvailabilityStepProps> = ({ onNext, state, setS
         </CardContent>
       </Card>
 
-      <div className="text-center px-4 sm:px-0">
+      <div className="text-center px-4 sm:px-0 mb-8">
         <Button
           onClick={handleSave}
           disabled={saving || !hasAtLeastOneAvailableDay}
