@@ -44,17 +44,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    if (user) {
-      fetchGlowStatus();
-      
-      // Set up interval to check glowing status every second
-      const interval = setInterval(() => {
-        fetchGlowStatus();
-      }, 1000);
-
-      // Clean up interval on unmount
-      return () => clearInterval(interval);
-    }
+    fetchGlowStatus();
   }, [user]);
 
   const handleSignOut = async () => {
