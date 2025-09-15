@@ -149,18 +149,18 @@ const NewOnboardingContainer: React.FC<NewOnboardingContainerProps> = ({ isOpen,
   const progress = (state.currentStep / totalSteps) * 100;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[92vw] sm:max-w-lg md:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-[95vw] sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[92vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Progress Bar */}
-        <div className="w-full bg-gray-200 h-2">
+        <div className="w-full bg-gray-200 h-1.5 sm:h-2">
           <div 
-            className="bg-primary h-2 transition-all duration-300 ease-out"
+            className="bg-primary h-1.5 sm:h-2 transition-all duration-300 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
 
         {/* Step Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-6 lg:pb-8">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-4 md:pb-6">
           {renderCurrentStep()}
         </div>
       </div>

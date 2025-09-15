@@ -100,20 +100,20 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
   const hasAnyPaymentInfo = payment.eftDetails || payment.payfastLink || payment.snapscanLink || payment.capitecPaylink;
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-20 sm:pb-12">
-      <div className="text-center px-4 sm:px-0">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
+    <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-12">
+      <div className="text-center px-2 sm:px-0">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-2">
           Payment Information
         </h2>
-        <p className="text-sm sm:text-base text-gray-600">
+        <p className="text-xs sm:text-sm md:text-base text-gray-600">
           Set up payment methods to accept payments from your customers.
           {state.choice === 'physical_products' ? ' At least one payment method is required.' : ''}
         </p>
         {state.choice === 'bookings' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mt-4">
-            <div className="flex items-start gap-2 sm:gap-3">
-              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <p className="text-xs sm:text-sm text-blue-800">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3 mt-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-blue-800">
                 Payment methods are optional for bookings. Automatic payments can be setup later via PayFast in Bookings settings.
               </p>
             </div>
@@ -121,23 +121,23 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
         )}
       </div>
 
-      <Card className="max-w-xl mx-auto">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <CreditCard className="w-5 h-5" />
+      <Card className="max-w-sm sm:max-w-md md:max-w-xl mx-auto">
+        <CardHeader className="pb-3 sm:pb-4 p-3 sm:p-4 md:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
             Payment Methods
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 sm:space-y-6">
+        <CardContent className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6">
           <div>
-            <Label htmlFor="eftDetails" className="text-sm font-medium">Bank Details (EFT)</Label>
+            <Label htmlFor="eftDetails" className="text-xs sm:text-sm font-medium">Bank Details (EFT)</Label>
             <Textarea
               id="eftDetails"
               value={payment.eftDetails}
               onChange={(e) => handleInputChange('eftDetails', e.target.value)}
               placeholder="Bank: ABC Bank&#10;Account Name: Your Business Name&#10;Account Number: 1234567890&#10;Branch Code: 123456"
-              rows={4}
-              className="mt-1 min-h-[100px] resize-none"
+              rows={3}
+              className="mt-1 min-h-[80px] sm:min-h-[100px] resize-none"
             />
             <p className="text-xs text-gray-500 mt-1">
               Customers will see these details for direct bank transfers
@@ -145,13 +145,13 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
           </div>
 
           <div>
-            <Label htmlFor="payfastLink" className="text-sm font-medium">PayFast Payment Link</Label>
+            <Label htmlFor="payfastLink" className="text-xs sm:text-sm font-medium">PayFast Payment Link</Label>
             <Input
               id="payfastLink"
               value={payment.payfastLink}
               onChange={(e) => handleInputChange('payfastLink', e.target.value)}
               placeholder="https://payfast.co.za/eng/recurring/your-link"
-              className="mt-1 min-h-[44px]"
+              className="mt-1 min-h-[40px] sm:min-h-[44px]"
             />
             <p className="text-xs text-gray-500 mt-1">
               Your PayFast payment link for card payments
@@ -159,13 +159,13 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
           </div>
 
           <div>
-            <Label htmlFor="snapscanLink" className="text-sm font-medium">SnapScan QR Code Link</Label>
+            <Label htmlFor="snapscanLink" className="text-xs sm:text-sm font-medium">SnapScan QR Code Link</Label>
             <Input
               id="snapscanLink"
               value={payment.snapscanLink}
               onChange={(e) => handleInputChange('snapscanLink', e.target.value)}
               placeholder="https://pos.snapscan.co.za/qr/your-code"
-              className="mt-1 min-h-[44px]"
+              className="mt-1 min-h-[40px] sm:min-h-[44px]"
             />
             <p className="text-xs text-gray-500 mt-1">
               Your SnapScan QR code link for mobile payments
@@ -173,13 +173,13 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
           </div>
 
           <div>
-            <Label htmlFor="capitecPaylink" className="text-sm font-medium">Capitec Pay Link</Label>
+            <Label htmlFor="capitecPaylink" className="text-xs sm:text-sm font-medium">Capitec Pay Link</Label>
             <Input
               id="capitecPaylink"
               value={payment.capitecPaylink}
               onChange={(e) => handleInputChange('capitecPaylink', e.target.value)}
               placeholder="https://paylink.capitecbank.co.za/your-link"
-              className="mt-1 min-h-[44px]"
+              className="mt-1 min-h-[40px] sm:min-h-[44px]"
             />
             <p className="text-xs text-gray-500 mt-1">
               Your Capitec Pay link for instant payments
@@ -188,14 +188,14 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
         </CardContent>
       </Card>
 
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0 mb-8">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center px-2 sm:px-0 mb-6">
         {isOptional && (
           <Button
             variant="outline"
             onClick={handleSkip}
             disabled={saving}
-            size="lg"
-            className="min-h-[44px] w-full sm:w-auto"
+            size="sm"
+            className="min-h-[40px] sm:min-h-[44px] w-full sm:w-auto"
           >
             <ArrowRight className="w-4 h-4 mr-2" />
             Skip for Now
@@ -204,15 +204,15 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
         <Button
           onClick={handleSave}
           disabled={saving || (!isOptional && !hasAnyPaymentInfo)}
-          size="lg"
-          className="min-h-[44px] w-full sm:w-auto sm:min-w-40"
+          size="sm"
+          className="min-h-[40px] sm:min-h-[44px] w-full sm:w-auto sm:min-w-40"
         >
           {saving ? 'Saving...' : hasAnyPaymentInfo ? 'Save & Continue' : 'Continue'}
         </Button>
       </div>
       
       {!isOptional && !hasAnyPaymentInfo && (
-        <p className="text-xs sm:text-sm text-red-500 text-center px-4 sm:px-0">
+        <p className="text-xs text-red-500 text-center px-2 sm:px-0">
           Please add at least one payment method to continue
         </p>
       )}

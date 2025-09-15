@@ -79,40 +79,40 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
   const isFormValid = product.title.trim() && product.price.trim() && !isNaN(parseFloat(product.price));
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      <div className="text-center px-4 sm:px-0">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="text-center px-2 sm:px-0">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-2">
           Add Your First Product
         </h2>
-        <p className="text-sm sm:text-base text-gray-600">
+        <p className="text-xs sm:text-sm md:text-base text-gray-600">
           Create your first product listing to start selling on your store.
         </p>
       </div>
 
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Package className="w-5 h-5" />
+      <Card className="max-w-lg sm:max-w-xl md:max-w-2xl mx-auto">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Package className="w-4 h-4 sm:w-5 sm:h-5" />
             Product Details
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-          <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-            <div className="space-y-4 order-2 md:order-1">
+        <CardContent className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
+          <div className="grid gap-3 sm:gap-4 md:gap-6 md:grid-cols-2">
+            <div className="space-y-3 sm:space-y-4 order-2 md:order-1">
               <div>
-                <Label htmlFor="title" className="text-sm font-medium">Product Name *</Label>
+                <Label htmlFor="title" className="text-xs sm:text-sm font-medium">Product Name *</Label>
                 <Input
                   id="title"
                   value={product.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   placeholder="e.g. Premium Coffee Beans"
                   required
-                  className="mt-1 min-h-[44px]"
+                  className="mt-1 min-h-[40px] sm:min-h-[44px]"
                 />
               </div>
 
               <div>
-                <Label htmlFor="price" className="text-sm font-medium">Price (R) *</Label>
+                <Label htmlFor="price" className="text-xs sm:text-sm font-medium">Price (R) *</Label>
                 <Input
                   id="price"
                   type="number"
@@ -122,25 +122,25 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
                   onChange={(e) => handleInputChange('price', e.target.value)}
                   placeholder="0.00"
                   required
-                  className="mt-1 min-h-[44px]"
+                  className="mt-1 min-h-[40px] sm:min-h-[44px]"
                 />
               </div>
 
               <div>
-                <Label htmlFor="category" className="text-sm font-medium">Category</Label>
+                <Label htmlFor="category" className="text-xs sm:text-sm font-medium">Category</Label>
                 <Input
                   id="category"
                   value={product.category}
                   onChange={(e) => handleInputChange('category', e.target.value)}
                   placeholder="e.g. Food & Beverages"
-                  className="mt-1 min-h-[44px]"
+                  className="mt-1 min-h-[40px] sm:min-h-[44px]"
                 />
               </div>
             </div>
 
-            <div className="space-y-4 order-1 md:order-2">
+            <div className="space-y-3 sm:space-y-4 order-1 md:order-2">
               <div>
-                <Label className="text-sm font-medium">Product Image</Label>
+                <Label className="text-xs sm:text-sm font-medium">Product Image</Label>
                 <ImageUpload
                   value={product.imageUrl}
                   onChange={(url) => handleInputChange('imageUrl', url)}
@@ -154,31 +154,31 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
           </div>
 
           <div>
-            <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+            <Label htmlFor="description" className="text-xs sm:text-sm font-medium">Description</Label>
             <Textarea
               id="description"
               value={product.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Describe your product..."
               rows={3}
-              className="mt-1 min-h-[100px] resize-none"
+              className="mt-1 min-h-[80px] sm:min-h-[100px] resize-none"
             />
           </div>
         </CardContent>
       </Card>
 
-      <div className="text-center px-4 sm:px-0">
+      <div className="text-center px-2 sm:px-0">
         <Button
           onClick={handleSave}
           disabled={saving || !isFormValid}
-          size="lg"
-          className="min-h-[44px] w-full sm:w-auto sm:min-w-40"
+          size="sm"
+          className="min-h-[40px] sm:min-h-[44px] w-full sm:w-auto sm:min-w-40"
         >
           <Plus className="w-4 h-4 mr-2" />
           {saving ? 'Adding Product...' : 'Add Product & Continue'}
         </Button>
         {!isFormValid && (
-          <p className="text-xs sm:text-sm text-red-500 mt-2">
+          <p className="text-xs text-red-500 mt-2">
             Please fill in the product name and price
           </p>
         )}
