@@ -100,7 +100,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
   const hasAnyPaymentInfo = payment.eftDetails || payment.payfastLink || payment.snapscanLink || payment.capitecPaylink;
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8 pb-20 sm:pb-12">
       <div className="text-center px-4 sm:px-0">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
           Payment Information
@@ -121,7 +121,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
         )}
       </div>
 
-      <Card className="max-w-2xl mx-auto">
+      <Card className="max-w-xl mx-auto">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <CreditCard className="w-5 h-5" />
@@ -188,7 +188,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
         </CardContent>
       </Card>
 
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0 mb-8">
         {isOptional && (
           <Button
             variant="outline"
