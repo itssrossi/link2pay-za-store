@@ -61,7 +61,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     return () => window.removeEventListener('invoice-glow-ready', update);
   }, []);
 
-  // Check for tip popup on dashboard page
+  // Check for tip popup on dashboard page with delay
   useEffect(() => {
     const shouldShowTip = () => {
       const isOnDashboard = location.pathname === '/dashboard';
@@ -69,9 +69,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       const notShownYet = !tipPopupShown;
       
       if (isOnDashboard && tipReady && notShownYet && user) {
-        setShowTipPopup(true);
-        // Mark as shown in database
-        markTipPopupAsShown();
+        // Add 500ms delay to allow page to load and invoice glow to be established
+        setTimeout(() => {
+          setShowTipPopup(true);
+          // Mark as shown in database
+          markTipPopupAsShown();
+        }, 500);
       }
     };
 

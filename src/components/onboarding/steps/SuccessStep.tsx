@@ -24,7 +24,6 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
     setShowConfetti(true);
     triggerConfetti();
     generateUniqueLink();
-    enableInvoiceTabGlow();
   }, []);
 
   const generateUniqueLink = () => {
@@ -62,6 +61,11 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
 
   const openLink = () => {
     window.open(uniqueLink, '_blank');
+  };
+
+  const handleGoToDashboard = async () => {
+    await enableInvoiceTabGlow();
+    onComplete();
   };
 
   const getSuccessMessage = () => {
@@ -143,7 +147,7 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
       </div>
 
       <div className="mb-8">
-        <Button onClick={onComplete} size="lg" className="bg-green-600 hover:bg-green-700 min-h-[44px] w-full sm:w-auto sm:min-w-48">
+        <Button onClick={handleGoToDashboard} size="lg" className="bg-green-600 hover:bg-green-700 min-h-[44px] w-full sm:w-auto sm:min-w-48">
           Go to Dashboard
         </Button>
       </div>
