@@ -461,11 +461,11 @@ const Dashboard = () => {
         onClose={() => setShowInvoicesModal(false)} 
       />
 
-      {/* Use new onboarding container */}
-      <NewOnboardingContainer 
+      {/* Use new onboarding container - no longer needed since we use pages */}
+      {/* <NewOnboardingContainer 
         isOpen={showOnboarding} 
         onClose={() => setShowOnboarding(false)} 
-      />
+      /> */}
     </Layout>
   );
 };

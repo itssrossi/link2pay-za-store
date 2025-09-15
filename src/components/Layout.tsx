@@ -30,36 +30,65 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const [tipPopupShown, setTipPopupShown] = useState(false);
 
   useEffect(() => {
-    const fetchGlowAndTipStatus = async () => {
+    const fetchUserProfile = async () => {
       if (!user) return;
-      
+
       try {
         const { data: profile } = await supabase
           .from('profiles')
           .select('glowing_invoice_tab, tip_popup_shown')
           .eq('id', user.id)
           .maybeSingle();
+
+        if (profile) {
+          // Check for immediate activation flags first
+          const invoiceGlowReady = localStorage.getItem('invoiceGlowReady') === 'true';
+          const tipPopupReady = localStorage.getItem('tipPopupReady') === 'true';
           
-        if (profile?.glowing_invoice_tab) {
-          setShouldGlowInvoice(true);
+          if (invoiceGlowReady) {
+            setShouldGlowInvoice(true);
+            setGlowReady(true);
+            localStorage.removeItem('invoiceGlowReady');
+          } else {
+            setShouldGlowInvoice(profile.glowing_invoice_tab);
+          }
+          
+          if (tipPopupReady && !profile.tip_popup_shown) {
+            setTipPopupShown(false);
+            localStorage.removeItem('tipPopupReady');
+          } else {
+            setTipPopupShown(profile.tip_popup_shown);
+          }
         }
-        setTipPopupShown(profile?.tip_popup_shown || false);
       } catch (error) {
-        console.error('Error fetching status:', error);
+        console.error('Error fetching user profile:', error);
       }
     };
 
-    fetchGlowAndTipStatus();
+    fetchUserProfile();
   }, [user]);
 
-  // Listen for SuccessStep signal to allow glow during onboarding only at the right time
+  // Handle invoice glow ready event and tip popup ready event
   useEffect(() => {
-    const update = () => setGlowReady(true);
-    // initialize from localStorage in case SuccessStep already ran
-    setGlowReady(localStorage.getItem('invoiceGlowReady') === 'true');
-    window.addEventListener('invoice-glow-ready', update);
-    return () => window.removeEventListener('invoice-glow-ready', update);
-  }, []);
+    const handleInvoiceGlowReady = () => {
+      setGlowReady(true);
+      setShouldGlowInvoice(true);
+    };
+
+    const handleTipPopupReady = () => {
+      if (!tipPopupShown) {
+        setShowTipPopup(true);
+      }
+    };
+
+    window.addEventListener('invoice-glow-ready', handleInvoiceGlowReady);
+    window.addEventListener('tip-popup-ready', handleTipPopupReady);
+    
+    return () => {
+      window.removeEventListener('invoice-glow-ready', handleInvoiceGlowReady);
+      window.removeEventListener('tip-popup-ready', handleTipPopupReady);
+    };
+  }, [tipPopupShown]);
 
   // Check for tip popup on dashboard page
   useEffect(() => {

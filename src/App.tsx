@@ -26,6 +26,14 @@ const Storefront = lazy(() => import('@/pages/Storefront'));
 const ProtectedRoute = lazy(() => import('@/components/ProtectedRoute'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
+// Onboarding Pages
+const OnboardingChoice = lazy(() => import('@/pages/onboarding/OnboardingChoice'));
+const LogoUpload = lazy(() => import('@/pages/onboarding/LogoUpload'));
+const ProductSetup = lazy(() => import('@/pages/onboarding/ProductSetup'));
+const AvailabilitySetup = lazy(() => import('@/pages/onboarding/AvailabilitySetup'));
+const PaymentSetup = lazy(() => import('@/pages/onboarding/PaymentSetup'));
+const Success = lazy(() => import('@/pages/onboarding/Success'));
+
 // Loading component
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -129,13 +137,22 @@ function App() {
                     path="/settings"
                     element={
                       <Suspense fallback={<PageLoader />}>
-                        <ProtectedRoute>
-                          <Settings />
-                        </ProtectedRoute>
-                      </Suspense>
-                    }
-                  />
-                  <Route path="*" element={<NotFound />} />
+                       <ProtectedRoute>
+                         <Settings />
+                       </ProtectedRoute>
+                     </Suspense>
+                   }
+                 />
+                 
+                 {/* Onboarding Routes */}
+                 <Route path="/onboarding/choice" element={<OnboardingChoice />} />
+                 <Route path="/onboarding/logo" element={<LogoUpload />} />
+                 <Route path="/onboarding/product" element={<ProductSetup />} />
+                 <Route path="/onboarding/availability" element={<AvailabilitySetup />} />
+                 <Route path="/onboarding/payment" element={<PaymentSetup />} />
+                 <Route path="/onboarding/success" element={<Success />} />
+                 
+                 <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
               <Toaster />

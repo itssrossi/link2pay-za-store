@@ -65,6 +65,11 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
 
   const handleGoToDashboard = async () => {
     await enableInvoiceTabGlow();
+    
+    // Dispatch custom events for immediate UI updates
+    window.dispatchEvent(new Event('invoice-glow-ready'));
+    window.dispatchEvent(new Event('tip-popup-ready'));
+    
     onComplete();
   };
 

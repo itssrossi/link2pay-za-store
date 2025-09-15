@@ -74,10 +74,13 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           if (profile.has_active_subscription) {
             setNeedsBillingSetup(false);
             setNeedsSubscriptionPayment(false);
-            // Smart onboarding logic: only show if not completed OR (completed but first sign-in not done)
+            // Determine if we should show onboarding - redirect to new onboarding pages
             if (!profile.onboarding_completed && !onboardingCompleted) {
-              console.log('User has subscription but onboarding not completed - showing onboarding');
-              setShowOnboarding(true);
+              // Instead of showing modal, redirect to onboarding pages
+              if (window.location.pathname === '/dashboard' || window.location.pathname === '/') {
+                window.location.href = '/onboarding/choice';
+                return;
+              }
             } else if (profile.onboarding_completed && !profile.first_sign_in_completed) {
               console.log('Onboarding completed but first sign-in not done - skipping onboarding');
               // Mark first sign-in as completed for future sessions
@@ -104,9 +107,13 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
               const isTrialActive = trialEnd > now;
               
               if (!profile.onboarding_completed && !onboardingCompleted && isTrialActive) {
-                // User needs to complete onboarding during active trial
+                // User needs to complete onboarding during active trial - redirect
                 console.log('User needs to complete onboarding during trial');
-                setShowOnboarding(true);
+                if (window.location.pathname === '/dashboard' || window.location.pathname === '/') {
+                  window.location.href = '/onboarding/choice';
+                  return;
+                }
+                setShowOnboarding(false);
                 setNeedsBillingSetup(false);
                 setNeedsSubscriptionPayment(false);
               } else if (profile.onboarding_completed && !profile.first_sign_in_completed && isTrialActive) {
