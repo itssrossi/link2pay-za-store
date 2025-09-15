@@ -79,40 +79,40 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
   const success = getSuccessMessage();
 
   return (
-    <div className="text-center space-y-8">
+    <div className="text-center space-y-6 sm:space-y-8 px-4 sm:px-0">
       <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
       
-      <div className="space-y-4">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Sparkles className="w-10 h-10 text-green-600" />
+      <div className="space-y-3 sm:space-y-4">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+          <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
         </div>
         
-        <h2 className="text-3xl font-bold text-gray-900">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
           {success.title}
         </h2>
-        <p className="text-xl text-gray-700 font-medium">
+        <p className="text-lg sm:text-xl text-gray-700 font-medium">
           {success.subtitle}
         </p>
-        <p className="text-gray-600 max-w-md mx-auto">
+        <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto">
           {success.description}
         </p>
       </div>
 
       <Card className="max-w-lg mx-auto bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-        <CardHeader>
-          <CardTitle className="text-lg">{success.linkLabel}</CardTitle>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-base sm:text-lg">{success.linkLabel}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-white rounded-lg p-3 font-mono text-sm break-all">
+        <CardContent className="p-4 sm:p-6 space-y-3 sm:space-y-4">
+          <div className="bg-white rounded-lg p-3 font-mono text-xs sm:text-sm break-all">
             {uniqueLink}
           </div>
           
-          <div className="flex gap-3">
-            <Button onClick={copyLink} className="flex-1" size="lg">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <Button onClick={copyLink} className="flex-1 min-h-[44px]" size="lg">
               <Copy className="w-4 h-4 mr-2" />
               Copy Link
             </Button>
-            <Button onClick={openLink} variant="outline" className="flex-1" size="lg">
+            <Button onClick={openLink} variant="outline" className="flex-1 min-h-[44px]" size="lg">
               <ExternalLink className="w-4 h-4 mr-2" />
               View Live
             </Button>
@@ -120,23 +120,23 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto">
-          <p className="text-sm text-yellow-800">
+      <div className="space-y-3 sm:space-y-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 max-w-md mx-auto">
+          <p className="text-xs sm:text-sm text-yellow-800">
             💡 <strong>Don't forget to invoice your clients to get paid!</strong> Check out the Invoice tab (it's glowing!) to create your first invoice.
           </p>
         </div>
         
         {state.choice === 'bookings' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
-            <p className="text-sm text-blue-800">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 max-w-md mx-auto">
+            <p className="text-xs sm:text-sm text-blue-800">
               ⚡ <strong>Automatic payments</strong> can be setup via PayFast in Bookings tab in settings.
             </p>
           </div>
         )}
       </div>
 
-      <Button onClick={onComplete} size="lg" className="bg-green-600 hover:bg-green-700">
+      <Button onClick={onComplete} size="lg" className="bg-green-600 hover:bg-green-700 min-h-[44px] w-full sm:w-auto sm:min-w-48">
         Go to Dashboard
       </Button>
     </div>
