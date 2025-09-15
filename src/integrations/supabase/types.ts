@@ -545,6 +545,7 @@ export type Database = {
           subscription_price: number | null
           subscription_status: string | null
           theme_preset: string | null
+          tip_popup_shown: boolean | null
           trial_ends_at: string | null
           trial_expired: boolean | null
           trial_started_at: string | null
@@ -609,6 +610,7 @@ export type Database = {
           subscription_price?: number | null
           subscription_status?: string | null
           theme_preset?: string | null
+          tip_popup_shown?: boolean | null
           trial_ends_at?: string | null
           trial_expired?: boolean | null
           trial_started_at?: string | null
@@ -673,6 +675,7 @@ export type Database = {
           subscription_price?: number | null
           subscription_status?: string | null
           theme_preset?: string | null
+          tip_popup_shown?: boolean | null
           trial_ends_at?: string | null
           trial_expired?: boolean | null
           trial_started_at?: string | null

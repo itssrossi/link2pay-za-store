@@ -16,6 +16,7 @@ import {
 import { Home, Package, FileText, Settings, LogOut, MessageCircle } from 'lucide-react';
 import MobileStickyGrowthCTA from '@/components/MobileStickyGrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
+import { TipPopup } from '@/components/ui/tip-popup';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
@@ -25,27 +26,30 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const [showGrowthForm, setShowGrowthForm] = useState(false);
   const [shouldGlowInvoice, setShouldGlowInvoice] = useState(false);
   const [glowReady, setGlowReady] = useState(false);
+  const [showTipPopup, setShowTipPopup] = useState(false);
+  const [tipPopupShown, setTipPopupShown] = useState(false);
 
   useEffect(() => {
-    const fetchGlowStatus = async () => {
+    const fetchGlowAndTipStatus = async () => {
       if (!user) return;
       
       try {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('glowing_invoice_tab')
+          .select('glowing_invoice_tab, tip_popup_shown')
           .eq('id', user.id)
           .maybeSingle();
           
         if (profile?.glowing_invoice_tab) {
           setShouldGlowInvoice(true);
         }
+        setTipPopupShown(profile?.tip_popup_shown || false);
       } catch (error) {
-        console.error('Error fetching glow status:', error);
+        console.error('Error fetching status:', error);
       }
     };
 
-    fetchGlowStatus();
+    fetchGlowAndTipStatus();
   }, [user]);
 
   // Listen for SuccessStep signal to allow glow during onboarding only at the right time
@@ -56,6 +60,39 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     window.addEventListener('invoice-glow-ready', update);
     return () => window.removeEventListener('invoice-glow-ready', update);
   }, []);
+
+  // Check for tip popup on dashboard page
+  useEffect(() => {
+    const shouldShowTip = () => {
+      const isOnDashboard = location.pathname === '/dashboard';
+      const tipReady = localStorage.getItem('tipPopupReady') === 'true';
+      const notShownYet = !tipPopupShown;
+      
+      if (isOnDashboard && tipReady && notShownYet && user) {
+        setShowTipPopup(true);
+        // Mark as shown in database
+        markTipPopupAsShown();
+      }
+    };
+
+    shouldShowTip();
+  }, [location.pathname, tipPopupShown, user]);
+
+  const markTipPopupAsShown = async () => {
+    if (!user) return;
+    
+    try {
+      await supabase
+        .from('profiles')
+        .update({ tip_popup_shown: true })
+        .eq('id', user.id);
+      
+      setTipPopupShown(true);
+      localStorage.removeItem('tipPopupReady'); // Clean up
+    } catch (error) {
+      console.error('Error marking tip popup as shown:', error);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -192,6 +229,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <GrowthApplicationForm 
         isOpen={showGrowthForm} 
         onClose={() => setShowGrowthForm(false)} 
+      />
+
+      <TipPopup 
+        isOpen={showTipPopup} 
+        onClose={() => setShowTipPopup(false)} 
       />
     </div>
   );
