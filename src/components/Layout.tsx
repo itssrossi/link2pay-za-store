@@ -24,6 +24,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const [showGrowthForm, setShowGrowthForm] = useState(false);
   const [shouldGlowInvoice, setShouldGlowInvoice] = useState(false);
+  const [glowReady, setGlowReady] = useState(false);
 
   useEffect(() => {
     const fetchGlowStatus = async () => {
@@ -46,6 +47,15 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
     fetchGlowStatus();
   }, [user]);
+
+  // Listen for SuccessStep signal to allow glow during onboarding only at the right time
+  useEffect(() => {
+    const update = () => setGlowReady(true);
+    // initialize from localStorage in case SuccessStep already ran
+    setGlowReady(localStorage.getItem('invoiceGlowReady') === 'true');
+    window.addEventListener('invoice-glow-ready', update);
+    return () => window.removeEventListener('invoice-glow-ready', update);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -92,7 +102,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.href;
                   const isInvoice = item.href === '/invoice-builder';
-                  const shouldApplyGlow = isInvoice && shouldGlowInvoice;
+                  const shouldApplyGlow = isInvoice && shouldGlowInvoice && (!showOnboarding || glowReady);
                   
                   return (
                     <Link
@@ -153,7 +163,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
             const isInvoice = item.href === '/invoice-builder';
-            const shouldApplyGlow = isInvoice && shouldGlowInvoice;
+            const shouldApplyGlow = isInvoice && shouldGlowInvoice && (!showOnboarding || glowReady);
             
             return (
               <Link

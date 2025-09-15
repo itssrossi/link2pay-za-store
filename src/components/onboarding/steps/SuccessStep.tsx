@@ -44,6 +44,9 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
         .from('profiles')
         .update({ glowing_invoice_tab: true })
         .eq('id', user.id);
+      // Signal Layout to allow glow immediately on Success page
+      localStorage.setItem('invoiceGlowReady', 'true');
+      window.dispatchEvent(new Event('invoice-glow-ready'));
     } catch (error) {
       console.error('Error enabling invoice tab glow:', error);
     }
