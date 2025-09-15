@@ -79,7 +79,7 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
   const success = getSuccessMessage();
 
   return (
-    <div className="text-center space-y-6 sm:space-y-8 px-4 sm:px-0">
+    <div className="text-center space-y-6 sm:space-y-8 px-4 sm:px-0 pb-20 sm:pb-12">
       <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
       
       <div className="space-y-3 sm:space-y-4">
@@ -98,7 +98,7 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
         </p>
       </div>
 
-      <Card className="max-w-lg mx-auto bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+      <Card className="max-w-md mx-auto bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="text-base sm:text-lg">{success.linkLabel}</CardTitle>
         </CardHeader>
@@ -136,9 +136,11 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
         )}
       </div>
 
-      <Button onClick={onComplete} size="lg" className="bg-green-600 hover:bg-green-700 min-h-[44px] w-full sm:w-auto sm:min-w-48">
-        Go to Dashboard
-      </Button>
+      <div className="mb-8">
+        <Button onClick={onComplete} size="lg" className="bg-green-600 hover:bg-green-700 min-h-[44px] w-full sm:w-auto sm:min-w-48">
+          Go to Dashboard
+        </Button>
+      </div>
     </div>
   );
 };
