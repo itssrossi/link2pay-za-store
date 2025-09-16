@@ -198,6 +198,112 @@ export type Database = {
         }
         Relationships: []
       }
+      email_campaign_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          id: string
+          status: string
+          subscriber_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          status: string
+          subscriber_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          status?: string
+          subscriber_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaign_logs_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaign_subscribers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaign_subscribers: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaign_subscribers_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaigns: {
+        Row: {
+          created_at: string
+          delay_days: number
+          id: string
+          is_active: boolean
+          name: string
+          subject: string
+          template_content: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delay_days: number
+          id?: string
+          is_active?: boolean
+          name: string
+          subject: string
+          template_content: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delay_days?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          subject?: string
+          template_content?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoice_items: {
         Row: {
           created_at: string
@@ -848,6 +954,10 @@ export type Database = {
     Functions: {
       delete_user_completely: {
         Args: { p_uid: string }
+        Returns: undefined
+      }
+      enroll_user_in_drip_campaigns: {
+        Args: { p_user_id: string }
         Returns: undefined
       }
       generate_product_id: {
