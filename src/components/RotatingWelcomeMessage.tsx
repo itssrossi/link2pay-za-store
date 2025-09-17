@@ -32,6 +32,7 @@ export const RotatingWelcomeMessage = ({
       const messages = [
         "Complete your store setup to start selling!",
         fullName ? `Hi ${fullName}! Let's finish setting up your store` : "Let's finish setting up your store",
+        "Don't forget to complete your onboarding in the setup progress box",
       ];
 
       // Add specific encouragement based on missing steps
