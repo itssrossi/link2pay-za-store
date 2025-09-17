@@ -29,6 +29,7 @@ const GrowthCTA = lazy(() => import('@/components/GrowthCTA'));
 const GrowthApplicationForm = lazy(() => import('@/components/GrowthApplicationForm'));
 const InvoicesModal = lazy(() => import('@/components/InvoicesModal'));
 const OnboardingProgressList = lazy(() => import('@/components/onboarding/OnboardingProgressList'));
+const RotatingWelcomeMessage = lazy(() => import('@/components/RotatingWelcomeMessage').then(module => ({ default: module.RotatingWelcomeMessage })));
 
 interface DashboardStats {
   totalProducts: number;
@@ -54,6 +55,16 @@ interface DashboardState {
   showGrowthForm: boolean;
   showInvoicesModal: boolean;
   hideOnboardingChecklist: boolean;
+  profile?: {
+    store_handle?: string;
+    business_name?: string;
+    logo_url?: string;
+    eft_details?: string;
+    payfast_link?: string;
+    snapscan_link?: string;
+    full_name?: string;
+    onboarding_completed?: boolean;
+  };
 }
 
 // Memoized onboarding steps configuration
@@ -117,7 +128,8 @@ const Dashboard = () => {
     loading: true,
     showGrowthForm: false,
     showInvoicesModal: false,
-    hideOnboardingChecklist: false
+    hideOnboardingChecklist: false,
+    profile: undefined
   });
 
   // Optimized data fetching - combine all queries and run in parallel
@@ -150,7 +162,7 @@ const Dashboard = () => {
           .eq('payment_status', 'paid'),
         supabase
           .from('profiles')
-          .select('store_handle, business_name, logo_url, eft_details, payfast_link, snapscan_link')
+          .select('store_handle, business_name, logo_url, eft_details, payfast_link, snapscan_link, full_name, onboarding_completed')
           .eq('id', user.id)
           .maybeSingle(),
         supabase
@@ -206,6 +218,7 @@ const Dashboard = () => {
           storeHandle: profile?.store_handle || ''
         },
         onboardingSteps: updatedSteps,
+        profile: profile || undefined,
         loading: false
       }));
 
@@ -304,10 +317,15 @@ const Dashboard = () => {
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" data-walkthrough="dashboard-title">Dashboard</h1>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">
-              Welcome back! Here's an overview of your business.
-            </p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground" data-walkthrough="dashboard-title">Dashboard</h1>
+            <Suspense fallback={<p className="text-muted-foreground mt-1 text-sm sm:text-base">Welcome back!</p>}>
+              <RotatingWelcomeMessage
+                fullName={state.profile?.full_name}
+                businessName={state.profile?.business_name}
+                onboardingCompleted={state.profile?.onboarding_completed}
+                onboardingSteps={state.onboardingSteps.map(step => ({ name: step.title, completed: step.completed }))}
+              />
+            </Suspense>
           </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <div className="flex gap-2">
