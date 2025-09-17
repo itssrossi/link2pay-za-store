@@ -42,6 +42,24 @@ export function createInvoiceNotificationPayload(
   };
 }
 
+export function createCampaignMessagePayload(
+  phone: string,
+  clientName: string,
+  templateSid: string
+): MessagePayload {
+  const formattedPhone = formatTwilioWhatsAppNumber(phone);
+  
+  return {
+    channel: "whatsapp",
+    recipient: formattedPhone,
+    type: "template",
+    contentSid: templateSid,
+    contentVariables: {
+      "1": clientName
+    }
+  };
+}
+
 export function createFallbackTextPayload(
   phone: string,
   clientName: string,

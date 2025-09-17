@@ -2,10 +2,12 @@
 export interface WhatsAppRequest {
   phone: string;
   clientName: string;
-  amount: string;
-  invoiceId: string;
+  amount?: string;
+  invoiceId?: string;
   messageType?: string;
   invoiceUrl?: string;
+  templateSid?: string;
+  campaignName?: string;
 }
 
 export interface MessagePayload {

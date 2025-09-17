@@ -947,6 +947,109 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_campaign_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          id: string
+          status: string
+          subscriber_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          status: string
+          subscriber_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          status?: string
+          subscriber_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_campaign_logs_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_campaign_subscribers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_campaign_subscribers: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_campaign_subscribers_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_campaigns: {
+        Row: {
+          created_at: string
+          delay_days: number
+          id: string
+          is_active: boolean
+          name: string
+          template_sid: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delay_days: number
+          id?: string
+          is_active?: boolean
+          name: string
+          template_sid: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delay_days?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          template_sid?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -957,6 +1060,10 @@ export type Database = {
         Returns: undefined
       }
       enroll_user_in_drip_campaigns: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      enroll_user_in_whatsapp_campaigns: {
         Args: { p_user_id: string }
         Returns: undefined
       }
