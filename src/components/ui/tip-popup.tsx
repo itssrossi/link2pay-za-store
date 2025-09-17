@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 interface TipPopupProps {
   isOpen: boolean;
   onClose: () => void;
+  userName?: string;
 }
 
-export const TipPopup: React.FC<TipPopupProps> = ({ isOpen, onClose }) => {
+export const TipPopup: React.FC<TipPopupProps> = ({ isOpen, onClose, userName }) => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -46,10 +47,10 @@ export const TipPopup: React.FC<TipPopupProps> = ({ isOpen, onClose }) => {
             
             <div className="space-y-2">
               <h3 className="text-lg font-semibold text-foreground">
-                Get Started with Your First Invoice
+                {userName ? `Great stuff ${userName}!` : 'Great stuff!'}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Send your first invoice today and collect your first payment through Link2Pay before your trial ends
+                Let's get your first invoice sent and collect your first payment through Link2Pay before your trial ends
               </p>
             </div>
           </div>

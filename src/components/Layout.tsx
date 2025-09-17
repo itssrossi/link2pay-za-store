@@ -28,6 +28,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const [glowReady, setGlowReady] = useState(false);
   const [showTipPopup, setShowTipPopup] = useState(false);
   const [tipPopupShown, setTipPopupShown] = useState(false);
+  const [userName, setUserName] = useState<string>('');
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -36,11 +37,14 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       try {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('glowing_invoice_tab, tip_popup_shown')
+          .select('glowing_invoice_tab, tip_popup_shown, full_name')
           .eq('id', user.id)
           .maybeSingle();
 
         if (profile) {
+          // Set user name
+          setUserName(profile.full_name || '');
+          
           // Check for immediate activation flags first
           const invoiceGlowReady = localStorage.getItem('invoiceGlowReady') === 'true';
           const tipPopupReady = localStorage.getItem('tipPopupReady') === 'true';
@@ -263,6 +267,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       <TipPopup 
         isOpen={showTipPopup} 
         onClose={() => setShowTipPopup(false)} 
+        userName={userName}
       />
     </div>
   );
