@@ -7,7 +7,8 @@ import { corsHeaders, generateInvoiceUrl } from './utils.ts';
 import {
   createPaymentConfirmationPayload,
   createInvoiceNotificationPayload,
-  createFallbackTextPayload
+  createFallbackTextPayload,
+  createCampaignMessagePayload
 } from './messageTemplates.ts';
 import {
   sendTwilioMessage,
@@ -21,7 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { phone, clientName, amount, invoiceId, messageType, invoiceUrl }: WhatsAppRequest = await req.json();
+    const { phone, clientName, amount, invoiceId, messageType, invoiceUrl, templateSid, campaignName }: WhatsAppRequest = await req.json();
 
     console.log('=== WhatsApp Message Request Started ===');
     console.log('Request payload:', {
@@ -31,21 +32,46 @@ const handler = async (req: Request): Promise<Response> => {
       invoiceId,
       messageType: messageType || 'invoice_notification',
       invoiceUrl,
+      templateSid,
+      campaignName,
       timestamp: new Date().toISOString()
     });
 
-    // Validate required fields
-    if (!phone || !clientName || !invoiceId) {
+    // Validate required fields based on message type
+    if (!phone || !clientName) {
       const missingFields = [];
       if (!phone) missingFields.push('phone');
       if (!clientName) missingFields.push('clientName');
-      if (!invoiceId) missingFields.push('invoiceId');
       
       console.error('Missing required fields:', missingFields);
       return new Response(
         JSON.stringify({ 
           success: false, 
           error: `Missing required fields: ${missingFields.join(', ')}` 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Additional validation for invoice messages
+    if (messageType !== 'campaign' && !invoiceId) {
+      console.error('Missing invoiceId for invoice message');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Missing required field: invoiceId for invoice messages' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Additional validation for campaign messages
+    if (messageType === 'campaign' && !templateSid) {
+      console.error('Missing templateSid for campaign message');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Missing required field: templateSid for campaign messages' 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -87,7 +113,19 @@ const handler = async (req: Request): Promise<Response> => {
     let templateAttempted = false;
 
     // Create appropriate message payload based on type
-    if (messageType === 'payment_confirmation') {
+    if (messageType === 'campaign') {
+      console.log('=== Preparing Campaign Message ===');
+      console.log('Campaign message details:', {
+        phone,
+        clientName,
+        templateSid,
+        campaignName
+      });
+
+      messagePayload = createCampaignMessagePayload(phone, clientName, templateSid);
+      templateAttempted = true;
+      console.log('Campaign message template payload:', JSON.stringify(messagePayload, null, 2));
+    } else if (messageType === 'payment_confirmation') {
       console.log('=== Preparing Payment Confirmation ===');
       console.log('Payment confirmation details:', {
         phone,
