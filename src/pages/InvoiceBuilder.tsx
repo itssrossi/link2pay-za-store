@@ -307,6 +307,21 @@ const InvoiceBuilder = () => {
 
       console.log('Invoice items created successfully');
 
+      // Check if this is the user's first invoice and update timestamp
+      const { data: existingInvoices } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(2);
+
+      if (existingInvoices && existingInvoices.length === 1) {
+        // This is the first invoice, update the profile
+        await supabase
+          .from('profiles')
+          .update({ first_invoice_sent_at: new Date().toISOString() })
+          .eq('id', user.id);
+      }
+
       // Send WhatsApp message if requested
       if (sendWhatsApp && validatedWhatsAppNumber) {
         console.log('Attempting to send WhatsApp message...');

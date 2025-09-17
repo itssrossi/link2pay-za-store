@@ -167,7 +167,10 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       
       await supabase
         .from('profiles')
-        .update({ onboarding_completed: true })
+        .update({ 
+          onboarding_completed: true,
+          onboarding_completed_at: new Date().toISOString()
+        })
         .eq('id', user.id);
 
       setShowOnboarding(false);

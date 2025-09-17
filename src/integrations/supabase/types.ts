@@ -613,6 +613,7 @@ export type Database = {
           discount_applied: boolean | null
           eft_details: string | null
           email: string | null
+          first_invoice_sent_at: string | null
           first_sign_in_completed: boolean | null
           full_name: string | null
           glowing_invoice_tab: boolean | null
@@ -628,6 +629,7 @@ export type Database = {
           logo_url: string | null
           onboarding_choice: string | null
           onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
           payfast_billing_token: string | null
           payfast_link: string | null
           payfast_merchant_id: string | null
@@ -678,6 +680,7 @@ export type Database = {
           discount_applied?: boolean | null
           eft_details?: string | null
           email?: string | null
+          first_invoice_sent_at?: string | null
           first_sign_in_completed?: boolean | null
           full_name?: string | null
           glowing_invoice_tab?: boolean | null
@@ -693,6 +696,7 @@ export type Database = {
           logo_url?: string | null
           onboarding_choice?: string | null
           onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
           payfast_billing_token?: string | null
           payfast_link?: string | null
           payfast_merchant_id?: string | null
@@ -743,6 +747,7 @@ export type Database = {
           discount_applied?: boolean | null
           eft_details?: string | null
           email?: string | null
+          first_invoice_sent_at?: string | null
           first_sign_in_completed?: boolean | null
           full_name?: string | null
           glowing_invoice_tab?: boolean | null
@@ -758,6 +763,7 @@ export type Database = {
           logo_url?: string | null
           onboarding_choice?: string | null
           onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
           payfast_billing_token?: string | null
           payfast_link?: string | null
           payfast_merchant_id?: string | null
