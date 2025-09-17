@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CreditCard, ArrowRight, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { OnboardingState } from '../NewOnboardingContainer';
+import { useOnboardingTracking } from '@/hooks/useOnboardingTracking';
 
 interface PaymentStepProps {
   onNext: () => void;
@@ -27,6 +28,12 @@ interface PaymentForm {
 const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOptional }) => {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  
+  const { trackCompletion, trackSkip } = useOnboardingTracking({
+    stepName: 'payment_setup',
+    stepNumber: 3,
+    onboardingType: state.choice || undefined
+  });
   const [payment, setPayment] = useState<PaymentForm>({
     eftDetails: '',
     payfastLink: '',
@@ -83,6 +90,12 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
       if (error) throw error;
 
       setState(prev => ({ ...prev, hasPayments: true }));
+      await trackCompletion({
+        has_eft_details: !!payment.eftDetails,
+        has_payfast_link: !!payment.payfastLink,
+        has_snapscan_link: !!payment.snapscanLink,
+        has_capitec_paylink: !!payment.capitecPaylink
+      });
       toast.success('Payment information saved successfully!');
       onNext();
     } catch (error) {
@@ -93,7 +106,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    await trackSkip('User chose to skip payment setup');
     onNext();
   };
 

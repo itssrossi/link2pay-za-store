@@ -8,6 +8,7 @@ import { Copy, ExternalLink, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { OnboardingState } from '../NewOnboardingContainer';
 import { playCelebrationSound } from '@/utils/celebrationSound';
+import { useOnboardingTracking } from '@/hooks/useOnboardingTracking';
 
 interface SuccessStepProps {
   onComplete: () => void;
@@ -20,6 +21,12 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [uniqueLink, setUniqueLink] = useState('');
   const [soundPlayed, setSoundPlayed] = useState(false);
+  
+  const { trackCompletion } = useOnboardingTracking({
+    stepName: 'success',
+    stepNumber: 4,
+    onboardingType: state.choice || undefined
+  });
 
   useEffect(() => {
     // Trigger confetti and sound on mount
@@ -85,6 +92,10 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
   };
 
   const handleGoToDashboard = async () => {
+    await trackCompletion({
+      store_handle: state.storeHandle,
+      final_choice: state.choice
+    });
     await enableInvoiceTabGlow();
     
     // Dispatch custom events for immediate UI updates

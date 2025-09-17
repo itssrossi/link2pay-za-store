@@ -10,6 +10,7 @@ import ImageUpload from '@/components/ui/image-upload';
 import { Package, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { OnboardingState } from '../NewOnboardingContainer';
+import { useOnboardingTracking } from '@/hooks/useOnboardingTracking';
 
 interface ProductStepProps {
   onNext: () => void;
@@ -29,6 +30,12 @@ interface ProductForm {
 const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) => {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  
+  const { trackCompletion } = useOnboardingTracking({
+    stepName: 'product_setup',
+    stepNumber: 2,
+    onboardingType: state.choice || undefined
+  });
   const [product, setProduct] = useState<ProductForm>({
     title: '',
     description: '',
@@ -86,6 +93,12 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
       ]);
 
       setState(prev => ({ ...prev, hasProducts: true }));
+      await trackCompletion({ 
+        product_title: product.title,
+        product_price: product.price,
+        product_category: product.category,
+        has_image: !!product.imageUrl
+      });
       toast.success('Product added successfully!');
       onNext();
     } catch (error) {

@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Clock, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { OnboardingState } from '../NewOnboardingContainer';
+import { useOnboardingTracking } from '@/hooks/useOnboardingTracking';
 
 interface AvailabilityStepProps {
   onNext: () => void;
@@ -28,6 +29,12 @@ interface DayAvailability {
 const AvailabilityStep: React.FC<AvailabilityStepProps> = ({ onNext, state, setState }) => {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  
+  const { trackCompletion } = useOnboardingTracking({
+    stepName: 'availability_setup',
+    stepNumber: 2,
+    onboardingType: state.choice || undefined
+  });
   const [availability, setAvailability] = useState<DayAvailability[]>([
     { dayOfWeek: 1, dayName: 'Monday', isAvailable: true, startTime: '09:00', endTime: '17:00' },
     { dayOfWeek: 2, dayName: 'Tuesday', isAvailable: true, startTime: '09:00', endTime: '17:00' },
@@ -123,6 +130,17 @@ const AvailabilityStep: React.FC<AvailabilityStepProps> = ({ onNext, state, setS
       ]);
 
       setState(prev => ({ ...prev, hasAvailability: true }));
+      
+      const availableDays = availability.filter(day => day.isAvailable).length;
+      await trackCompletion({ 
+        available_days_count: availableDays,
+        availability_data: availability.filter(day => day.isAvailable).map(day => ({
+          day: day.dayName,
+          start: day.startTime,
+          end: day.endTime
+        }))
+      });
+      
       toast.success('Availability saved successfully!');
       onNext();
     } catch (error) {

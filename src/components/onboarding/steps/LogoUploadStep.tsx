@@ -7,6 +7,7 @@ import ImageUpload from '@/components/ui/image-upload';
 import { Upload, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { OnboardingState } from '../NewOnboardingContainer';
+import { useOnboardingTracking } from '@/hooks/useOnboardingTracking';
 
 interface LogoUploadStepProps {
   onNext: () => void;
@@ -19,6 +20,12 @@ const LogoUploadStep: React.FC<LogoUploadStepProps> = ({ onNext, state, setState
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [logoUrl, setLogoUrl] = useState(state.logoUrl || '');
+  
+  const { trackCompletion, trackSkip } = useOnboardingTracking({
+    stepName: 'logo_upload',
+    stepNumber: 1,
+    onboardingType: state.choice || undefined
+  });
 
   const handleLogoUpload = async (url: string) => {
     if (!user) return;
@@ -41,11 +48,13 @@ const LogoUploadStep: React.FC<LogoUploadStepProps> = ({ onNext, state, setState
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    await trackCompletion({ has_logo: !!logoUrl });
     onNext();
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    await trackSkip('User chose to skip logo upload');
     onNext();
   };
 

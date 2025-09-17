@@ -461,6 +461,57 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          entered_at: string
+          id: string
+          is_completed: boolean | null
+          is_skipped: boolean | null
+          metadata: Json | null
+          onboarding_type: string | null
+          skipped_at: string | null
+          step_name: string
+          step_number: number
+          time_spent_seconds: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          entered_at?: string
+          id?: string
+          is_completed?: boolean | null
+          is_skipped?: boolean | null
+          metadata?: Json | null
+          onboarding_type?: string | null
+          skipped_at?: string | null
+          step_name: string
+          step_number: number
+          time_spent_seconds?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          entered_at?: string
+          id?: string
+          is_completed?: boolean | null
+          is_skipped?: boolean | null
+          metadata?: Json | null
+          onboarding_type?: string | null
+          skipped_at?: string | null
+          step_name?: string
+          step_number?: number
+          time_spent_seconds?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payfast_subscriptions: {
         Row: {
           amount: number
