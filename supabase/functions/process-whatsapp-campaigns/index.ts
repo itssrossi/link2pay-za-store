@@ -39,28 +39,49 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     // Get all due WhatsApp campaign messages
+    // Fetch due subscribers first (without joins)
     const { data: dueSubscribers, error: fetchError } = await supabase
       .from('whatsapp_campaign_subscribers')
-      .select(`
-        id,
-        user_id,
-        campaign_id,
-        scheduled_at,
-        whatsapp_campaigns:campaign_id (
-          id,
-          name,
-          template_sid,
-          delay_days
-        ),
-        profiles:user_id (
-          full_name,
-          whatsapp_number
-        )
-      `)
+      .select('id, user_id, campaign_id, scheduled_at')
       .eq('status', 'enrolled')
       .is('sent_at', null)
       .lte('scheduled_at', new Date().toISOString())
       .limit(50); // Process in batches
+
+    if (fetchError) {
+      console.error('Error fetching due subscribers (base):', fetchError);
+      throw fetchError;
+    }
+
+    // Collect unique IDs to fetch related data in separate queries
+    const userIds = Array.from(new Set((dueSubscribers ?? []).map((s: any) => s.user_id))).filter(Boolean);
+    const campaignIds = Array.from(new Set((dueSubscribers ?? []).map((s: any) => s.campaign_id))).filter(Boolean);
+
+    // Fetch campaigns referenced by due subscribers
+    const { data: campaigns, error: campaignsError } = await supabase
+      .from('whatsapp_campaigns')
+      .select('id, name, template_sid, delay_days')
+      .in('id', campaignIds.length ? campaignIds : ['00000000-0000-0000-0000-000000000000']);
+
+    if (campaignsError) {
+      console.error('Error fetching campaigns:', campaignsError);
+      throw campaignsError;
+    }
+
+    // Fetch profiles (user info) for due subscribers
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, whatsapp_number')
+      .in('id', userIds.length ? userIds : ['00000000-0000-0000-0000-000000000000']);
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      throw profilesError;
+    }
+
+    // Build quick lookup maps
+    const campaignMap = new Map((campaigns ?? []).map((c: any) => [c.id, c]));
+    const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
 
     if (fetchError) {
       console.error('Error fetching due subscribers:', fetchError);
@@ -86,13 +107,24 @@ const handler = async (req: Request): Promise<Response> => {
     // Process each due message
     for (const subscriber of dueSubscribers as any[]) {
       try {
-        const profile = subscriber.profiles;
-        const campaign = subscriber.whatsapp_campaigns;
+        const profile = profileMap.get(subscriber.user_id);
+        const campaign = campaignMap.get(subscriber.campaign_id);
+
+        if (!campaign) {
+          console.log(`Skipping subscriber ${subscriber.id}: campaign not found for campaign_id ${subscriber.campaign_id}`);
+          await logCampaignResult(supabase, subscriber.id, 'failed', {
+            error: 'Campaign not found',
+            campaign_id: subscriber.campaign_id
+          });
+          errorCount++;
+          continue;
+        }
 
         if (!profile?.whatsapp_number || !profile?.full_name) {
-          console.log(`Skipping subscriber ${subscriber.id}: missing WhatsApp number or name`);
+          console.log(`Skipping subscriber ${subscriber.id}: missing WhatsApp number or name for user_id ${subscriber.user_id}`);
           await logCampaignResult(supabase, subscriber.id, 'failed', {
-            error: 'Missing WhatsApp number or full name'
+            error: 'Missing WhatsApp number or full name',
+            user_id: subscriber.user_id
           });
           errorCount++;
           continue;
