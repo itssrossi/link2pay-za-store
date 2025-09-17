@@ -31,8 +31,19 @@ const Auth = () => {
     keepSignedIn: true
   });
 
-  // Redirect if already authenticated
+  // Handle email confirmation and redirect authenticated users
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const confirmed = urlParams.get('confirmed');
+    
+    if (confirmed === 'true') {
+      setIsLogin(true); // Switch to login tab
+      addAuthStatus('Email confirmed successfully! Please sign in with your credentials.', 'success');
+      toast.success('Email confirmed! Please sign in to continue.');
+      // Clean up the URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
     if (user && session) {
       console.log('User already authenticated, redirecting to dashboard');
       navigate('/dashboard');
@@ -92,7 +103,6 @@ const Auth = () => {
       addAuthStatus('Starting sign up process...');
       
       const { error } = await signUp(formData.email, formData.password, {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
         data: {
           business_name: formData.businessName,
           full_name: formData.fullName,

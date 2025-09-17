@@ -179,7 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         options: {
           ...options,
-          emailRedirectTo: options?.emailRedirectTo || `${window.location.origin}/dashboard`,
+          emailRedirectTo: options?.emailRedirectTo || `${window.location.origin}/auth?confirmed=true`,
           data: {
             business_name: options?.data?.business_name || 'My Business',
             full_name: options?.data?.full_name || '',
@@ -237,7 +237,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         type: 'signup',
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`
+          emailRedirectTo: `${window.location.origin}/auth?confirmed=true`
         }
       });
 
