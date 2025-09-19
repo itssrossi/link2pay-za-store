@@ -13,10 +13,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
-import { Home, Package, FileText, Settings, LogOut, MessageCircle } from 'lucide-react';
+import { Home, Package, FileText, Settings, LogOut, MessageCircle, Code } from 'lucide-react';
 import MobileStickyGrowthCTA from '@/components/MobileStickyGrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 import { TipPopup } from '@/components/ui/tip-popup';
+import { DevModeDialog } from '@/components/DevModeDialog';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
@@ -29,6 +30,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const [showTipPopup, setShowTipPopup] = useState(false);
   const [tipPopupShown, setTipPopupShown] = useState(false);
   const [userName, setUserName] = useState<string>('');
+  const [showDevDialog, setShowDevDialog] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -212,6 +214,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   <MessageCircle className="mr-2 h-4 w-4" />
                   <span>Contact Support</span>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowDevDialog(true)}>
+                  <Code className="mr-2 h-4 w-4" />
+                  <span>Dev Mode</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
@@ -268,6 +275,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         isOpen={showTipPopup} 
         onClose={() => setShowTipPopup(false)} 
         userName={userName}
+      />
+
+      <DevModeDialog 
+        isOpen={showDevDialog} 
+        onClose={() => setShowDevDialog(false)} 
       />
     </div>
   );

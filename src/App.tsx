@@ -34,6 +34,9 @@ const AvailabilitySetup = lazy(() => import('@/pages/onboarding/AvailabilitySetu
 const PaymentSetup = lazy(() => import('@/pages/onboarding/PaymentSetup'));
 const Success = lazy(() => import('@/pages/onboarding/Success'));
 
+// Developer Dashboard
+const DevDashboard = lazy(() => import('@/pages/DevDashboard'));
+
 // Loading component
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -144,13 +147,16 @@ function App() {
                    }
                  />
                  
-                 {/* Onboarding Routes */}
-                 <Route path="/onboarding/choice" element={<OnboardingChoice />} />
-                 <Route path="/onboarding/logo" element={<LogoUpload />} />
-                 <Route path="/onboarding/product" element={<ProductSetup />} />
-                 <Route path="/onboarding/availability" element={<AvailabilitySetup />} />
-                 <Route path="/onboarding/payment" element={<PaymentSetup />} />
-                 <Route path="/onboarding/success" element={<Success />} />
+                  {/* Onboarding Routes */}
+                  <Route path="/onboarding/choice" element={<OnboardingChoice />} />
+                  <Route path="/onboarding/logo" element={<LogoUpload />} />
+                  <Route path="/onboarding/product" element={<ProductSetup />} />
+                  <Route path="/onboarding/availability" element={<AvailabilitySetup />} />
+                  <Route path="/onboarding/payment" element={<PaymentSetup />} />
+                  <Route path="/onboarding/success" element={<Success />} />
+                  
+                  {/* Developer Dashboard */}
+                  <Route path="/dev-dashboard" element={<DevDashboard />} />
                  
                  <Route path="*" element={<NotFound />} />
                 </Routes>
