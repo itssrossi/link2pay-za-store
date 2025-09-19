@@ -71,7 +71,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Fetch profiles (user info) for due subscribers
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('id, full_name, whatsapp_number')
+      .select('id, full_name, business_name, whatsapp_number')
       .in('id', userIds.length ? userIds : ['00000000-0000-0000-0000-000000000000']);
 
     if (profilesError) {
@@ -120,21 +120,34 @@ const handler = async (req: Request): Promise<Response> => {
           continue;
         }
 
-        if (!profile?.whatsapp_number || !profile?.full_name) {
-          console.log(`Skipping subscriber ${subscriber.id}: missing WhatsApp number or name for user_id ${subscriber.user_id}`);
-          await logCampaignResult(supabase, subscriber.id, 'failed', {
-            error: 'Missing WhatsApp number or full name',
+        if (!profile) {
+          console.log(`Skipping subscriber ${subscriber.id}: profile not found for user_id ${subscriber.user_id}`);
+          await logCampaignResult(supabase, subscriber.id, 'skipped', {
+            error: 'Profile not found',
             user_id: subscriber.user_id
           });
           errorCount++;
           continue;
         }
 
+        if (!profile.whatsapp_number) {
+          console.log(`Skipping subscriber ${subscriber.id}: missing WhatsApp number for user_id ${subscriber.user_id}`);
+          await logCampaignResult(supabase, subscriber.id, 'skipped', {
+            error: 'Missing WhatsApp number',
+            user_id: subscriber.user_id
+          });
+          errorCount++;
+          continue;
+        }
+
+        // Use fallback for name if missing
+        const clientName = profile.full_name || profile.business_name || 'there';
+
         // Send WhatsApp message using existing send-whatsapp function
         const { error: sendError } = await supabase.functions.invoke('send-whatsapp', {
           body: {
             phone: profile.whatsapp_number,
-            clientName: profile.full_name,
+            clientName: clientName,
             messageType: 'campaign',
             templateSid: campaign.template_sid,
             campaignName: campaign.name

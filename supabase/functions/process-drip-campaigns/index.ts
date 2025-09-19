@@ -82,16 +82,23 @@ const handler = async (req: Request): Promise<Response> => {
     // Process each due email
     for (const subscriber of dueSubscribers) {
       try {
-        // Get user profile data
+        // Get user profile data - use maybeSingle() to handle missing profiles gracefully
         const { data: userProfile, error: profileError } = await supabase
           .from('profiles')
           .select('id, full_name, business_name, email')
           .eq('id', subscriber.user_id)
-          .single();
+          .maybeSingle();
 
-        if (profileError || !userProfile) {
+        if (profileError) {
           console.error(`Error fetching profile for user ${subscriber.user_id}:`, profileError);
-          await logCampaignEvent(subscriber.id, 'failed', { error: 'Profile not found' });
+          await logCampaignEvent(subscriber.id, 'failed', { error: 'Database error fetching profile' });
+          errorCount++;
+          continue;
+        }
+
+        if (!userProfile) {
+          console.log(`Profile not found for user ${subscriber.user_id}, skipping campaign`);
+          await logCampaignEvent(subscriber.id, 'skipped', { error: 'Profile not found' });
           errorCount++;
           continue;
         }
@@ -166,9 +173,13 @@ const handler = async (req: Request): Promise<Response> => {
 
 // Helper function to personalize email template
 function personalizeTemplate(template: string, profile: UserProfile): string {
+  // Use better fallbacks for missing data
+  const displayName = profile.full_name || profile.business_name || 'there';
+  const businessName = profile.business_name || profile.full_name || 'your business';
+  
   return template
-    .replace(/\{\{name\}\}/g, profile.full_name || profile.business_name || 'there')
-    .replace(/\{\{business_name\}\}/g, profile.business_name || 'your business');
+    .replace(/\{\{name\}\}/g, displayName)
+    .replace(/\{\{business_name\}\}/g, businessName);
 }
 
 // Helper function to convert text to HTML
