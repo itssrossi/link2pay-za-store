@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 import { 
   getOnboardingInsights, 
   getFunnelAnalysis, 
@@ -12,7 +16,7 @@ import {
   FunnelAnalysis 
 } from '@/utils/onboardingAnalytics';
 import { useDevAuth } from '@/hooks/useDevAuth';
-import { ArrowLeft, Users, TrendingUp, Clock, Filter } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Clock, Filter, CalendarIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const DevDashboard = () => {
@@ -21,6 +25,8 @@ const DevDashboard = () => {
   const [insights, setInsights] = useState<OnboardingInsights | null>(null);
   const [funnelData, setFunnelData] = useState<FunnelAnalysis[]>([]);
   const [filterType, setFilterType] = useState<'all' | 'physical_products' | 'bookings'>('all');
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)); // Last 30 days
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,8 +35,8 @@ const DevDashboard = () => {
       try {
         setLoading(true);
         const [insightsData, funnelData] = await Promise.all([
-          getOnboardingInsights(),
-          getFunnelAnalysis(filterType === 'all' ? undefined : filterType)
+          getOnboardingInsights(startDate, endDate),
+          getFunnelAnalysis(filterType === 'all' ? undefined : filterType, startDate, endDate)
         ]);
         setInsights(insightsData);
         setFunnelData(funnelData);
@@ -48,11 +54,33 @@ const DevDashboard = () => {
     }
 
     fetchData();
-  }, [isDevAuthenticated, filterType]);
+  }, [isDevAuthenticated, filterType, startDate, endDate]);
 
   const handleBack = () => {
     logout();
     navigate('/dashboard');
+  };
+
+  const setDatePreset = (preset: string) => {
+    const now = new Date();
+    switch (preset) {
+      case '7d':
+        setStartDate(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000));
+        setEndDate(now);
+        break;
+      case '30d':
+        setStartDate(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000));
+        setEndDate(now);
+        break;
+      case '90d':
+        setStartDate(new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000));
+        setEndDate(now);
+        break;
+      case 'all':
+        setStartDate(undefined);
+        setEndDate(undefined);
+        break;
+    }
   };
 
   if (!isDevAuthenticated) {
@@ -96,8 +124,8 @@ const DevDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
             <div className="flex items-center space-x-4">
               <Button variant="ghost" size="sm" onClick={handleBack}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -106,20 +134,94 @@ const DevDashboard = () => {
               <h1 className="text-xl font-semibold">Developer Dashboard</h1>
               <Badge variant="secondary">Dev Mode</Badge>
             </div>
-            <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4" />
-              <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  <SelectItem value="physical_products">Physical Products</SelectItem>
-                  <SelectItem value="bookings">Bookings</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <div className="flex flex-col space-y-2 lg:flex-row lg:items-center lg:space-y-0 lg:space-x-4">
+              {/* Date Range Preset Buttons */}
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" onClick={() => setDatePreset('7d')}>Last 7 days</Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset('30d')}>Last 30 days</Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset('90d')}>Last 90 days</Button>
+                <Button variant="outline" size="sm" onClick={() => setDatePreset('all')}>All time</Button>
+              </div>
+              
+              {/* Date Pickers */}
+              <div className="flex space-x-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-36 justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                      size="sm"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "MMM dd") : "From"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={setStartDate}
+                      disabled={(date) => date > new Date() || (endDate && date > endDate)}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-36 justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                      )}
+                      size="sm"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "MMM dd") : "To"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={endDate}
+                      onSelect={setEndDate}
+                      disabled={(date) => date > new Date() || (startDate && date < startDate)}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Filter className="w-4 h-4" />
+                <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    <SelectItem value="physical_products">Physical Products</SelectItem>
+                    <SelectItem value="bookings">Bookings</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
+          
+          {/* Date Range Display */}
+          {(startDate || endDate) && (
+            <div className="text-sm text-muted-foreground mt-2">
+              Showing data {startDate ? `from ${format(startDate, "MMM dd, yyyy")}` : 'from beginning'} 
+              {endDate ? ` to ${format(endDate, "MMM dd, yyyy")}` : ' to now'}
+            </div>
+          )}
         </div>
       </div>
 

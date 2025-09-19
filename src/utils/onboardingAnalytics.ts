@@ -44,11 +44,21 @@ export interface OnboardingInsights {
 /**
  * Get detailed onboarding progress for all users
  */
-export const getOnboardingProgress = async (): Promise<OnboardingProgressData[]> => {
-  const { data, error } = await supabase
+export const getOnboardingProgress = async (startDate?: Date, endDate?: Date): Promise<OnboardingProgressData[]> => {
+  let query = supabase
     .from('onboarding_progress')
     .select('*')
     .order('created_at', { ascending: false });
+
+  if (startDate) {
+    query = query.gte('created_at', startDate.toISOString());
+  }
+  
+  if (endDate) {
+    query = query.lte('created_at', endDate.toISOString());
+  }
+
+  const { data, error } = await query;
   
   if (error) {
     console.error('Error fetching onboarding progress:', error);
@@ -61,13 +71,21 @@ export const getOnboardingProgress = async (): Promise<OnboardingProgressData[]>
 /**
  * Get onboarding funnel analysis
  */
-export const getFunnelAnalysis = async (onboardingType?: 'physical_products' | 'bookings'): Promise<FunnelAnalysis[]> => {
+export const getFunnelAnalysis = async (onboardingType?: 'physical_products' | 'bookings', startDate?: Date, endDate?: Date): Promise<FunnelAnalysis[]> => {
   let query = supabase
     .from('onboarding_progress')
     .select('*');
   
   if (onboardingType) {
     query = query.eq('onboarding_type', onboardingType);
+  }
+
+  if (startDate) {
+    query = query.gte('created_at', startDate.toISOString());
+  }
+  
+  if (endDate) {
+    query = query.lte('created_at', endDate.toISOString());
   }
   
   const { data, error } = await query;
@@ -118,10 +136,20 @@ export const getFunnelAnalysis = async (onboardingType?: 'physical_products' | '
 /**
  * Get comprehensive onboarding insights
  */
-export const getOnboardingInsights = async (): Promise<OnboardingInsights> => {
-  const { data, error } = await supabase
+export const getOnboardingInsights = async (startDate?: Date, endDate?: Date): Promise<OnboardingInsights> => {
+  let query = supabase
     .from('onboarding_progress')
     .select('*');
+
+  if (startDate) {
+    query = query.gte('created_at', startDate.toISOString());
+  }
+  
+  if (endDate) {
+    query = query.lte('created_at', endDate.toISOString());
+  }
+
+  const { data, error } = await query;
   
   if (error) {
     console.error('Error fetching insights:', error);
@@ -173,7 +201,7 @@ export const getOnboardingInsights = async (): Promise<OnboardingInsights> => {
     }
   }
   
-  const funnelAnalysis = await getFunnelAnalysis();
+  const funnelAnalysis = await getFunnelAnalysis(undefined, startDate, endDate);
   
   return {
     total_users_started: totalUsersStarted,
