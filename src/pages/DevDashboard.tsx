@@ -25,11 +25,6 @@ const DevDashboard = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isDevAuthenticated) {
-      navigate('/dashboard');
-      return;
-    }
-
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -37,7 +32,6 @@ const DevDashboard = () => {
           getOnboardingInsights(),
           getFunnelAnalysis(filterType === 'all' ? undefined : filterType)
         ]);
-        
         setInsights(insightsData);
         setFunnelData(funnelData);
       } catch (err) {
@@ -48,8 +42,13 @@ const DevDashboard = () => {
       }
     };
 
+    if (!isDevAuthenticated) {
+      setLoading(false);
+      return;
+    }
+
     fetchData();
-  }, [isDevAuthenticated, navigate, filterType]);
+  }, [isDevAuthenticated, filterType]);
 
   const handleBack = () => {
     logout();
@@ -57,7 +56,19 @@ const DevDashboard = () => {
   };
 
   if (!isDevAuthenticated) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Developer access required</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">Enter dev mode from the app to view analytics.</p>
+            <Button onClick={handleBack}>Back to Dashboard</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (loading) {
