@@ -21,12 +21,12 @@ export interface OnboardingProgressData {
 export interface FunnelAnalysis {
   step_name: string;
   step_number: number;
-  total_entries: number;
+  entries: number;
   completions: number;
   skips: number;
-  drop_offs: number;
+  dropOffs: number;
   completion_rate: number;
-  average_time_seconds: number;
+  avg_time_seconds: number;
 }
 
 export interface OnboardingInsights {
@@ -48,14 +48,14 @@ export const getOnboardingProgress = async (startDate?: Date, endDate?: Date): P
   let query = supabase
     .from('onboarding_progress')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('entered_at', { ascending: false });
 
   if (startDate) {
-    query = query.gte('created_at', startDate.toISOString());
+    query = query.gte('entered_at', startDate.toISOString());
   }
   
   if (endDate) {
-    query = query.lte('created_at', endDate.toISOString());
+    query = query.lte('entered_at', endDate.toISOString());
   }
 
   const { data, error } = await query;
@@ -71,67 +71,143 @@ export const getOnboardingProgress = async (startDate?: Date, endDate?: Date): P
 /**
  * Get onboarding funnel analysis
  */
-export const getFunnelAnalysis = async (onboardingType?: 'physical_products' | 'bookings', startDate?: Date, endDate?: Date): Promise<FunnelAnalysis[]> => {
+export const getFunnelAnalysis = async (
+  onboardingType?: 'physical_products' | 'bookings',
+  startDate?: Date,
+  endDate?: Date
+): Promise<FunnelAnalysis[]> => {
+  // Get all onboarding progress data with proper filtering
   let query = supabase
     .from('onboarding_progress')
-    .select('*');
-  
-  if (onboardingType) {
-    query = query.eq('onboarding_type', onboardingType);
-  }
+    .select('step_name, step_number, onboarding_type, entered_at, completed_at, is_completed, is_skipped, time_spent_seconds, user_id')
+    .order('user_id')
+    .order('step_number')
 
   if (startDate) {
-    query = query.gte('created_at', startDate.toISOString());
+    query = query.gte('entered_at', startDate.toISOString())
   }
-  
   if (endDate) {
-    query = query.lte('created_at', endDate.toISOString());
+    query = query.lte('entered_at', endDate.toISOString())
   }
-  
-  const { data, error } = await query;
-  
+  if (onboardingType) {
+    query = query.eq('onboarding_type', onboardingType)
+  }
+
+  const { data, error } = await query
+
   if (error) {
-    console.error('Error fetching funnel data:', error);
-    throw error;
+    console.error('Error fetching funnel data:', error)
+    return []
   }
-  
-  // Group by step and analyze
-  const stepGroups = data?.reduce((acc, row) => {
-    const key = `${row.step_number}-${row.step_name}`;
-    if (!acc[key]) {
-      acc[key] = {
-        step_name: row.step_name,
-        step_number: row.step_number,
-        entries: [],
-        completions: 0,
-        skips: 0,
-        total_time: 0,
-        time_count: 0
-      };
+
+  if (!data || data.length === 0) {
+    return []
+  }
+
+  // Create user journey map to track progression
+  const userJourneys = new Map<string, any[]>()
+  data.forEach(record => {
+    if (!userJourneys.has(record.user_id)) {
+      userJourneys.set(record.user_id, [])
     }
-    
-    acc[key].entries.push(row);
-    if (row.is_completed) acc[key].completions++;
-    if (row.is_skipped) acc[key].skips++;
-    if (row.time_spent_seconds) {
-      acc[key].total_time += row.time_spent_seconds;
-      acc[key].time_count++;
+    userJourneys.get(record.user_id)!.push(record)
+  })
+
+  // Define step sequence (accounting for branching at step 2)
+  const stepSequence = [
+    { number: 0, name: 'choice_selection' },
+    { number: 1, name: 'logo_upload' },
+    { number: 2, name: 'availability_setup', branch: 'bookings' },
+    { number: 2, name: 'product_setup', branch: 'physical_products' },
+    { number: 3, name: 'payment_setup' },
+    { number: 4, name: 'success' }
+  ]
+
+  // Calculate accurate funnel metrics
+  const funnelResults: FunnelAnalysis[] = []
+
+  for (const step of stepSequence) {
+    // Skip branching steps if filtering by onboarding type
+    if (onboardingType && step.branch && step.branch !== onboardingType) {
+      continue
     }
+
+    const usersAtStep = Array.from(userJourneys.values()).filter(journey => 
+      journey.some(record => 
+        record.step_number === step.number && 
+        record.step_name === step.name &&
+        (!onboardingType || !step.branch || record.onboarding_type === onboardingType)
+      )
+    )
+
+    const stepRecords = data.filter(record => 
+      record.step_number === step.number && 
+      record.step_name === step.name &&
+      (!onboardingType || !step.branch || record.onboarding_type === onboardingType)
+    )
+
+    const entries = usersAtStep.length
+    const completions = stepRecords.filter(r => r.is_completed).length
+    const skips = stepRecords.filter(r => r.is_skipped).length
     
-    return acc;
-  }, {} as Record<string, any>) || {};
-  
-  return Object.values(stepGroups).map((group: any) => ({
-    step_name: group.step_name,
-    step_number: group.step_number,
-    total_entries: group.entries.length,
-    completions: group.completions,
-    skips: group.skips,
-    drop_offs: group.entries.length - group.completions - group.skips,
-    completion_rate: group.entries.length > 0 ? (group.completions / group.entries.length) * 100 : 0,
-    average_time_seconds: group.time_count > 0 ? Math.round(group.total_time / group.time_count) : 0
-  })).sort((a, b) => a.step_number - b.step_number);
-};
+    // Calculate drop-offs: users who reached this step but never progressed to next step
+    let dropOffs = 0
+    if (step.number < 4) { // Don't calculate drop-offs for final step
+      const nextStepUsers = new Set<string>()
+      
+      // Handle branching logic for step 2
+      if (step.number === 1) {
+        // Next step after logo_upload depends on onboarding type
+        Array.from(userJourneys.values()).forEach(journey => {
+          const hasAvailability = journey.some(r => r.step_number === 2 && r.step_name === 'availability_setup')
+          const hasProduct = journey.some(r => r.step_number === 2 && r.step_name === 'product_setup')
+          if (hasAvailability || hasProduct) {
+            const userId = journey[0]?.user_id
+            if (userId) nextStepUsers.add(userId)
+          }
+        })
+      } else if (step.number === 0) {
+        // Next step after choice_selection is logo_upload
+        Array.from(userJourneys.values()).forEach(journey => {
+          const hasNextStep = journey.some(r => r.step_number === 1)
+          if (hasNextStep) {
+            const userId = journey[0]?.user_id
+            if (userId) nextStepUsers.add(userId)
+          }
+        })
+      } else {
+        // Regular progression
+        const nextStepNumber = step.number + 1
+        Array.from(userJourneys.values()).forEach(journey => {
+          const hasNextStep = journey.some(r => r.step_number === nextStepNumber)
+          if (hasNextStep) {
+            const userId = journey[0]?.user_id
+            if (userId) nextStepUsers.add(userId)
+          }
+        })
+      }
+
+      dropOffs = Math.max(0, entries - nextStepUsers.size)
+    }
+
+    const completionRate = entries > 0 ? ((completions + skips) / entries) * 100 : 0
+    const totalTime = stepRecords.reduce((sum, r) => sum + (r.time_spent_seconds || 0), 0)
+    const avgTime = entries > 0 ? totalTime / entries : 0
+
+    funnelResults.push({
+      step_name: step.name,
+      step_number: step.number,
+      entries,
+      completions,
+      skips,
+      dropOffs,
+      completion_rate: completionRate,
+      avg_time_seconds: avgTime
+    })
+  }
+
+  return funnelResults.sort((a, b) => a.step_number - b.step_number)
+}
 
 /**
  * Get comprehensive onboarding insights
@@ -142,11 +218,11 @@ export const getOnboardingInsights = async (startDate?: Date, endDate?: Date): P
     .select('*');
 
   if (startDate) {
-    query = query.gte('created_at', startDate.toISOString());
+    query = query.gte('entered_at', startDate.toISOString());
   }
   
   if (endDate) {
-    query = query.lte('created_at', endDate.toISOString());
+    query = query.lte('entered_at', endDate.toISOString());
   }
 
   const { data, error } = await query;
@@ -167,15 +243,19 @@ export const getOnboardingInsights = async (startDate?: Date, endDate?: Date): P
     };
   }
   
-  // Get unique users who started onboarding
-  const uniqueUsers = new Set(data.map(row => row.user_id));
-  const totalUsersStarted = uniqueUsers.size;
+  // Get unique users who started onboarding (entered choice_selection)
+  const startedUsers = new Set(
+    data.filter(row => row.step_name === 'choice_selection').map(row => row.user_id)
+  );
+  const totalUsersStarted = startedUsers.size;
   
   // Get users who completed the success step
-  const successCompletions = data.filter(row => row.step_name === 'success' && row.is_completed);
-  const totalUsersCompleted = successCompletions.length;
+  const completedUsers = new Set(
+    data.filter(row => row.step_name === 'success' && row.is_completed).map(row => row.user_id)
+  );
+  const totalUsersCompleted = completedUsers.size;
   
-  // Choice breakdown
+  // Choice breakdown - get completed choice selections
   const choiceData = data.filter(row => row.step_name === 'choice_selection' && row.is_completed);
   const choiceBreakdown = {
     physical_products: choiceData.filter(row => (row.metadata as any)?.selected_choice === 'physical_products').length,
@@ -183,21 +263,27 @@ export const getOnboardingInsights = async (startDate?: Date, endDate?: Date): P
   };
   
   // Average completion time (for completed onboardings)
-  const completedUsers = Array.from(uniqueUsers).filter(userId => 
-    data.some(row => row.user_id === userId && row.step_name === 'success' && row.is_completed)
-  );
-  
   let totalCompletionTime = 0;
   let completionTimeCount = 0;
   
   for (const userId of completedUsers) {
-    const userSteps = data.filter(row => row.user_id === userId).sort((a, b) => a.step_number - b.step_number);
+    const userSteps = data
+      .filter(row => row.user_id === userId)
+      .sort((a, b) => new Date(a.entered_at).getTime() - new Date(b.entered_at).getTime());
+    
     if (userSteps.length > 0) {
-      const startTime = new Date(userSteps[0].entered_at);
-      const endTime = new Date(userSteps[userSteps.length - 1].completed_at || userSteps[userSteps.length - 1].entered_at);
-      const diffMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-      totalCompletionTime += diffMinutes;
-      completionTimeCount++;
+      const firstStep = userSteps.find(s => s.step_name === 'choice_selection');
+      const lastStep = userSteps.find(s => s.step_name === 'success' && s.is_completed);
+      
+      if (firstStep && lastStep) {
+        const startTime = new Date(firstStep.entered_at);
+        const endTime = new Date(lastStep.completed_at || lastStep.entered_at);
+        const diffMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+        if (diffMinutes > 0) {
+          totalCompletionTime += diffMinutes;
+          completionTimeCount++;
+        }
+      }
     }
   }
   

@@ -304,21 +304,21 @@ const DevDashboard = () => {
                       <span className="text-orange-600">
                         {step.skips} skipped
                       </span>
-                      <span className="text-red-600">
-                        {step.drop_offs} dropped
-                      </span>
-                      <span className="text-blue-600">
-                        {Math.round(step.average_time_seconds / 60)}m avg
+                       <span className="text-red-600">
+                         {step.dropOffs} dropped
+                       </span>
+                       <span className="text-blue-600">
+                         {Math.round(step.avg_time_seconds / 60)}m avg
                       </span>
                     </div>
                   </div>
                   
                   <div className="space-y-1">
                     <Progress value={step.completion_rate} className="h-2" />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{step.total_entries} total entries</span>
-                      <span>{step.completion_rate.toFixed(1)}% completion rate</span>
-                    </div>
+                     <div className="flex justify-between text-xs text-muted-foreground">
+                       <span>{step.entries} total entries</span>
+                       <span>{step.completion_rate.toFixed(1)}% completion rate</span>
+                     </div>
                   </div>
                   
                   {index < funnelData.length - 1 && <Separator className="my-4" />}
@@ -334,28 +334,28 @@ const DevDashboard = () => {
             <CardTitle>Drop-off Points</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {funnelData
-                .filter(step => step.drop_offs > 0)
-                .sort((a, b) => b.drop_offs - a.drop_offs)
-                .slice(0, 5)
-                .map((step) => (
-                  <div key={step.step_name} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <div>
-                      <p className="font-medium capitalize">{step.step_name.replace('_', ' ')}</p>
-                      <p className="text-sm text-muted-foreground">Step {step.step_number}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-red-600">{step.drop_offs}</p>
-                      <p className="text-xs text-red-500">users dropped</p>
-                    </div>
-                  </div>
-                ))}
-              
-              {funnelData.filter(step => step.drop_offs > 0).length === 0 && (
-                <p className="text-muted-foreground text-center py-4">No significant drop-offs detected</p>
-              )}
-            </div>
+             <div className="space-y-4">
+               {funnelData
+                 .filter(step => step.dropOffs > 0)
+                 .sort((a, b) => b.dropOffs - a.dropOffs)
+                 .slice(0, 5)
+                 .map((step) => (
+                   <div key={step.step_name} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                     <div>
+                       <p className="font-medium capitalize">{step.step_name.replace('_', ' ')}</p>
+                       <p className="text-sm text-muted-foreground">Step {step.step_number}</p>
+                     </div>
+                     <div className="text-right">
+                       <p className="text-lg font-bold text-red-600">{step.dropOffs}</p>
+                       <p className="text-xs text-red-500">users dropped</p>
+                     </div>
+                   </div>
+                 ))}
+               
+               {funnelData.filter(step => step.dropOffs > 0).length === 0 && (
+                 <p className="text-muted-foreground text-center py-4">No significant drop-offs detected</p>
+               )}
+             </div>
           </CardContent>
         </Card>
       </div>
