@@ -1,8 +1,5 @@
 // Utility functions for analyzing onboarding progress data
 import { supabase } from '@/integrations/supabase/client';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/integrations/supabase/types';
 
 export interface OnboardingProgressData {
   id: string;
@@ -52,6 +49,19 @@ export const getOnboardingProgress = async (
   endDate?: Date,
   useAdminClient = false
 ): Promise<OnboardingProgressData[]> => {
+  if (useAdminClient) {
+    const { data, error } = await supabase.functions.invoke('analytics-data', {
+      body: {
+        type: 'progress',
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString()
+      }
+    });
+
+    if (error) throw error;
+    return data || [];
+  }
+
   let query = supabase
     .from('onboarding_progress')
     .select('*')
@@ -84,9 +94,22 @@ export const getFunnelAnalysis = async (
   endDate?: Date,
   useAdminClient = false
 ): Promise<FunnelAnalysis[]> => {
+  if (useAdminClient) {
+    const { data, error } = await supabase.functions.invoke('analytics-data', {
+      body: {
+        type: 'funnel',
+        onboardingType,
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString()
+      }
+    });
+
+    if (error) throw error;
+    return data || [];
+  }
+
   // Get all onboarding progress data with proper filtering
-  const client = useAdminClient ? supabaseAdmin : supabase;
-  let query = client
+  let query = supabase
     .from('onboarding_progress')
     .select('step_name, step_number, onboarding_type, entered_at, completed_at, is_completed, is_skipped, time_spent_seconds, user_id')
     .order('user_id')
@@ -226,8 +249,20 @@ export const getOnboardingInsights = async (
   endDate?: Date,
   useAdminClient = false
 ): Promise<OnboardingInsights> => {
-  const client = useAdminClient ? supabaseAdmin : supabase;
-  let query = client
+  if (useAdminClient) {
+    const { data, error } = await supabase.functions.invoke('analytics-data', {
+      body: {
+        type: 'insights',
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString()
+      }
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
+  let query = supabase
     .from('onboarding_progress')
     .select('*');
 
