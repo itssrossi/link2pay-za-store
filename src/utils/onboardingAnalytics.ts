@@ -1,5 +1,8 @@
 // Utility functions for analyzing onboarding progress data
 import { supabase } from '@/integrations/supabase/client';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/integrations/supabase/types';
 
 export interface OnboardingProgressData {
   id: string;
@@ -44,7 +47,11 @@ export interface OnboardingInsights {
 /**
  * Get detailed onboarding progress for all users
  */
-export const getOnboardingProgress = async (startDate?: Date, endDate?: Date): Promise<OnboardingProgressData[]> => {
+export const getOnboardingProgress = async (
+  startDate?: Date, 
+  endDate?: Date,
+  useAdminClient = false
+): Promise<OnboardingProgressData[]> => {
   let query = supabase
     .from('onboarding_progress')
     .select('*')
@@ -74,10 +81,12 @@ export const getOnboardingProgress = async (startDate?: Date, endDate?: Date): P
 export const getFunnelAnalysis = async (
   onboardingType?: 'physical_products' | 'bookings',
   startDate?: Date,
-  endDate?: Date
+  endDate?: Date,
+  useAdminClient = false
 ): Promise<FunnelAnalysis[]> => {
   // Get all onboarding progress data with proper filtering
-  let query = supabase
+  const client = useAdminClient ? supabaseAdmin : supabase;
+  let query = client
     .from('onboarding_progress')
     .select('step_name, step_number, onboarding_type, entered_at, completed_at, is_completed, is_skipped, time_spent_seconds, user_id')
     .order('user_id')
@@ -212,8 +221,13 @@ export const getFunnelAnalysis = async (
 /**
  * Get comprehensive onboarding insights
  */
-export const getOnboardingInsights = async (startDate?: Date, endDate?: Date): Promise<OnboardingInsights> => {
-  let query = supabase
+export const getOnboardingInsights = async (
+  startDate?: Date, 
+  endDate?: Date,
+  useAdminClient = false
+): Promise<OnboardingInsights> => {
+  const client = useAdminClient ? supabaseAdmin : supabase;
+  let query = client
     .from('onboarding_progress')
     .select('*');
 

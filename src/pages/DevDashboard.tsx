@@ -35,8 +35,8 @@ const DevDashboard = () => {
       try {
         setLoading(true);
         const [insightsData, funnelData] = await Promise.all([
-          getOnboardingInsights(startDate, endDate),
-          getFunnelAnalysis(filterType === 'all' ? undefined : filterType, startDate, endDate)
+          getOnboardingInsights(startDate, endDate, true),
+          getFunnelAnalysis(filterType === 'all' ? undefined : filterType, startDate, endDate, true)
         ]);
         setInsights(insightsData);
         setFunnelData(funnelData);
