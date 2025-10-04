@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Send, CreditCard, Truck } from 'lucide-react';
@@ -42,6 +43,10 @@ const InvoiceBuilder = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
   const [isFirstInvoice, setIsFirstInvoice] = useState(false);
+  
+  // View mode toggle
+  const [viewMode, setViewMode] = useState<'simple' | 'normal'>('normal');
+  const [simpleAmount, setSimpleAmount] = useState<number>(0);
   
   // Invoice details
   const [clientName, setClientName] = useState('');
@@ -205,9 +210,28 @@ const InvoiceBuilder = () => {
       toast.error('Please enter the client\'s phone number to send the invoice.');
       return;
     }
-    if (items.some(item => !item.title.trim())) {
-      toast.error('All items must have a title');
-      return;
+    
+    // Handle simple mode - create a single item from the simple amount
+    let itemsToSubmit = items;
+    if (viewMode === 'simple') {
+      if (!simpleAmount || simpleAmount <= 0) {
+        toast.error('Please enter a valid amount');
+        return;
+      }
+      itemsToSubmit = [{
+        id: crypto.randomUUID(),
+        title: 'Service/Product',
+        description: '',
+        quantity: 1,
+        unit_price: simpleAmount,
+        total_price: simpleAmount
+      }];
+    } else {
+      if (items.some(item => !item.title.trim())) {
+        toast.error('All items must have a title');
+        return;
+      }
+      itemsToSubmit = items;
     }
     
     // Normalize phone number for all purposes
@@ -287,7 +311,7 @@ const InvoiceBuilder = () => {
       console.log('Invoice created successfully:', invoice);
 
       // Create invoice items
-      const invoiceItems = items.map(item => ({
+      const invoiceItems = itemsToSubmit.map(item => ({
         invoice_id: invoice!.id,
         title: item.title,
         description: item.description,
@@ -387,17 +411,113 @@ const InvoiceBuilder = () => {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Invoice</h1>
-          <p className="text-gray-600 mt-2">
-            Build your invoice and optionally send it via WhatsApp
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Create Invoice</h1>
+            <p className="text-gray-600 mt-2">
+              Build your invoice and optionally send it via WhatsApp
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Label htmlFor="viewMode" className="text-sm font-medium">
+              {viewMode === 'simple' ? 'Simple Mode' : 'Normal Mode'}
+            </Label>
+            <Switch
+              id="viewMode"
+              checked={viewMode === 'normal'}
+              onCheckedChange={(checked) => setViewMode(checked ? 'normal' : 'simple')}
+            />
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            {/* Client Information */}
-            <Card>
+            {viewMode === 'simple' ? (
+              <>
+                {/* Simple Mode - Client Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Client Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="clientName">Client Name *</Label>
+                      <Input
+                        id="clientName"
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        placeholder="Enter client name"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="clientPhone">Client Phone Number *</Label>
+                      <Input
+                        id="clientPhone"
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        placeholder="0821234567, 27821234567, or +27821234567"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter in any format: 062..., 27..., or +27...
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="simpleAmount">Amount *</Label>
+                      <Input
+                        id="simpleAmount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={simpleAmount || ''}
+                        onChange={(e) => setSimpleAmount(parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Simple Mode - WhatsApp Toggle */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Send className="w-5 h-5 text-green-600" />
+                      WhatsApp Messaging
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="sendWhatsApp"
+                        checked={sendWhatsApp}
+                        onCheckedChange={(checked) => setSendWhatsApp(!!checked)}
+                      />
+                      <Label htmlFor="sendWhatsApp">Send this invoice via WhatsApp</Label>
+                    </div>
+                    
+                    {sendWhatsApp && (
+                      <div>
+                        <Label htmlFor="whatsappNumber">Client WhatsApp Number *</Label>
+                        <Input
+                          id="whatsappNumber"
+                          value={whatsappNumber}
+                          onChange={(e) => setWhatsappNumber(e.target.value)}
+                          placeholder="+27821234567"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Must be in E.164 format (e.g., +27821234567)
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <>
+                {/* Normal Mode - Client Information */}
+                <Card>
               <CardHeader>
                 <CardTitle>Client Information</CardTitle>
               </CardHeader>
@@ -727,12 +847,14 @@ const InvoiceBuilder = () => {
                 </div>
               </CardContent>
             </Card>
+              </>
+            )}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Quick Add Products */}
-            {products.length > 0 && (
+            {/* Quick Add Products - Only in Normal Mode */}
+            {viewMode === 'normal' && products.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle>Quick Add Products</CardTitle>
@@ -742,7 +864,7 @@ const InvoiceBuilder = () => {
                     <div key={product.id} className="flex items-center justify-between p-2 border rounded">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{product.title}</p>
-                        <p className="text-xs text-gray-500">R{product.price}</p>
+                        <p className="text-xs text-muted-foreground">R{product.price}</p>
                       </div>
                       <Button onClick={() => addProduct(product)} size="sm" variant="outline">
                         <Plus className="w-4 h-4" />
@@ -759,34 +881,45 @@ const InvoiceBuilder = () => {
                 <CardTitle>Invoice Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Items Subtotal:</span>
-                  <span>R{(calculateSubtotal() - deliveryFee).toFixed(2)}</span>
-                </div>
-                
-                {deliveryFee > 0 && (
-                  <div className="flex justify-between">
-                    <span>Delivery Fee:</span>
-                    <span>R{deliveryFee.toFixed(2)}</span>
-                  </div>
+                {viewMode === 'simple' ? (
+                  <>
+                    <div className="flex justify-between font-semibold text-lg">
+                      <span>Total:</span>
+                      <span>R{simpleAmount.toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between">
+                      <span>Items Subtotal:</span>
+                      <span>R{(calculateSubtotal() - deliveryFee).toFixed(2)}</span>
+                    </div>
+                    
+                    {deliveryFee > 0 && (
+                      <div className="flex justify-between">
+                        <span>Delivery Fee:</span>
+                        <span>R{deliveryFee.toFixed(2)}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span>R{calculateSubtotal().toFixed(2)}</span>
+                    </div>
+                    
+                    {vatEnabled && (
+                      <div className="flex justify-between">
+                        <span>VAT (15%):</span>
+                        <span>R{calculateVAT().toFixed(2)}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                      <span>Total:</span>
+                      <span>R{calculateTotal().toFixed(2)}</span>
+                    </div>
+                  </>
                 )}
-                
-                <div className="flex justify-between">
-                  <span>Subtotal:</span>
-                  <span>R{calculateSubtotal().toFixed(2)}</span>
-                </div>
-                
-                {vatEnabled && (
-                  <div className="flex justify-between">
-                    <span>VAT (15%):</span>
-                    <span>R{calculateVAT().toFixed(2)}</span>
-                  </div>
-                )}
-                
-                <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                  <span>Total:</span>
-                  <span>R{calculateTotal().toFixed(2)}</span>
-                </div>
                 
                 {(sendWhatsApp || showSnapScan || showPayFast) && (
                   <div className="mt-4 p-2 bg-blue-50 border border-blue-200 rounded space-y-1">
@@ -798,11 +931,6 @@ const InvoiceBuilder = () => {
                     {showSnapScan && profile?.snapscan_link && (
                       <Badge variant="secondary" className="bg-blue-500 text-white mr-1">
                         SnapScan
-                      </Badge>
-                    )}
-                    {false && ( // PayFast removed
-                      <Badge variant="secondary" className="bg-purple-500 text-white mr-1">
-                        PayFast
                       </Badge>
                     )}
                   </div>

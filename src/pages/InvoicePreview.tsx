@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Download, CreditCard, Truck, MapPin } from 'lucide-react';
+import { FileText, Download, CreditCard, Truck, MapPin, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 // PayFast integration removed - migrated to Paystack
@@ -65,6 +65,7 @@ interface Profile {
 
 const InvoicePreview = () => {
   const { invoiceId } = useParams();
+  const navigate = useNavigate();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -272,6 +273,16 @@ const InvoicePreview = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
       <div className="max-w-4xl mx-auto px-4">
+        {/* Back Button */}
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate('/dashboard')}
+          className="mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+        
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm p-8 mb-6">
           <div className="flex justify-between items-start mb-8">
