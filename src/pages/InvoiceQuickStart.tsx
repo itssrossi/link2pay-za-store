@@ -176,8 +176,16 @@ const InvoiceQuickStart: React.FC = () => {
       if (profile && !profile.first_invoice_sent_at) {
         await supabase
           .from('profiles')
-          .update({ first_invoice_sent_at: new Date().toISOString() })
+          .update({ 
+            first_invoice_sent_at: new Date().toISOString(),
+            glowing_invoice_tab: false,  // Disable glow since they used it
+            tip_popup_shown: true         // Mark popup as shown
+          })
           .eq('id', user.id);
+        
+        // Clear any pending localStorage flags
+        localStorage.removeItem('invoiceGlowReady');
+        localStorage.removeItem('tipPopupReady');
       }
 
       // Success!

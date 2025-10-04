@@ -69,16 +69,27 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
     if (!user) return;
 
     try {
-      await supabase
+      // Check if user has already sent their first invoice
+      const { data: profile } = await supabase
         .from('profiles')
-        .update({ glowing_invoice_tab: true })
-        .eq('id', user.id);
-      // Signal Layout to allow glow immediately on Success page
-      localStorage.setItem('invoiceGlowReady', 'true');
-      window.dispatchEvent(new Event('invoice-glow-ready'));
-      
-      // Enable tip popup for when user reaches dashboard
-      localStorage.setItem('tipPopupReady', 'true');
+        .select('first_invoice_sent_at')
+        .eq('id', user.id)
+        .single();
+
+      // Only enable glow if they haven't sent an invoice yet
+      if (!profile?.first_invoice_sent_at) {
+        await supabase
+          .from('profiles')
+          .update({ glowing_invoice_tab: true })
+          .eq('id', user.id);
+        
+        // Signal Layout to allow glow immediately on Success page
+        localStorage.setItem('invoiceGlowReady', 'true');
+        window.dispatchEvent(new Event('invoice-glow-ready'));
+        
+        // Enable tip popup for when user reaches dashboard
+        localStorage.setItem('tipPopupReady', 'true');
+      }
     } catch (error) {
       console.error('Error enabling invoice tab glow:', error);
     }
