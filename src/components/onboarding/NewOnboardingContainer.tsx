@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import OnboardingChoice from './steps/OnboardingChoice';
-import LogoUploadStep from './steps/LogoUploadStep';
 import AvailabilityStep from './steps/AvailabilityStep';
 import ProductStep from './steps/ProductStep';
 import PaymentStep from './steps/PaymentStep';
@@ -13,7 +12,6 @@ export type OnboardingChoice = 'physical_products' | 'bookings';
 export interface OnboardingState {
   choice: OnboardingChoice | null;
   currentStep: number;
-  logoUrl?: string;
   hasProducts: boolean;
   hasAvailability: boolean;
   hasPayments: boolean;
@@ -105,14 +103,12 @@ const NewOnboardingContainer: React.FC<NewOnboardingContainerProps> = ({ isOpen,
     
     if (state.choice === 'bookings') {
       return [
-        { component: LogoUploadStep, title: 'Upload Logo', optional: true },
         { component: AvailabilityStep, title: 'Set Availability', optional: false },
         { component: PaymentStep, title: 'Payment Info', optional: true },
         { component: SuccessStep, title: 'Success', optional: false }
       ];
     } else {
       return [
-        { component: LogoUploadStep, title: 'Upload Logo', optional: true },
         { component: ProductStep, title: 'Add Product', optional: false },
         { component: PaymentStep, title: 'Payment Info', optional: false },
         { component: SuccessStep, title: 'Success', optional: false }

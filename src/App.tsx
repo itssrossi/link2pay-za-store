@@ -28,7 +28,6 @@ const NotFound = lazy(() => import('@/pages/NotFound'));
 
 // Onboarding Pages
 const OnboardingChoice = lazy(() => import('@/pages/onboarding/OnboardingChoice'));
-const LogoUpload = lazy(() => import('@/pages/onboarding/LogoUpload'));
 const ProductSetup = lazy(() => import('@/pages/onboarding/ProductSetup'));
 const AvailabilitySetup = lazy(() => import('@/pages/onboarding/AvailabilitySetup'));
 const PaymentSetup = lazy(() => import('@/pages/onboarding/PaymentSetup'));
@@ -149,7 +148,6 @@ function App() {
                  
                   {/* Onboarding Routes */}
                   <Route path="/onboarding/choice" element={<OnboardingChoice />} />
-                  <Route path="/onboarding/logo" element={<LogoUpload />} />
                   <Route path="/onboarding/product" element={<ProductSetup />} />
                   <Route path="/onboarding/availability" element={<AvailabilitySetup />} />
                   <Route path="/onboarding/payment" element={<PaymentSetup />} />

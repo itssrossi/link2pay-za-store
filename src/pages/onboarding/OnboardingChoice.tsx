@@ -21,9 +21,9 @@ const OnboardingChoicePage = () => {
 
       // Navigate to next step based on choice
       if (choice === 'bookings') {
-        navigate('/onboarding/logo');
+        navigate('/onboarding/availability');
       } else {
-        navigate('/onboarding/logo');
+        navigate('/onboarding/product');
       }
     } catch (error) {
       console.error('Error updating choice:', error);
