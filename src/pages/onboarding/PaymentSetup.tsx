@@ -64,7 +64,7 @@ const PaymentSetupPage = () => {
         onNext={handleNext}
         state={state}
         setState={setState}
-        isOptional={state.choice === 'bookings'}
+        isOptional={true}
       />
     </OnboardingLayout>
   );

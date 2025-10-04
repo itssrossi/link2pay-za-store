@@ -120,19 +120,8 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
           Payment Information
         </h2>
         <p className="text-xs sm:text-sm md:text-base text-gray-600">
-          Set up payment methods to accept payments from your customers.
-          {state.choice === 'physical_products' ? ' At least one payment method is required.' : ''}
+          Set up payment methods to accept payments from your customers. You can always add or update these later in Settings.
         </p>
-        {state.choice === 'bookings' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3 mt-3">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-blue-800">
-                Payment methods are optional for bookings. Automatic payments can be setup later via PayFast in Bookings settings.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
       <Card className="max-w-sm sm:max-w-md md:max-w-xl mx-auto">
@@ -217,19 +206,13 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ onNext, state, setState, isOp
         )}
         <Button
           onClick={handleSave}
-          disabled={saving || (!isOptional && !hasAnyPaymentInfo)}
+          disabled={saving}
           size="sm"
           className="min-h-[40px] sm:min-h-[44px] w-full sm:w-auto sm:min-w-40"
         >
           {saving ? 'Saving...' : hasAnyPaymentInfo ? 'Save & Continue' : 'Continue'}
         </Button>
       </div>
-      
-      {!isOptional && !hasAnyPaymentInfo && (
-        <p className="text-xs text-red-500 text-center px-2 sm:px-0">
-          Please add at least one payment method to continue
-        </p>
-      )}
     </div>
   );
 };
