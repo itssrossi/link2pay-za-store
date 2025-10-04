@@ -32,5 +32,8 @@ verify_jwt = false
 [functions.confirm-booking-payment]
 verify_jwt = false
 
+[functions.analytics-data]
+verify_jwt = false
+
 [functions.process-drip-campaigns]
 verify_jwt = false

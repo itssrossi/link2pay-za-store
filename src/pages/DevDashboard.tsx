@@ -246,7 +246,7 @@ const DevDashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">{insights?.total_users_completed || 0}</div>
               <p className="text-xs text-muted-foreground">
-                {insights?.overall_completion_rate.toFixed(1)}% completion rate
+                {Number(insights?.overall_completion_rate ?? 0).toFixed(1)}% completion rate
               </p>
             </CardContent>
           </Card>
@@ -298,28 +298,31 @@ const DevDashboard = () => {
                       <span className="font-medium capitalize">{step.step_name.replace('_', ' ')}</span>
                     </div>
                     <div className="flex items-center space-x-4 text-sm">
-                      <span className="text-green-600 font-medium">
-                        {step.completions} completed ({step.completion_rate.toFixed(1)}%)
+                      <span className="text-muted-foreground" title="Total users who reached this step">
+                        {step.entries} entries
                       </span>
-                      <span className="text-orange-600">
+                      <span className="text-green-600 font-medium" title="Users who completed or skipped this step">
+                        {step.completions} completed ({Number(step.completion_rate ?? 0).toFixed(1)}%)
+                      </span>
+                      <span className="text-orange-600" title="Users who skipped this step">
                         {step.skips} skipped
                       </span>
-                       <span className="text-red-600">
+                       <span className="text-red-600" title="Users who didn't progress to the next step">
                          {step.dropOffs} dropped
                        </span>
-                       <span className="text-blue-600">
-                         {Math.round(step.avg_time_seconds / 60)}m avg
+                       <span className="text-blue-600" title="Average time spent on this step">
+                         {Math.round((step.avg_time_seconds ?? 0) / 60)}m avg
                       </span>
                     </div>
                   </div>
                   
-                  <div className="space-y-1">
-                    <Progress value={step.completion_rate} className="h-2" />
-                     <div className="flex justify-between text-xs text-muted-foreground">
-                       <span>{step.entries} total entries</span>
-                       <span>{step.completion_rate.toFixed(1)}% completion rate</span>
-                     </div>
-                  </div>
+                   <div className="space-y-1">
+                     <Progress value={step.completion_rate} className="h-2" />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{step.entries} users reached this step</span>
+                        <span>{Number(step.completion_rate ?? 0).toFixed(1)}% moved forward</span>
+                      </div>
+                   </div>
                   
                   {index < funnelData.length - 1 && <Separator className="my-4" />}
                 </div>

@@ -105,7 +105,18 @@ export const getFunnelAnalysis = async (
     });
 
     if (error) throw error;
-    return data || [];
+    
+    // Map the response to match FunnelAnalysis interface
+    return (data || []).map((step: any) => ({
+      step_name: step.step_name,
+      step_number: step.step_number,
+      entries: step.entries,
+      completions: step.completions,
+      skips: step.skips,
+      dropOffs: step.drop_offs,
+      completion_rate: step.completion_rate,
+      avg_time_seconds: step.avg_time_seconds
+    }));
   }
 
   // Get all onboarding progress data with proper filtering
@@ -259,7 +270,18 @@ export const getOnboardingInsights = async (
     });
 
     if (error) throw error;
-    return data;
+    
+    // Get funnel analysis separately to include in insights
+    const funnelAnalysis = await getFunnelAnalysis(undefined, startDate, endDate, true);
+    
+    return {
+      total_users_started: data.total_users_started,
+      total_users_completed: data.total_users_completed,
+      overall_completion_rate: data.overall_completion_rate,
+      funnel_analysis: funnelAnalysis,
+      choice_breakdown: data.choice_breakdown,
+      average_completion_time_minutes: data.average_completion_time_minutes
+    };
   }
 
   let query = supabase
