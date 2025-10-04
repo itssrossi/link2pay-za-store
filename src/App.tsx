@@ -16,6 +16,7 @@ const AddProduct = lazy(() => import('@/pages/AddProduct'));
 const EditProduct = lazy(() => import('@/pages/EditProduct'));
 const InvoiceBuilder = lazy(() => import('@/pages/InvoiceBuilder'));
 const InvoicePreview = lazy(() => import('@/pages/InvoicePreview'));
+const InvoiceQuickStart = lazy(() => import('@/pages/InvoiceQuickStart'));
 const BillingSetup = lazy(() => import('@/pages/BillingSetup'));
 const BillingSuccess = lazy(() => import('@/pages/BillingSuccess'));
 const BillingCancelled = lazy(() => import('@/pages/BillingCancelled'));
@@ -131,6 +132,16 @@ function App() {
                       <Suspense fallback={<PageLoader />}>
                         <ProtectedRoute>
                           <InvoiceBuilder />
+                        </ProtectedRoute>
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/invoice/quick-start"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <ProtectedRoute>
+                          <InvoiceQuickStart />
                         </ProtectedRoute>
                       </Suspense>
                     }

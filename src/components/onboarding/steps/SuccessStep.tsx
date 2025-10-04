@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ interface SuccessStepProps {
 }
 
 const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [showConfetti, setShowConfetti] = useState(false);
   const [uniqueLink, setUniqueLink] = useState('');
@@ -102,28 +104,14 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
     window.dispatchEvent(new Event('invoice-glow-ready'));
     window.dispatchEvent(new Event('tip-popup-ready'));
     
-    onComplete();
+    navigate('/invoice/quick-start');
   };
 
-  const getSuccessMessage = () => {
-    if (state.choice === 'bookings') {
-      return {
-        title: 'Congratulations! 🎉',
-        subtitle: 'Your booking system is ready!',
-        description: 'Share your booking link and begin to accept bookings.',
-        linkLabel: 'Your Booking Link'
-      };
-    } else {
-      return {
-        title: 'Congratulations! 🎉',
-        subtitle: 'Your store is live!',
-        description: 'Share your store link and begin to accept orders.',
-        linkLabel: 'Your Store Link'
-      };
-    }
+  const success = {
+    title: '🎉 You\'re all set up!',
+    subtitle: 'Let\'s send your first invoice — it only takes 30 seconds',
+    linkLabel: state.choice === 'bookings' ? 'Your Booking Link' : 'Your Store Link'
   };
-
-  const success = getSuccessMessage();
 
   return (
     <div 
@@ -144,9 +132,6 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
         </h2>
         <p className="text-base sm:text-lg md:text-xl text-gray-700 font-medium">
           {success.subtitle}
-        </p>
-        <p className="text-xs sm:text-sm md:text-base text-gray-600 max-w-xs sm:max-w-sm md:max-w-md mx-auto">
-          {success.description}
         </p>
       </div>
 
@@ -172,25 +157,9 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
         </CardContent>
       </Card>
 
-      <div className="space-y-2 sm:space-y-3">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 sm:p-3 max-w-xs sm:max-w-sm md:max-w-md mx-auto">
-          <p className="text-xs text-yellow-800">
-            💡 <strong>Don't forget to invoice your clients to get paid!</strong> Check out the Invoice tab (it's glowing!) to create your first invoice.
-          </p>
-        </div>
-        
-        {state.choice === 'bookings' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3 max-w-xs sm:max-w-sm md:max-w-md mx-auto">
-            <p className="text-xs text-blue-800">
-              ⚡ <strong>Automatic payments</strong> can be setup via PayFast in Bookings tab in settings.
-            </p>
-          </div>
-        )}
-      </div>
-
       <div className="mb-6">
-        <Button onClick={handleGoToDashboard} size="sm" className="bg-green-600 hover:bg-green-700 min-h-[40px] sm:min-h-[44px] w-full sm:w-auto sm:min-w-48">
-          Go to Dashboard
+        <Button onClick={handleGoToDashboard} size="lg" className="bg-green-600 hover:bg-green-700 min-h-[48px] w-full sm:w-auto sm:min-w-64">
+          Create Your First Invoice
         </Button>
       </div>
     </div>
