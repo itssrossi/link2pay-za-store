@@ -51,7 +51,7 @@ const ProductSetupPage = () => {
   };
 
   return (
-    <OnboardingLayout progress={75} showBackButton backTo="/onboarding/logo">
+    <OnboardingLayout progress={75} showBackButton backTo="/onboarding/choice">
       <ProductStep
         onNext={handleNext}
         state={state}

@@ -24,7 +24,6 @@ interface ProductForm {
   description: string;
   price: string;
   imageUrl: string;
-  category: string;
 }
 
 const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) => {
@@ -40,8 +39,7 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
     title: '',
     description: '',
     price: '',
-    imageUrl: '',
-    category: ''
+    imageUrl: ''
   });
 
   const handleInputChange = (field: keyof ProductForm, value: string) => {
@@ -66,7 +64,7 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
           description: product.description,
           price: parseFloat(product.price),
           image_url: product.imageUrl,
-          category: product.category || 'General',
+          category: 'General',
           is_active: true
         });
 
@@ -96,7 +94,6 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
       await trackCompletion({ 
         product_title: product.title,
         product_price: product.price,
-        product_category: product.category,
         has_image: !!product.imageUrl
       });
       toast.success('Product added successfully!');
@@ -107,6 +104,13 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSkip = async () => {
+    await trackCompletion({ 
+      action: 'skipped'
+    });
+    onNext();
   };
 
   const isFormValid = product.title.trim() && product.price.trim() && !isNaN(parseFloat(product.price));
@@ -159,16 +163,6 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
                 />
               </div>
 
-              <div>
-                <Label htmlFor="category" className="text-xs sm:text-sm font-medium">Category</Label>
-                <Input
-                  id="category"
-                  value={product.category}
-                  onChange={(e) => handleInputChange('category', e.target.value)}
-                  placeholder="e.g. Food & Beverages"
-                  className="mt-1 min-h-[40px] sm:min-h-[44px]"
-                />
-              </div>
             </div>
 
             <div className="space-y-3 sm:space-y-4 order-1 md:order-2">
@@ -200,7 +194,7 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
         </CardContent>
       </Card>
 
-      <div className="text-center px-2 sm:px-0">
+      <div className="text-center px-2 sm:px-0 space-y-3">
         <Button
           onClick={handleSave}
           disabled={saving || !isFormValid}
@@ -210,9 +204,19 @@ const ProductStep: React.FC<ProductStepProps> = ({ onNext, state, setState }) =>
           <Plus className="w-4 h-4 mr-2" />
           {saving ? 'Adding Product...' : 'Add Product & Continue'}
         </Button>
+        
+        <Button
+          onClick={handleSkip}
+          variant="outline"
+          size="sm"
+          className="min-h-[40px] sm:min-h-[44px] w-full sm:w-auto sm:min-w-40"
+        >
+          Add Later
+        </Button>
+        
         {!isFormValid && (
-          <p className="text-xs text-red-500 mt-2">
-            Please fill in the product name and price
+          <p className="text-xs text-muted-foreground mt-2">
+            Please fill in the product name and price, or add a product later
           </p>
         )}
       </div>
