@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X, Lightbulb } from 'lucide-react';
 import { triggerConfetti } from '@/components/ui/confetti';
 
 const InvoiceQuickStart: React.FC = () => {
@@ -20,6 +20,26 @@ const InvoiceQuickStart: React.FC = () => {
     amount: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showTipPopup, setShowTipPopup] = useState(false);
+  const [userWhatsAppNumber, setUserWhatsAppNumber] = useState<string>('');
+
+  useEffect(() => {
+    const fetchUserWhatsApp = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('whatsapp_number')
+        .eq('id', user.id)
+        .single();
+      
+      if (data?.whatsapp_number) {
+        setUserWhatsAppNumber(data.whatsapp_number);
+      }
+    };
+    
+    fetchUserWhatsApp();
+  }, [user]);
 
   const formatPhoneNumber = (value: string): string => {
     // Remove all non-digits
@@ -86,6 +106,13 @@ const InvoiceQuickStart: React.FC = () => {
     // Clear error for this field
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleAutofillMyNumber = () => {
+    if (userWhatsAppNumber) {
+      handleInputChange('whatsappNumber', userWhatsAppNumber);
+      setShowTipPopup(true);
     }
   };
 
@@ -253,6 +280,17 @@ const InvoiceQuickStart: React.FC = () => {
             <p className="text-xs text-muted-foreground">
               Enter 10 digits (e.g. 0821234567)
             </p>
+            {userWhatsAppNumber && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAutofillMyNumber}
+                className="w-full mt-2"
+              >
+                Use My Number
+              </Button>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -294,6 +332,39 @@ const InvoiceQuickStart: React.FC = () => {
           </button>
         </CardContent>
       </Card>
+
+      {/* Tip Popup */}
+      {showTipPopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md relative animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={() => setShowTipPopup(false)}
+              className="absolute top-4 right-4 p-1 rounded-full hover:bg-muted transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            
+            <CardHeader className="text-center pb-4">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Lightbulb className="w-8 h-8 text-primary" />
+              </div>
+              <CardTitle className="text-xl">Quick Tip!</CardTitle>
+            </CardHeader>
+            
+            <CardContent className="text-center space-y-4">
+              <p className="text-muted-foreground">
+                Send it to yourself and see how simple it is! 💡
+              </p>
+              <Button
+                onClick={() => setShowTipPopup(false)}
+                className="w-full"
+              >
+                Got it!
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
