@@ -111,6 +111,9 @@ const SuccessStep: React.FC<SuccessStepProps> = ({ onComplete, state }) => {
     });
     await enableInvoiceTabGlow();
     
+    // Mark onboarding as complete in database
+    await onComplete();
+    
     // Dispatch custom events for immediate UI updates
     window.dispatchEvent(new Event('invoice-glow-ready'));
     window.dispatchEvent(new Event('tip-popup-ready'));
