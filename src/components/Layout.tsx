@@ -96,6 +96,20 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     };
   }, [tipPopupShown]);
 
+  // Track dashboard visits
+  useEffect(() => {
+    const trackDashboardVisit = async () => {
+      if (user && location.pathname === '/dashboard') {
+        await supabase
+          .from('profiles')
+          .update({ last_dashboard_visit: new Date().toISOString() })
+          .eq('id', user.id);
+      }
+    };
+    
+    trackDashboardVisit();
+  }, [user, location.pathname]);
+
   // Check for tip popup on dashboard page
   useEffect(() => {
     const shouldShowTip = () => {

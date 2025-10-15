@@ -37,3 +37,6 @@ verify_jwt = false
 
 [functions.process-drip-campaigns]
 verify_jwt = false
+
+[functions.process-retention-monitoring]
+verify_jwt = false

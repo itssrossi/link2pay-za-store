@@ -677,6 +677,7 @@ export type Database = {
           hero_subheading: string | null
           id: string
           last_customized_at: string | null
+          last_dashboard_visit: string | null
           logo_url: string | null
           onboarding_choice: string | null
           onboarding_completed: boolean | null
@@ -744,6 +745,7 @@ export type Database = {
           hero_subheading?: string | null
           id: string
           last_customized_at?: string | null
+          last_dashboard_visit?: string | null
           logo_url?: string | null
           onboarding_choice?: string | null
           onboarding_completed?: boolean | null
@@ -811,6 +813,7 @@ export type Database = {
           hero_subheading?: string | null
           id?: string
           last_customized_at?: string | null
+          last_dashboard_visit?: string | null
           logo_url?: string | null
           onboarding_choice?: string | null
           onboarding_completed?: boolean | null
@@ -1004,6 +1007,66 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_dashboard_visit: string | null
+          last_invoice_at: string | null
+          tag: string
+          tag_updated_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_dashboard_visit?: string | null
+          last_invoice_at?: string | null
+          tag: string
+          tag_updated_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_dashboard_visit?: string | null
+          last_invoice_at?: string | null
+          tag?: string
+          tag_updated_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message_content: string
+          message_type: string
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message_content: string
+          message_type: string
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message_content?: string
+          message_type?: string
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       whatsapp_campaign_logs: {
         Row: {
           created_at: string
@@ -1127,6 +1190,16 @@ export type Database = {
       generate_product_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_retention_stats: {
+        Args: { end_date?: string; start_date?: string }
+        Returns: {
+          active_count: number
+          at_risk_count: number
+          date: string
+          dormant_count: number
+          total_users: number
+        }[]
       }
       is_trial_expired: {
         Args: { profile_id: string }
