@@ -17,11 +17,15 @@ import {
   ExternalLink,
   Copy,
   Settings,
-  Plus
+  Plus,
+  Image,
+  MessageCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import StatsCard from '@/components/dashboard/StatsCard';
+import { PersonalizationPrompt } from '@/components/PersonalizationPrompt';
+import { usePersonalizationPrompts } from '@/hooks/usePersonalizationPrompts';
 
 // Lazy load heavy components
 const QuickInvoiceWhatsApp = lazy(() => import('@/components/QuickInvoiceWhatsApp'));
@@ -64,6 +68,7 @@ interface DashboardState {
     snapscan_link?: string;
     full_name?: string;
     onboarding_completed?: boolean;
+    dashboard_visit_count?: number;
   };
 }
 
@@ -113,7 +118,19 @@ const initialOnboardingSteps: OnboardingStep[] = [
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { needsBillingSetup, showOnboarding, setShowOnboarding, completeOnboarding, skipOnboarding } = useOnboarding();
+  
+  // Personalization prompts hook
+  const {
+    showLogoPrompt,
+    showProductsPrompt,
+    showQuickInvoicePrompt,
+    dismissLogoPrompt,
+    dismissProductsPrompt,
+    dismissQuickInvoicePrompt,
+    loading: promptsLoading
+  } = usePersonalizationPrompts();
   
   // Consolidated state management
   const [state, setState] = useState<DashboardState>({
@@ -162,7 +179,7 @@ const Dashboard = () => {
           .eq('payment_status', 'paid'),
         supabase
           .from('profiles')
-          .select('store_handle, business_name, logo_url, eft_details, payfast_link, snapscan_link, full_name, onboarding_completed')
+          .select('store_handle, business_name, logo_url, eft_details, payfast_link, snapscan_link, full_name, onboarding_completed, dashboard_visit_count')
           .eq('id', user.id)
           .maybeSingle(),
         supabase
@@ -176,6 +193,16 @@ const Dashboard = () => {
       const { data: bookings } = bookingsResult;
       const { data: profile } = profileResult;
       const { count: bookingsCount } = availabilityResult;
+
+      // Increment dashboard visit count
+      if (profile) {
+        await supabase
+          .from('profiles')
+          .update({ 
+            dashboard_visit_count: (profile.dashboard_visit_count || 0) + 1 
+          })
+          .eq('id', user.id);
+      }
 
       // Calculate stats
       const invoiceRevenue = invoices?.reduce((sum, invoice) => sum + invoice.total_amount, 0) || 0;
@@ -352,6 +379,31 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Personalization Prompts */}
+        <div className="space-y-3">
+          {showLogoPrompt && (
+            <PersonalizationPrompt
+              icon={<Image className="w-5 h-5 text-blue-600" />}
+              message="Add your logo for a more professional look"
+              ctaText="Add Logo"
+              ctaAction={() => navigate('/settings#business')}
+              onDismiss={dismissLogoPrompt}
+              variant="info"
+            />
+          )}
+
+          {showProductsPrompt && (
+            <PersonalizationPrompt
+              icon={<Package className="w-5 h-5 text-green-600" />}
+              message="Add your top 3 products to your storefront"
+              ctaText="Add Products"
+              ctaAction={() => navigate('/products/add')}
+              onDismiss={dismissProductsPrompt}
+              variant="success"
+            />
+          )}
+        </div>
+
         {/* Quick Stats */}
         <div className="grid gap-2 sm:gap-3 lg:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {/* Onboarding Progress - Show when not completed */}
@@ -443,9 +495,26 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Invoice with WhatsApp */}
-        <Suspense fallback={<Skeleton className="h-48 w-full" />}>
-          <QuickInvoiceWhatsApp />
-        </Suspense>
+        <div className="space-y-3">
+          {showQuickInvoicePrompt && (
+            <PersonalizationPrompt
+              icon={<MessageCircle className="w-5 h-5 text-purple-600" />}
+              message="Try using Quick Invoice with WhatsApp — it's faster!"
+              ctaText="Try It Now"
+              ctaAction={() => {
+                document.getElementById('quick-invoice-whatsapp')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              onDismiss={dismissQuickInvoicePrompt}
+              variant="accent"
+            />
+          )}
+          
+          <div id="quick-invoice-whatsapp">
+            <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+              <QuickInvoiceWhatsApp />
+            </Suspense>
+          </div>
+        </div>
 
 
 

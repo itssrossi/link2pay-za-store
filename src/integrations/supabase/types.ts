@@ -657,6 +657,7 @@ export type Database = {
           capitec_paylink: string | null
           created_at: string
           customization_version: number | null
+          dashboard_visit_count: number | null
           default_booking_deposit: number | null
           default_currency: string | null
           delivery_method: string | null
@@ -691,6 +692,10 @@ export type Database = {
           paystack_customer_code: string | null
           pf_subscription_id: string | null
           primary_color: string | null
+          prompt_logo_dismissed: boolean | null
+          prompt_products_dismissed: boolean | null
+          prompt_quick_invoice_dismissed: boolean | null
+          quick_invoice_used: boolean | null
           show_capitec: boolean | null
           show_payfast_auto: boolean | null
           snapscan_link: string | null
@@ -725,6 +730,7 @@ export type Database = {
           capitec_paylink?: string | null
           created_at?: string
           customization_version?: number | null
+          dashboard_visit_count?: number | null
           default_booking_deposit?: number | null
           default_currency?: string | null
           delivery_method?: string | null
@@ -759,6 +765,10 @@ export type Database = {
           paystack_customer_code?: string | null
           pf_subscription_id?: string | null
           primary_color?: string | null
+          prompt_logo_dismissed?: boolean | null
+          prompt_products_dismissed?: boolean | null
+          prompt_quick_invoice_dismissed?: boolean | null
+          quick_invoice_used?: boolean | null
           show_capitec?: boolean | null
           show_payfast_auto?: boolean | null
           snapscan_link?: string | null
@@ -793,6 +803,7 @@ export type Database = {
           capitec_paylink?: string | null
           created_at?: string
           customization_version?: number | null
+          dashboard_visit_count?: number | null
           default_booking_deposit?: number | null
           default_currency?: string | null
           delivery_method?: string | null
@@ -827,6 +838,10 @@ export type Database = {
           paystack_customer_code?: string | null
           pf_subscription_id?: string | null
           primary_color?: string | null
+          prompt_logo_dismissed?: boolean | null
+          prompt_products_dismissed?: boolean | null
+          prompt_quick_invoice_dismissed?: boolean | null
+          quick_invoice_used?: boolean | null
           show_capitec?: boolean | null
           show_payfast_auto?: boolean | null
           snapscan_link?: string | null

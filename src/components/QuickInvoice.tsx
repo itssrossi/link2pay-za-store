@@ -112,6 +112,12 @@ const QuickInvoice = () => {
       setGeneratedLink(invoiceLink);
       setShowGeneratedLink(true);
       
+      // Mark quick invoice as used
+      await supabase
+        .from('profiles')
+        .update({ quick_invoice_used: true })
+        .eq('id', user.id);
+      
       // Trigger celebration effects
       triggerConfetti();
       playCelebrationSound();
