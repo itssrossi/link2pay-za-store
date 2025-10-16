@@ -10,6 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Zap, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseQuickInvoiceCommand, sendWhatsAppInvoice } from '@/utils/whatsappService';
+import { triggerConfetti } from '@/components/ui/confetti';
+import { playCelebrationSound } from '@/utils/celebrationSound';
+import { checkWeeklyInvoiceAchievement } from '@/utils/invoiceAchievements';
 
 const QuickInvoice = () => {
   const { user } = useAuth();
@@ -18,6 +21,7 @@ const QuickInvoice = () => {
   const [otherDelivery, setOtherDelivery] = useState('');
   const [loading, setLoading] = useState(false);
   const [generatedLink, setGeneratedLink] = useState('');
+  const [showGeneratedLink, setShowGeneratedLink] = useState(false);
 
   const generateQuickInvoice = async () => {
     if (!user || !quickInput.trim()) {
@@ -106,6 +110,11 @@ const QuickInvoice = () => {
 
       const invoiceLink = `${window.location.origin}/invoice/${invoiceData.id}`;
       setGeneratedLink(invoiceLink);
+      setShowGeneratedLink(true);
+      
+      // Trigger celebration effects
+      triggerConfetti();
+      playCelebrationSound();
 
       // Send WhatsApp message
       const whatsappSuccess = await sendWhatsAppInvoice({
@@ -117,12 +126,18 @@ const QuickInvoice = () => {
       });
 
       if (whatsappSuccess) {
-        toast.success(`Invoice created and WhatsApp message sent to ${parsed.phoneNumber}`);
+        toast.success('Invoice sent! Let\'s get you paid 💸');
+        await checkWeeklyInvoiceAchievement(user.id);
       } else {
         toast.error('Invoice created, but WhatsApp message failed. Please check API settings.');
       }
 
       setQuickInput('');
+      
+      // Auto-hide after 3 seconds
+      setTimeout(() => {
+        setShowGeneratedLink(false);
+      }, 3000);
       
     } catch (error) {
       console.error('Error generating quick invoice:', error);
@@ -192,17 +207,32 @@ const QuickInvoice = () => {
           {loading ? 'Generating...' : 'Generate Invoice & Send WhatsApp'}
         </Button>
 
-        {generatedLink && (
-          <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-            <p className="text-sm font-medium text-green-800 mb-2">Invoice Generated!</p>
+        {showGeneratedLink && (
+          <div className="mt-4 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border-2 border-green-300 animate-in slide-in-from-bottom duration-500">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center animate-in zoom-in duration-300">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-lg font-bold text-green-800">✅ Invoice Ready — Copy Link!</p>
+                <p className="text-sm text-green-600">Generated in seconds</p>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <Input 
                 value={generatedLink} 
                 readOnly 
-                className="text-sm bg-white"
+                className="text-sm bg-white border-green-200 focus:border-green-400"
               />
-              <Button size="sm" variant="outline" onClick={copyLink}>
-                <Copy className="w-4 h-4" />
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={copyLink}
+                className="border-green-300 hover:bg-green-100"
+              >
+                <Copy className="w-4 h-4 text-green-700" />
               </Button>
             </div>
           </div>

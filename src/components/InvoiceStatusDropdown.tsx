@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ZokoService } from '@/utils/zokoService';
+import { triggerConfetti } from '@/components/ui/confetti';
+import { playCelebrationSound } from '@/utils/celebrationSound';
 
 interface InvoiceStatusDropdownProps {
   invoiceId: string;
@@ -112,7 +114,17 @@ const InvoiceStatusDropdown = ({
         }
       }
 
-      toast.success(`Invoice status updated to ${newStatus}`);
+      if (newStatus === 'paid') {
+        const amount = totalAmount ? `R${totalAmount.toFixed(2)}` : 'money';
+        toast.success(`Payment received ✅ You've earned ${amount} today!`, {
+          duration: 5000,
+        });
+        triggerConfetti();
+        playCelebrationSound();
+      } else {
+        toast.success(`Invoice status updated to ${newStatus}`);
+      }
+      
       onStatusChange?.(newStatus);
 
     } catch (error) {

@@ -17,6 +17,8 @@ import { Trash2, Plus, Send, CreditCard, Truck } from 'lucide-react';
 import { ZokoService } from '@/utils/zokoService';
 import { CompletionPopup } from '@/components/ui/completion-popup';
 import { triggerConfetti } from '@/components/ui/confetti';
+import { playCelebrationSound } from '@/utils/celebrationSound';
+import { checkWeeklyInvoiceAchievement } from '@/utils/invoiceAchievements';
 // PayFast integration removed - migrated to Paystack
 
 interface InvoiceItem {
@@ -364,7 +366,9 @@ const InvoiceBuilder = () => {
           console.log('WhatsApp send result:', messageResult);
 
           if (messageResult.success) {
-            toast.success(`Invoice ${invoiceNumber} created and WhatsApp message sent successfully! 📱✅`);
+            playCelebrationSound();
+            toast.success('Invoice sent! Let\'s get you paid 💸');
+            await checkWeeklyInvoiceAchievement(user.id);
           } else {
             console.error('WhatsApp send failed:', messageResult);
             toast.error(`Invoice ${invoiceNumber} created, but WhatsApp failed: ${messageResult.error || 'Unknown error'}`);
@@ -379,7 +383,9 @@ const InvoiceBuilder = () => {
           toast.error(`Invoice ${invoiceNumber} created, but WhatsApp send failed: ${whatsappError.message}`);
         }
       } else {
-        toast.success(`Invoice ${invoiceNumber} created successfully! 📄✅`);
+        playCelebrationSound();
+        toast.success('Invoice sent! Let\'s get you paid 💸');
+        await checkWeeklyInvoiceAchievement(user.id);
       }
 
       // Only show completion popup and confetti for first invoice

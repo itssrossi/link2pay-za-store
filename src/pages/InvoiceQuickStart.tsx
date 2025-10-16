@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Sparkles, X, Lightbulb } from 'lucide-react';
 import { triggerConfetti } from '@/components/ui/confetti';
+import { playCelebrationSound } from '@/utils/celebrationSound';
+import { checkWeeklyInvoiceAchievement } from '@/utils/invoiceAchievements';
 
 const InvoiceQuickStart: React.FC = () => {
   const navigate = useNavigate();
@@ -217,7 +219,11 @@ const InvoiceQuickStart: React.FC = () => {
 
       // Success!
       triggerConfetti();
-      toast.success('🎉 Invoice sent successfully!');
+      playCelebrationSound();
+      toast.success('Invoice sent! Let\'s get you paid 💸');
+      
+      // Check for weekly achievement
+      await checkWeeklyInvoiceAchievement(user.id);
       
       setTimeout(() => {
         navigate(`/invoice/${invoice.id}`);
