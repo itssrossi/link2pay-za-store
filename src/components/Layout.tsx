@@ -162,12 +162,20 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const navigationItems = [
+  const desktopNavigationItems = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Products', href: '/products', icon: Package },
     { name: 'Invoice', href: '/invoice-builder', icon: FileText },
     { name: 'Rewards', href: '/rewards', icon: Trophy },
     { name: 'Settings', href: '/settings', icon: Settings },
+  ];
+
+  const mobileNavigationItems = [
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Products', href: '/products', icon: Package },
+    { name: 'Invoice', href: '/invoice-builder', icon: FileText },
+    { name: 'Settings', href: '/settings', icon: Settings },
+    // Rewards removed - accessible via Dashboard button instead
   ];
 
   return (
@@ -185,7 +193,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               </Link>
               
               <div className="hidden md:flex space-x-4 lg:space-x-6">
-                {navigationItems.map((item) => {
+                {desktopNavigationItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.href;
                   const isInvoice = item.href === '/invoice-builder';
@@ -251,7 +259,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       {/* Mobile Navigation - Updated to remove Store Builder and Orders */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-50 pb-[env(safe-area-inset-bottom)]">
         <div className="grid grid-cols-4 gap-1 p-2 pb-2">
-          {navigationItems.map((item) => {
+          {mobileNavigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
             const isInvoice = item.href === '/invoice-builder';

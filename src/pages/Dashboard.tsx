@@ -19,7 +19,8 @@ import {
   Settings,
   Plus,
   Image,
-  MessageCircle
+  MessageCircle,
+  Trophy
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
@@ -361,7 +362,14 @@ const Dashboard = () => {
                   <GrowthCTA onClick={handleShowGrowthForm} />
                 </Suspense>
               )}
-              <Button size="sm" className="flex-1 sm:flex-none" data-walkthrough="add-product" asChild>
+              {/* Show Rewards button on mobile, Add Product on desktop */}
+              <Button size="sm" className="flex-1 sm:flex-none md:hidden" asChild>
+                <Link to="/rewards" className="flex items-center">
+                  <Trophy className="w-4 h-4 mr-1 sm:mr-2" />
+                  <span>Rewards</span>
+                </Link>
+              </Button>
+              <Button size="sm" className="hidden md:flex flex-1 sm:flex-none" data-walkthrough="add-product" asChild>
                 <Link to="/products/add" className="flex items-center">
                   <Plus className="w-4 h-4 mr-1 sm:mr-2" />
                   <span className="hidden xs:inline">Add Product</span>
