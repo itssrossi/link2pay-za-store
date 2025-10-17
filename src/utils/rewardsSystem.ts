@@ -44,18 +44,19 @@ export const awardPoints = async (
       throw updateError;
     }
 
-    const { error: logError } = await supabase
-      .from('reward_activities')
-      .insert({
-        user_id: userId,
-        activity_type: activityType,
-        points_earned: points,
-        metadata
-      });
-
-    if (logError) {
-      console.error('Error logging activity:', logError);
-      throw logError;
+    // Log activity (non-blocking - don't throw if this fails)
+    try {
+      await supabase
+        .from('reward_activities')
+        .insert({
+          user_id: userId,
+          activity_type: activityType,
+          points_earned: points,
+          metadata
+        });
+      console.log('✅ Activity logged successfully');
+    } catch (logError) {
+      console.error('⚠️ Non-blocking: failed to log reward activity:', logError);
     }
 
     console.log('✅ Points awarded successfully');
@@ -72,7 +73,7 @@ export const awardPoints = async (
 
 export const checkBadgeUnlocks = async (userId: string): Promise<string[]> => {
   try {
-    const [invoiceCount, weeklyInvoices, dailyInvoices, weeklyRevenue, repeatCustomers, currentRewards] = await Promise.all([
+    const [invoiceCount, weeklyInvoices, dailyInvoices, weeklyRevenue, repeatCustomers, { data: currentRewards }] = await Promise.all([
       supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('invoices').select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
@@ -88,7 +89,7 @@ export const checkBadgeUnlocks = async (userId: string): Promise<string[]> => {
       supabase.from('user_rewards').select('badges, current_streak, points_total, points_weekly').eq('user_id', userId).maybeSingle()
     ]);
 
-    const unlockedBadges = currentRewards.data?.badges || [];
+    const unlockedBadges = currentRewards?.badges || [];
     const newBadges: string[] = [];
 
     BADGES.forEach(badge => {
@@ -109,7 +110,7 @@ export const checkBadgeUnlocks = async (userId: string): Promise<string[]> => {
           shouldUnlock = revenue >= badge.unlockCriteria.value;
           break;
         case 'streak':
-          shouldUnlock = (currentRewards.data?.current_streak || 0) >= badge.unlockCriteria.value;
+          shouldUnlock = (currentRewards?.current_streak || 0) >= badge.unlockCriteria.value;
           break;
         case 'customer_count':
           shouldUnlock = (repeatCustomers.data || 0) >= badge.unlockCriteria.value;
@@ -131,8 +132,8 @@ export const checkBadgeUnlocks = async (userId: string): Promise<string[]> => {
       }, 0);
       
       // Get current points before update
-      const currentTotal = currentRewards.data?.points_total || 0;
-      const currentWeekly = currentRewards.data?.points_weekly || 0;
+      const currentTotal = currentRewards?.points_total || 0;
+      const currentWeekly = currentRewards?.points_weekly || 0;
       
       // Update badges AND points in single transaction (no recursive call)
       await supabase
