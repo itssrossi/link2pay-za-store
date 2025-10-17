@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { ZokoService } from '@/utils/zokoService';
 import { triggerConfetti } from '@/components/ui/confetti';
 import { playCelebrationSound } from '@/utils/celebrationSound';
+import { awardPoints } from '@/utils/rewardsSystem';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface InvoiceStatusDropdownProps {
   invoiceId: string;
@@ -34,6 +36,7 @@ const InvoiceStatusDropdown = ({
   whatsappPaidSent = false,
   onStatusChange 
 }: InvoiceStatusDropdownProps) => {
+  const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleStatusChange = async (newStatus: string) => {
@@ -81,6 +84,14 @@ const InvoiceStatusDropdown = ({
       // Send WhatsApp confirmation if status changed to "paid" and not sent before
       if (shouldSendPaymentConfirmation) {
         console.log('Invoice marked as paid, sending WhatsApp confirmation...');
+        
+        // Award points for payment received
+        if (user) {
+          await awardPoints(user.id, 'payment_received', 20, { 
+            invoice_id: invoiceId,
+            amount: totalAmount 
+          });
+        }
         
         try {
           const result = await ZokoService.sendPaymentConfirmation(

@@ -37,6 +37,9 @@ const Success = lazy(() => import('@/pages/onboarding/Success'));
 // Developer Dashboard
 const DevDashboard = lazy(() => import('@/pages/DevDashboard'));
 
+// Rewards
+const Rewards = lazy(() => import('@/pages/Rewards'));
+
 // Loading component
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -152,6 +155,16 @@ function App() {
                       <Suspense fallback={<PageLoader />}>
                        <ProtectedRoute>
                          <Settings />
+                       </ProtectedRoute>
+                     </Suspense>
+                   }
+                 />
+                 <Route
+                   path="/rewards"
+                   element={
+                     <Suspense fallback={<PageLoader />}>
+                       <ProtectedRoute>
+                         <Rewards />
                        </ProtectedRoute>
                      </Suspense>
                    }

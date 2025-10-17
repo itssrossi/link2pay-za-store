@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
-import { Home, Package, FileText, Settings, LogOut, MessageCircle, Code } from 'lucide-react';
+import { Home, Package, FileText, Settings, LogOut, MessageCircle, Code, Trophy } from 'lucide-react';
 import MobileStickyGrowthCTA from '@/components/MobileStickyGrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 import { TipPopup } from '@/components/ui/tip-popup';
@@ -166,6 +166,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Products', href: '/products', icon: Package },
     { name: 'Invoice', href: '/invoice-builder', icon: FileText },
+    { name: 'Rewards', href: '/rewards', icon: Trophy },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 

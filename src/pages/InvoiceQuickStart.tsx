@@ -11,6 +11,8 @@ import { Sparkles, X, Lightbulb } from 'lucide-react';
 import { triggerConfetti } from '@/components/ui/confetti';
 import { playCelebrationSound } from '@/utils/celebrationSound';
 import { checkWeeklyInvoiceAchievement } from '@/utils/invoiceAchievements';
+import { awardPoints } from '@/utils/rewardsSystem';
+import { updateStreakOnInvoice } from '@/utils/streakCalculator';
 
 const InvoiceQuickStart: React.FC = () => {
   const navigate = useNavigate();
@@ -224,6 +226,14 @@ const InvoiceQuickStart: React.FC = () => {
       
       // Check for weekly achievement
       await checkWeeklyInvoiceAchievement(user.id);
+      
+      // Award points and update streak
+      await awardPoints(user.id, 'invoice_sent', 10, { invoice_id: invoice.id });
+      const newStreak = await updateStreakOnInvoice(user.id);
+      
+      if (newStreak === 7 || newStreak === 30 || newStreak % 10 === 0) {
+        toast.success(`🔥 ${newStreak} day streak! Keep it up!`, { duration: 5000 });
+      }
       
       setTimeout(() => {
         navigate(`/invoice/${invoice.id}`);

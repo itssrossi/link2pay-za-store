@@ -899,6 +899,33 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_activities: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          points_earned: number
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          points_earned: number
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          points_earned?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       store_sections: {
         Row: {
           created_at: string
@@ -1082,6 +1109,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_rewards: {
+        Row: {
+          badges: string[] | null
+          created_at: string | null
+          current_streak: number | null
+          has_seen_rewards_popup: boolean | null
+          id: string
+          last_activity_date: string | null
+          longest_streak: number | null
+          points_total: number | null
+          points_weekly: number | null
+          streak_safe_date: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          badges?: string[] | null
+          created_at?: string | null
+          current_streak?: number | null
+          has_seen_rewards_popup?: boolean | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          points_total?: number | null
+          points_weekly?: number | null
+          streak_safe_date?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          badges?: string[] | null
+          created_at?: string | null
+          current_streak?: number | null
+          has_seen_rewards_popup?: boolean | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          points_total?: number | null
+          points_weekly?: number | null
+          streak_safe_date?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       whatsapp_campaign_logs: {
         Row: {
           created_at: string
@@ -1205,6 +1277,10 @@ export type Database = {
       generate_product_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_repeat_customers_count: {
+        Args: { p_user_id: string }
+        Returns: number
       }
       get_retention_stats: {
         Args: { end_date?: string; start_date?: string }

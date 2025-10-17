@@ -13,6 +13,8 @@ import { parseQuickInvoiceCommand, sendWhatsAppInvoice } from '@/utils/whatsappS
 import { triggerConfetti } from '@/components/ui/confetti';
 import { playCelebrationSound } from '@/utils/celebrationSound';
 import { checkWeeklyInvoiceAchievement } from '@/utils/invoiceAchievements';
+import { awardPoints } from '@/utils/rewardsSystem';
+import { updateStreakOnInvoice } from '@/utils/streakCalculator';
 
 const QuickInvoice = () => {
   const { user } = useAuth();
@@ -117,6 +119,19 @@ const QuickInvoice = () => {
         .from('profiles')
         .update({ quick_invoice_used: true })
         .eq('id', user.id);
+      
+      // Award points for invoice sent
+      await awardPoints(user.id, 'invoice_sent', 10, { invoice_id: invoiceData.id });
+      
+      // Update streak
+      const newStreak = await updateStreakOnInvoice(user.id);
+      
+      // Show streak notification if milestone
+      if (newStreak === 7 || newStreak === 30 || newStreak % 10 === 0) {
+        toast.success(`🔥 ${newStreak} day streak! Keep it up!`, {
+          duration: 5000
+        });
+      }
       
       // Trigger celebration effects
       triggerConfetti();

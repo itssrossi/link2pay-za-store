@@ -19,6 +19,8 @@ import { CompletionPopup } from '@/components/ui/completion-popup';
 import { triggerConfetti } from '@/components/ui/confetti';
 import { playCelebrationSound } from '@/utils/celebrationSound';
 import { checkWeeklyInvoiceAchievement } from '@/utils/invoiceAchievements';
+import { awardPoints } from '@/utils/rewardsSystem';
+import { updateStreakOnInvoice } from '@/utils/streakCalculator';
 // PayFast integration removed - migrated to Paystack
 
 interface InvoiceItem {
@@ -369,6 +371,14 @@ const InvoiceBuilder = () => {
             playCelebrationSound();
             toast.success('Invoice sent! Let\'s get you paid 💸');
             await checkWeeklyInvoiceAchievement(user.id);
+            
+            // Award points and update streak
+            await awardPoints(user.id, 'invoice_sent', 10, { invoice_id: invoice!.id });
+            const newStreak = await updateStreakOnInvoice(user.id);
+            
+            if (newStreak === 7 || newStreak === 30 || newStreak % 10 === 0) {
+              toast.success(`🔥 ${newStreak} day streak! Keep it up!`, { duration: 5000 });
+            }
           } else {
             console.error('WhatsApp send failed:', messageResult);
             toast.error(`Invoice ${invoiceNumber} created, but WhatsApp failed: ${messageResult.error || 'Unknown error'}`);
@@ -386,6 +396,14 @@ const InvoiceBuilder = () => {
         playCelebrationSound();
         toast.success('Invoice sent! Let\'s get you paid 💸');
         await checkWeeklyInvoiceAchievement(user.id);
+        
+        // Award points and update streak
+        await awardPoints(user.id, 'invoice_sent', 10, { invoice_id: invoice!.id });
+        const newStreak = await updateStreakOnInvoice(user.id);
+        
+        if (newStreak === 7 || newStreak === 30 || newStreak % 10 === 0) {
+          toast.success(`🔥 ${newStreak} day streak! Keep it up!`, { duration: 5000 });
+        }
       }
 
       // Only show completion popup and confetti for first invoice
