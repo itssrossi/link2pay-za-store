@@ -11,6 +11,7 @@ import { BadgeGrid } from '@/components/rewards/BadgeGrid';
 import { Leaderboard } from '@/components/rewards/Leaderboard';
 import { RewardsComingSoonModal } from '@/components/rewards/RewardsComingSoonModal';
 import { Skeleton } from '@/components/ui/skeleton';
+import { checkBadgeUnlocks } from '@/utils/rewardsSystem';
 
 const Rewards = () => {
   const { user } = useAuth();
@@ -76,8 +77,30 @@ const Rewards = () => {
           points_total: 0,
           points_weekly: 0,
           current_streak: 0,
-          longest_streak: 0
+          longest_streak: 0,
+          badges: []
         });
+      }
+
+      // Check for badge unlocks based on current activity
+      console.log('🔍 Checking for badge unlocks...');
+      const newlyUnlocked = await checkBadgeUnlocks(user.id);
+      console.log('✅ Badge check complete:', newlyUnlocked);
+      
+      if (newlyUnlocked.length > 0) {
+        console.log('🎉 New badges unlocked! Re-fetching rewards...');
+        // Re-fetch to get updated badges and points
+        const updatedRewards = await supabase
+          .from('user_rewards')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (updatedRewards.data) {
+          setTotalPoints(updatedRewards.data.points_total || 0);
+          setWeeklyPoints(updatedRewards.data.points_weekly || 0);
+          setUnlockedBadges(updatedRewards.data.badges || []);
+        }
       }
 
     } catch (error) {

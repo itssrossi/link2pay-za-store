@@ -138,22 +138,28 @@ export const checkBadgeUnlocks = async (userId: string): Promise<string[]> => {
       // Update badges AND points in single transaction (no recursive call)
       await supabase
         .from('user_rewards')
-        .update({ 
+        .upsert({ 
+          user_id: userId,
           badges: updatedBadges,
           points_total: currentTotal + badgePoints,
           points_weekly: currentWeekly + badgePoints
-        })
-        .eq('user_id', userId);
-      
-      // Log badge unlock activity
-      await supabase
-        .from('reward_activities')
-        .insert({
-          user_id: userId,
-          activity_type: 'badge_unlock',
-          points_earned: badgePoints,
-          metadata: { badges: newBadges }
+        }, {
+          onConflict: 'user_id'
         });
+      
+      // Log badge unlock activity (non-blocking)
+      try {
+        await supabase
+          .from('reward_activities')
+          .insert({
+            user_id: userId,
+            activity_type: 'badge_unlock',
+            points_earned: badgePoints,
+            metadata: { badges: newBadges }
+          });
+      } catch (logError) {
+        console.error('⚠️ Non-blocking: failed to log badge unlock activity:', logError);
+      }
       
       // Show celebration for each badge
       newBadges.forEach(badgeId => {
