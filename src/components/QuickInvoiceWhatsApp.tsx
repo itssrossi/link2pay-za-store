@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -7,11 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { ZokoService } from '@/utils/zokoService';
+import { Copy } from 'lucide-react';
 
 const QuickInvoiceWhatsApp = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [command, setCommand] = useState('');
   const [loading, setLoading] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState('');
+  const [generatedInvoiceNumber, setGeneratedInvoiceNumber] = useState('');
+  const [showGeneratedLink, setShowGeneratedLink] = useState(false);
 
   const parseCommand = (cmd: string) => {
     const parts = cmd.split(':');
@@ -95,6 +101,12 @@ const QuickInvoiceWhatsApp = () => {
 
       if (itemError) throw itemError;
 
+      // Generate invoice link
+      const invoiceLink = `${window.location.origin}/invoice/${invoice.id}`;
+      setGeneratedLink(invoiceLink);
+      setGeneratedInvoiceNumber(invoiceNumber);
+      setShowGeneratedLink(true);
+
       // Send WhatsApp message via Zoko
       const messageResult = await ZokoService.sendInvoiceMessage(
         phone,
@@ -117,6 +129,16 @@ const QuickInvoiceWhatsApp = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(generatedLink);
+    toast.success('Invoice link copied!');
+  };
+
+  const viewInvoice = () => {
+    const invoiceId = generatedLink.split('/invoice/')[1];
+    navigate(`/invoice/${invoiceId}`);
   };
 
   return (
@@ -147,6 +169,42 @@ const QuickInvoiceWhatsApp = () => {
         >
           {loading ? 'Creating Invoice...' : 'Create & Send Invoice'}
         </Button>
+
+        {showGeneratedLink && (
+          <div className="mt-4 p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border-2 border-green-300 animate-in slide-in-from-bottom duration-500">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center animate-in zoom-in duration-300">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-lg font-bold text-green-800">✅ Invoice {generatedInvoiceNumber} Ready!</p>
+                <p className="text-sm text-green-600">WhatsApp message sent successfully</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Input 
+                  value={generatedLink} 
+                  readOnly 
+                  className="text-sm bg-white border-green-200"
+                />
+                <Button size="sm" variant="outline" onClick={copyLink}>
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <Button 
+                onClick={viewInvoice}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                View Invoice
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <h4 className="font-medium text-blue-900 text-sm mb-1">How it works:</h4>
