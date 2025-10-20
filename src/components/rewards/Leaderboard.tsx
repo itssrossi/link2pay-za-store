@@ -86,7 +86,18 @@ export const Leaderboard = () => {
       
       // Sort by revenue descending, take top 10, assign ranks
       const sorted = allUsers
-        .sort((a, b) => b.revenue - a.revenue)
+        .sort((a, b) => {
+          // Primary sort: by revenue (descending)
+          if (b.revenue !== a.revenue) {
+            return b.revenue - a.revenue;
+          }
+          // Secondary sort: by points (descending) for ties
+          if (b.points !== a.points) {
+            return b.points - a.points;
+          }
+          // Tertiary sort: by business name (alphabetical) for final ties
+          return a.businessName.localeCompare(b.businessName);
+        })
         .slice(0, 10)
         .map((entry, index) => ({ ...entry, rank: index + 1 }));
 
