@@ -9,6 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { ZokoService } from '@/utils/zokoService';
 import { Copy } from 'lucide-react';
+import { triggerConfetti } from '@/components/ui/confetti';
+import { playCelebrationSound } from '@/utils/celebrationSound';
+import { checkWeeklyInvoiceAchievement } from '@/utils/invoiceAchievements';
 
 const QuickInvoiceWhatsApp = () => {
   const { user } = useAuth();
@@ -106,6 +109,13 @@ const QuickInvoiceWhatsApp = () => {
       setGeneratedLink(invoiceLink);
       setGeneratedInvoiceNumber(invoiceNumber);
       setShowGeneratedLink(true);
+
+      // 🎉 Trigger celebrations!
+      triggerConfetti();
+      playCelebrationSound();
+      
+      // Check for weekly achievements
+      await checkWeeklyInvoiceAchievement(user.id);
 
       // Send WhatsApp message via Zoko
       const messageResult = await ZokoService.sendInvoiceMessage(
