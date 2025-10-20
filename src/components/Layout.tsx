@@ -18,6 +18,7 @@ import MobileStickyGrowthCTA from '@/components/MobileStickyGrowthCTA';
 import GrowthApplicationForm from '@/components/GrowthApplicationForm';
 import { TipPopup } from '@/components/ui/tip-popup';
 import { DevModeDialog } from '@/components/DevModeDialog';
+import { RewardsHeaderDisplay } from '@/components/RewardsHeaderDisplay';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
@@ -218,8 +219,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               </div>
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-3">
+              <RewardsHeaderDisplay />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-[#4C9F70] text-white">
@@ -248,6 +252,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </div>
         </div>
       </nav>
