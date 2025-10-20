@@ -3,6 +3,7 @@ import { BADGES } from '@/types/rewards';
 import { toast } from 'sonner';
 import { triggerConfetti } from '@/components/ui/confetti';
 import { playCelebrationSound } from '@/utils/celebrationSound';
+import { triggerBadgeUnlockModal } from '@/utils/badgeUnlockEvent';
 
 export const awardPoints = async (
   userId: string,
@@ -165,8 +166,19 @@ export const checkBadgeUnlocks = async (userId: string): Promise<string[]> => {
       newBadges.forEach(badgeId => {
         const badge = BADGES.find(b => b.id === badgeId);
         if (badge) {
-          toast.success(`🎉 Badge Unlocked: ${badge.name}! +${badge.points} points`, {
-            duration: 5000,
+          // Trigger the global modal popup
+          triggerBadgeUnlockModal({
+            badgeId: badge.id,
+            badgeName: badge.name,
+            badgeDescription: badge.description,
+            badgeIcon: badge.icon,
+            badgeColor: badge.color,
+            points: badge.points
+          });
+          
+          // Keep toast as backup notification
+          toast.success(`🎉 Badge Unlocked: ${badge.name}!`, {
+            duration: 3000,
           });
         }
       });

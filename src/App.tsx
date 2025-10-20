@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { OnboardingProvider } from '@/contexts/OnboardingContext';
+import { BadgeUnlockModal } from '@/components/BadgeUnlockModal';
 
 // Lazy load pages for better performance
 const Index = lazy(() => import('@/pages/Index'));
@@ -184,6 +185,7 @@ function App() {
                 </Routes>
               </Suspense>
               <Toaster />
+              <BadgeUnlockModal />
             </div>
           </SubscriptionProvider>
         </OnboardingProvider>
